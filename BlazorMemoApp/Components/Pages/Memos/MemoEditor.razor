@@ -1,0 +1,155 @@
+﻿@page "/memos/new"
+@rendermode InteractiveServer
+@using BlazorMemoApp.Models
+@inject BlazorMemoApp.Services.PoApiClient PoApi
+@inject NavigationManager Nav
+
+<h1>Create Memo</h1>
+
+<EditForm Model="header">
+    <div class="row g-3">
+        <div class="col-sm-3">
+            <label class="form-label">Memo No</label>
+            <input class="form-control" value="@header.MemoNo" disabled />
+        </div>
+        <div class="col-sm-3">
+            <label class="form-label">Memo Date</label>
+            <InputDate class="form-control" @bind-Value="header.MemoDate" />
+        </div>
+        <div class="col-sm-3">
+            <label class="form-label">Buyer</label>
+            <InputSelect class="form-select" @bind-Value="header.BuyerId">
+                <option value="">-- Select --</option>
+                <option value="1">Buyer A</option>
+            </InputSelect>
+        </div>
+        <div class="col-sm-3">
+            <label class="form-label">Style</label>
+            <InputSelect class="form-select" @bind-Value="header.StyleId">
+                <option value="">-- Select --</option>
+                <option value="1">Style A</option>
+            </InputSelect>
+        </div>
+        <div class="col-sm-3">
+            <label class="form-label">Supplier</label>
+            <InputSelect class="form-select" @bind-Value="header.SupplierId">
+                <option value="">-- Select --</option>
+                <option value="1">Supplier A</option>
+            </InputSelect>
+        </div>
+        <div class="col-sm-3 position-relative">
+            <label class="form-label">PO Number</label>
+            <div class="input-group">
+                @* <input class="form-control" @bind-value="SearchText" @bind-value:event="oninput" placeholder="Type part of PO No..." /> *@
+                <input class="form-control" @bind-value="SearchText" placeholder="Type part of PO No..." />
+                <button type="button" class="btn btn-outline-primary" title="Search PO" @onclick="SearchPosAsync">Search PO</button>
+            </div>
+            @if (suggestions.Count > 0 && showSuggestions)
+            {
+                <div class="list-group position-absolute z-3" style="max-height:200px; overflow:auto; width:100%;">
+                    @foreach (var s in suggestions)
+                    {
+                        <button type="button" class="list-group-item list-group-item-action" @onclick="() => SelectPo(s)">@s</button>
+                    }
+                </div>
+            }
+        </div>
+        <div class="col-sm-3">
+            <label class="form-label">PO Selected</label>
+            <input class="form-control" value="@header.PONumber" disabled />
+        </div>
+    </div>
+</EditForm>
+
+<hr />
+
+<BlazorMemoApp.Components.Memos.MemoDetailGrid Items="header.Details" />
+
+<div class="mt-3">
+    <button class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+    <button class="btn btn-primary ms-2" @onclick="Save">Save</button>
+</div>
+
+@code {
+    private MemoHeaderModel header = new()
+    {
+        MemoNo = GenerateMemoNo()
+    };
+
+    private string searchText = string.Empty;
+    private bool showSuggestions = false;
+    private List<string> suggestions = new();
+    private System.Timers.Timer? debounceTimer;
+
+    private string SearchText
+    {
+        get => searchText;
+        set
+        {
+            searchText = value ?? string.Empty;
+            debounceTimer?.Stop();
+            debounceTimer?.Start();
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        debounceTimer = new System.Timers.Timer(300);
+        debounceTimer.AutoReset = false;
+        debounceTimer.Elapsed += async (_, _) => await InvokeAsync(SearchPosAsync);
+    }
+
+    private static string GenerateMemoNo()
+    {
+        // Placeholder auto-generated memo no
+        return $"MO{DateTime.UtcNow:yyMMddHHmmss}";
+    }
+
+    private async Task SearchPosAsync()
+    {
+        if (string.IsNullOrWhiteSpace(searchText))
+        {
+            suggestions.Clear();
+            showSuggestions = false;
+            StateHasChanged();
+            return;
+        }
+        suggestions = await PoApi.SearchPosAsync(searchText);
+        showSuggestions = suggestions.Count > 0;
+        StateHasChanged();
+    }
+
+    private void OnSearchInput(ChangeEventArgs e)
+    {
+        searchText = e.Value?.ToString() ?? string.Empty;
+        debounceTimer?.Stop();
+        debounceTimer?.Start();
+    }
+
+    private async Task SelectPo(string po)
+    {
+        header.PONumber = po;
+        showSuggestions = false;
+        suggestions.Clear();
+        searchText = po;
+
+        var details = await PoApi.GetPoDetailsAsync(po);
+        header.Details = details.Select(d => new MemoDetailModel
+        {
+            Article = d.Article,
+            Color = d.Color,
+            Size = d.Size,
+            Price = d.Rate,
+            Unit = d.UOM
+        }).ToList();
+    }
+
+    private void Cancel() => Nav.NavigateTo("/memos");
+
+    private void Save()
+    {
+        // Placeholder for saving logic (EF/repository not implemented in this minimal PR)
+        // Could post to an API endpoint in future.
+        Nav.NavigateTo("/memos");
+    }
+}

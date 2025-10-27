@@ -1,0 +1,85 @@
+﻿@using BlazorMemoApp.Models
+
+@if (Items is null || Items.Count == 0)
+{
+    <p>No details loaded. Select a PO to populate items.</p>
+}
+else
+{
+    <div style="overflow-x: auto;">
+        <table class="table table-bordered table-sm align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Article</th>
+                    <th>Color</th>
+                    <th>Size</th>
+                    <th>Price</th>
+                    <th>Unit</th>
+                    <th>BOMQty</th>
+                    <th>BOMAmount</th>
+                    <th>AvailStockQty</th>
+                    <th>StockAmount</th>
+                    <th>PurchaseQty</th>
+                    <th>PurchaseAmount</th>
+                    <th>MCQQty</th>
+                    <th>MCQAmount</th>
+                    <th>Diff</th>
+                    <th>SurchargePaid</th>
+                    <th>TotalExtraPaid</th>
+                    <th>StockFromMCQ</th>
+                    <th>StockUsableQty</th>
+                    <th>StockUsableAmount</th>
+                    <th>StockNonUsableQty</th>
+                    <th>StockNonUsableAmount</th>
+                    <th>TotalExtraCollected</th>
+                </tr>
+            </thead>
+            <tbody>
+            @for (var i = 0; i < Items.Count; i++)
+            {
+                var it = Items[i];
+                <tr>
+                    <td>@it.Article</td>
+                    <td>@it.Color</td>
+                    <td>@it.Size</td>
+                    <td>@it.Price</td>
+                    <td>@it.Unit</td>
+                    <td>
+                        <input type="number" class="form-control form-control-sm" @bind-value="it.BOMQty" @bind-value:event="oninput" />
+                    </td>
+                    <td>@it.BOMAmount</td>
+                    <td>
+                        <input type="number" class="form-control form-control-sm" @bind-value="it.AvailStockQty" @bind-value:event="oninput" />
+                    </td>
+                    <td>@it.StockAmount</td>
+                    <td>@it.PurchaseQty</td>
+                    <td>@it.PurchaseAmount</td>
+                    <td>
+                        <input type="number" class="form-control form-control-sm" @bind-value="it.MCQQty" @bind-value:event="oninput" />
+                    </td>
+                    <td>@it.MCQAmount</td>
+                    <td>@it.Diff</td>
+                    <td>
+                        <input type="number" step="0.01" class="form-control form-control-sm" @bind-value="it.SurchargePaid" @bind-value:event="oninput" />
+                    </td>
+                    <td>@it.TotalExtraPaid</td>
+                    <td>@it.StockFromMCQ</td>
+                    <td>
+                        <input type="number" class="form-control form-control-sm" @bind-value="it.StockUsableQty" @bind-value:event="oninput" />
+                    </td>
+                    <td>@it.StockUsableAmount</td>
+                    <td>@it.StockNonUsableQty</td>
+                    <td>@it.StockNonUsableAmount</td>
+                    <td>
+                        <input type="number" step="0.01" class="form-control form-control-sm" @bind-value="it.TotalExtraCollected" @bind-value:event="oninput" />
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    [Parameter] public List<MemoDetailModel> Items { get; set; } = new();
+}

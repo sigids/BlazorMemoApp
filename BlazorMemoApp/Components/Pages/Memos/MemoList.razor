@@ -1,0 +1,22 @@
+﻿@page "/memos"
+@rendermode InteractiveServer
+@inject NavigationManager Nav
+
+<h1>Memo List</h1>
+
+<div class="mb-3">
+    <button class="btn btn-primary" @onclick="CreateNew">Create Memo</button>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <p>This is a placeholder for the memo list grid with filter, paging, and search as per PRD.</p>
+    </div>
+</div>
+
+@code {
+    private void CreateNew()
+    {
+        Nav.NavigateTo("/memos/new");
+    }
+}

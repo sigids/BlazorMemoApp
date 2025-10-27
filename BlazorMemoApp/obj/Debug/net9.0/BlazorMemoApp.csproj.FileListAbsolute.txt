@@ -8,13 +8,13 @@ C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\Microsoft.En
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\Microsoft.EntityFrameworkCore.SqlServer.dll
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\Microsoft.Identity.Client.dll
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\Microsoft.SqlServer.Server.dll
-C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\System.Configuration.ConfigurationManager.dll
-C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\runtimes\win\lib\net6.0\Microsoft.Data.SqlClient.dll
-C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\runtimes\win-x64\native\Microsoft.Data.SqlClient.SNI.dll
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\appsettings.Development.json
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\appsettings.json
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\BlazorMemoApp.staticwebassets.runtime.json
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\BlazorMemoApp.staticwebassets.endpoints.json
+C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\BlazorMemoApp.deps.json
+C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\BlazorMemoApp.runtimeconfig.json
+C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\BlazorMemoApp.pdb
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\Azure.Core.dll
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\Azure.Identity.dll
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\Humanizer.dll
@@ -58,6 +58,7 @@ C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\System.Compo
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\System.Composition.Hosting.dll
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\System.Composition.Runtime.dll
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\System.Composition.TypedParts.dll
+C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\System.Configuration.ConfigurationManager.dll
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\System.Drawing.Common.dll
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\System.IdentityModel.Tokens.Jwt.dll
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\System.Memory.Data.dll
@@ -131,8 +132,10 @@ C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\tr\Microsoft
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\zh-Hans\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.resources.dll
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\zh-Hant\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.resources.dll
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\runtimes\unix\lib\net6.0\Microsoft.Data.SqlClient.dll
+C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\runtimes\win\lib\net6.0\Microsoft.Data.SqlClient.dll
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\runtimes\win-arm\native\Microsoft.Data.SqlClient.SNI.dll
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\runtimes\win-arm64\native\Microsoft.Data.SqlClient.SNI.dll
+C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\runtimes\win-x64\native\Microsoft.Data.SqlClient.SNI.dll
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\runtimes\win-x86\native\Microsoft.Data.SqlClient.SNI.dll
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\runtimes\win\lib\net6.0\Microsoft.Win32.SystemEvents.dll
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\runtimes\unix\lib\net6.0\System.Drawing.Common.dll
@@ -147,6 +150,7 @@ C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\BlazorMemoAp
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\BlazorMemoApp.AssemblyInfo.cs
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\BlazorMemoApp.csproj.CoreCompileInputs.cache
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\BlazorMemoApp.MvcApplicationPartsAssemblyInfo.cache
+C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\BlazorMemoApp.sourcelink.json
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\rjimswa.dswa.cache.json
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\rjsmrazor.dswa.cache.json
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\rjsmcshtml.dswa.cache.json
@@ -209,8 +213,5 @@ C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\BlazorMe.B02
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\BlazorMemoApp.dll
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\refint\BlazorMemoApp.dll
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\BlazorMemoApp.pdb
-C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\BlazorMemoApp.deps.json
-C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\BlazorMemoApp.runtimeconfig.json
-C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\BlazorMemoApp.pdb
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\BlazorMemoApp.genruntimeconfig.cache
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\ref\BlazorMemoApp.dll

@@ -1,22 +1,240 @@
 ﻿@page "/memos"
 @rendermode InteractiveServer
 @inject NavigationManager Nav
+@inject BlazorMemoApp.Data.ApplicationDbContext Db
+@inject IJSRuntime JS
+
+@using BlazorMemoApp.Models
+@using Microsoft.EntityFrameworkCore
+@using System.Text
+@using System.Globalization
 
 <h1>Memo List</h1>
 
-<div class="mb-3">
+<div class="mb-3 d-flex gap-2 flex-wrap align-items-center">
     <button class="btn btn-primary" @onclick="CreateNew">Create Memo</button>
-</div>
 
-<div class="card">
-    <div class="card-body">
-        <p>This is a placeholder for the memo list grid with filter, paging, and search as per PRD.</p>
+    <div class="input-group" style="max-width:340px;">
+        <span class="input-group-text">Search</span>
+        <input class="form-control form-control-sm" @bind="_filter" placeholder="Memo No, PO Number" />
+    </div>
+
+    <div>
+        <select class="form-select form-select-sm" style="width:90px;" @bind="_pageSize">
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+        </select>
     </div>
 </div>
 
+@if (_allMemos is null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (!_allMemos.Any())
+{
+    <p>No memos found.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm table-bordered align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Memo No</th>
+                    <th>Memo Date</th>
+                    <th>PO Number</th>
+                    <th>GmtQty</th>
+                    <th>GmtFobValue</th>
+                    <th class="text-end">SurchargePaid (sum)</th>
+                    <th class="text-end">TotalExtraCollected (sum)</th>
+                    <th class="text-end">TotalExtraPaid (sum)</th>
+                    <th style="width:220px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var memo in PagedMemos)
+            {
+                <tr>
+                    <td>@memo.MemoNo</td>
+                    <td>@memo.MemoDate.ToString("yyyy-MM-dd")</td>
+                    <td>@memo.PONumber</td>
+                    <td>@memo.GmtQty</td>
+                    <td>@(memo.GmtFobValue?.ToString("N2") ?? "")</td>
+                    <td class="text-end">@memo.Details?.Sum(d => d.SurchargePaid).ToString("N2")</td>
+                    <td class="text-end">@memo.Details?.Sum(d => d.TotalExtraCollected).ToString("N2")</td>
+                    <td class="text-end">@memo.Details?.Sum(d => d.TotalExtraPaid).ToString("N2")</td>
+                    <td>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-primary" @onclick="() => EditMemo(memo.Id)">Edit</button>
+                            <button class="btn btn-sm btn-outline-secondary" @onclick="() => ViewMemo(memo.Id)">View/Print</button>
+                            <button class="btn btn-sm btn-outline-success" @onclick="() => ExportCsv(memo.Id)">CSV</button>
+                            <button class="btn btn-sm btn-danger" @onclick="() => DeleteMemo(memo.Id)">Delete</button>
+                        </div>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center">
+        <div>Showing @((_currentPage-1)*_pageSize+1)-@(((_currentPage-1)*_pageSize)+PagedMemos.Count()) of @FilteredMemos.Count()</div>
+        <nav>
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item @(_currentPage==1?"disabled":"")"><a class="page-link" href="#" @onclick="PrevPage">Prev</a></li>
+                @for (var p = 1; p <= TotalPages; p++)
+                {
+                    <li class="page-item @(p==_currentPage?"active":"")"><a class="page-link" href="#" @onclick="(()=>GotoPage(p))">@p</a></li>
+                }
+                <li class="page-item @(_currentPage==TotalPages?"disabled":"")"><a class="page-link" href="#" @onclick="NextPage">Next</a></li>
+            </ul>
+        </nav>
+    </div>
+}
+
 @code {
+    private List<MemoHeaderModel>? _allMemos;
+    private string _filter = string.Empty;
+    private int _pageSize = 10;
+    private int _currentPage = 1;
+
+    private IEnumerable<MemoHeaderModel> FilteredMemos => string.IsNullOrWhiteSpace(_filter)
+        ? _allMemos ?? Enumerable.Empty<MemoHeaderModel>()
+        : (_allMemos ?? Enumerable.Empty<MemoHeaderModel>()).Where(m =>
+            (m.MemoNo ?? string.Empty).Contains(_filter, StringComparison.OrdinalIgnoreCase)
+            || (m.PONumber ?? string.Empty).Contains(_filter, StringComparison.OrdinalIgnoreCase));
+
+    private IEnumerable<MemoHeaderModel> PagedMemos => FilteredMemos.Skip((_currentPage - 1) * _pageSize).Take(_pageSize);
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(FilteredMemos.Count() / (double)_pageSize));
+
+    protected override async Task OnInitializedAsync()
+    {
+        // load memos including details for totals
+        _allMemos = await Db.Memos.Include(m => m.Details).OrderByDescending(m => m.MemoDate).ToListAsync();
+        if (_currentPage > TotalPages) _currentPage = TotalPages;
+    }
+
     private void CreateNew()
     {
         Nav.NavigateTo("/memos/new");
+    }
+
+    private void EditMemo(int id)
+    {
+        Nav.NavigateTo($"/memos/{id}");
+    }
+
+    private void ViewMemo(int id)
+    {
+        Nav.NavigateTo($"/memos/{id}");
+    }
+
+    private async Task DeleteMemo(int id)
+    {
+        var memo = _allMemos?.FirstOrDefault(m => m.Id == id);
+        if (memo == null)
+            return;
+
+    var confirmed = await JS.InvokeAsync<bool>("confirm", $"Delete memo {memo.MemoNo}? This will remove its details as well.");
+        if (!confirmed)
+            return;
+
+        try
+        {
+            Db.Memos.Remove(memo);
+            await Db.SaveChangesAsync();
+            _allMemos?.Remove(memo);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error deleting memo: {ex.Message}");
+        }
+    }
+
+    private async Task ExportCsv(int id)
+    {
+        var memo = _allMemos?.FirstOrDefault(m => m.Id == id);
+        if (memo == null) return;
+
+        var sb = new StringBuilder();
+        // Header info (key,value)
+        sb.AppendLine("Field,Value");
+        sb.AppendLine($"MemoNo,{EscapeCsv(memo.MemoNo)}");
+        sb.AppendLine($"MemoDate,{memo.MemoDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}");
+        sb.AppendLine($"PONumber,{EscapeCsv(memo.PONumber)}");
+        sb.AppendLine($"GmtQty,{memo.GmtQty}");
+        sb.AppendLine($"GmtFobValue,{memo.GmtFobValue?.ToString("F2", CultureInfo.InvariantCulture) ?? string.Empty}");
+        sb.AppendLine();
+
+        // Details header
+        sb.AppendLine("Article,Color,Size,Price,Unit,BOMQty,AvailStockQty,MCQQty,SurchargePaid,StockUsableQty,TotalExtraCollected,BOMAmount,StockAmount,PurchaseQty,PurchaseAmount,MCQAmount,Diff,StockFromMCQ,StockUsableAmount,StockNonUsableQty,StockNonUsableAmount,TotalExtraPaid");
+
+        foreach (var d in memo.Details ?? Enumerable.Empty<MemoDetailModel>())
+        {
+            var line = string.Join(",",
+                EscapeCsv(d.Article),
+                EscapeCsv(d.Color),
+                EscapeCsv(d.Size),
+                d.Price.ToString("F2", CultureInfo.InvariantCulture),
+                EscapeCsv(d.Unit),
+                d.BOMQty.ToString(CultureInfo.InvariantCulture),
+                d.AvailStockQty.ToString(CultureInfo.InvariantCulture),
+                d.MCQQty.ToString(CultureInfo.InvariantCulture),
+                d.SurchargePaid.ToString("F2", CultureInfo.InvariantCulture),
+                d.StockUsableQty.ToString(CultureInfo.InvariantCulture),
+                d.TotalExtraCollected.ToString("F2", CultureInfo.InvariantCulture),
+                d.BOMAmount.ToString("F2", CultureInfo.InvariantCulture),
+                d.StockAmount.ToString("F2", CultureInfo.InvariantCulture),
+                d.PurchaseQty.ToString(CultureInfo.InvariantCulture),
+                d.PurchaseAmount.ToString("F2", CultureInfo.InvariantCulture),
+                d.MCQAmount.ToString("F2", CultureInfo.InvariantCulture),
+                d.Diff.ToString("F2", CultureInfo.InvariantCulture),
+                d.StockFromMCQ.ToString(CultureInfo.InvariantCulture),
+                d.StockUsableAmount.ToString("F2", CultureInfo.InvariantCulture),
+                d.StockNonUsableQty.ToString(CultureInfo.InvariantCulture),
+                d.StockNonUsableAmount.ToString("F2", CultureInfo.InvariantCulture),
+                d.TotalExtraPaid.ToString("F2", CultureInfo.InvariantCulture)
+            );
+            sb.AppendLine(line);
+        }
+
+        var csv = sb.ToString();
+        var bytes = Encoding.UTF8.GetBytes(csv);
+        var base64 = Convert.ToBase64String(bytes);
+        var filename = $"{(string.IsNullOrWhiteSpace(memo.MemoNo) ? "memo" : memo.MemoNo)}_{memo.Id}.csv".Replace("\"", "");
+
+        // Use a small inline script to trigger download from base64 data
+        var safeBase64 = base64.Replace("'", "\\'");
+        var safeFilename = filename.Replace("'", "\\'");
+        var js = $"(function(b64, filename){{var link=document.createElement('a');link.href='data:text/csv;base64,'+b64;link.download=filename;document.body.appendChild(link);link.click();document.body.removeChild(link);}})('{safeBase64}','{safeFilename}');";
+        await JS.InvokeVoidAsync("eval", js);
+    }
+
+    private static string EscapeCsv(string? input)
+    {
+        if (string.IsNullOrEmpty(input)) return string.Empty;
+        var needQuotes = input.Contains(',') || input.Contains('"') || input.Contains('\r') || input.Contains('\n');
+        var outVal = input.Replace("\"", "\"\"");
+        return needQuotes ? '"' + outVal + '"' : outVal;
+    }
+
+    private void PrevPage()
+    {
+        if (_currentPage > 1) _currentPage--;
+    }
+
+    private void NextPage()
+    {
+        if (_currentPage < TotalPages) _currentPage++;
+    }
+
+    private void GotoPage(int p)
+    {
+        _currentPage = Math.Min(Math.Max(1, p), TotalPages);
     }
 }

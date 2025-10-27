@@ -1,4 +1,25 @@
 ﻿@using BlazorMemoApp.Models
+@using System.Linq
+@inject IJSRuntime JS
+
+<div class="mb-2 d-flex flex-wrap gap-2 align-items-center">
+    <div class="input-group" style="max-width:320px;">
+        <span class="input-group-text">Filter</span>
+        <input class="form-control form-control-sm" @bind="_filter" placeholder="Article, Color, Size, Unit" />
+    </div>
+
+    <div>
+        <select class="form-select form-select-sm" style="width:90px;" @bind="_pageSize">
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+        </select>
+    </div>
+
+    <button class="btn btn-sm btn-outline-primary" @onclick="SelectAllFiltered">Select All</button>
+    <button class="btn btn-sm btn-danger" @onclick="DeleteSelected">Delete Selected (@_selected.Count)</button>
+</div>
 
 @if (Items is null || Items.Count == 0)
 {
@@ -10,6 +31,7 @@ else
         <table class="table table-bordered table-sm align-middle">
             <thead class="table-light">
                 <tr>
+                    <th style="width:36px;"></th>
                     <th>Article</th>
                     <th>Color</th>
                     <th>Size</th>
@@ -35,10 +57,12 @@ else
                 </tr>
             </thead>
             <tbody>
-            @for (var i = 0; i < Items.Count; i++)
+            @foreach (var it in PagedItems)
             {
-                var it = Items[i];
                 <tr>
+                    <td class="text-center">
+                        <input type="checkbox" class="form-check-input" checked="@(_selected.Contains(it))" @onchange="(e) => OnRowSelectedChanged(it, e)" />
+                    </td>
                     <td>@it.Article</td>
                     <td>@it.Color</td>
                     <td>@it.Size</td>
@@ -78,8 +102,98 @@ else
             </tbody>
         </table>
     </div>
+
+    <div class="d-flex justify-content-between align-items-center">
+        <div>Showing @((_currentPage-1)*_pageSize+1)-@(((_currentPage-1)*_pageSize)+PagedItems.Count) of @FilteredItems.Count()</div>
+        <nav>
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item @( _currentPage==1?"disabled":"" )"><a class="page-link" href="#" @onclick="PrevPage">Prev</a></li>
+                @for (var p = 1; p <= TotalPages; p++)
+                {
+                    <li class="page-item @(p==_currentPage?"active":"")"><a class="page-link" href="#" @onclick="(()=>GotoPage(p))">@p</a></li>
+                }
+                <li class="page-item @(_currentPage==TotalPages?"disabled":"")"><a class="page-link" href="#" @onclick="NextPage">Next</a></li>
+            </ul>
+        </nav>
+    </div>
 }
 
 @code {
     [Parameter] public List<MemoDetailModel> Items { get; set; } = new();
+    [Parameter] public EventCallback<List<MemoDetailModel>> ItemsChanged { get; set; }
+
+    private HashSet<MemoDetailModel> _selected = new();
+    private string _filter = string.Empty;
+    private int _pageSize = 10;
+    private int _currentPage = 1;
+
+    private IEnumerable<MemoDetailModel> FilteredItems => string.IsNullOrWhiteSpace(_filter)
+        ? Items
+        : Items.Where(i => (i.Article ?? string.Empty).Contains(_filter, StringComparison.OrdinalIgnoreCase)
+                       || (i.Color ?? string.Empty).Contains(_filter, StringComparison.OrdinalIgnoreCase)
+                       || (i.Size ?? string.Empty).Contains(_filter, StringComparison.OrdinalIgnoreCase)
+                       || (i.Unit ?? string.Empty).Contains(_filter, StringComparison.OrdinalIgnoreCase));
+
+    private List<MemoDetailModel> PagedItems => FilteredItems.Skip((_currentPage - 1) * _pageSize).Take(_pageSize).ToList();
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(FilteredItems.Count() / (double)_pageSize));
+
+    protected override void OnParametersSet()
+    {
+        // Ensure page index is valid after parameter changes
+        if (_currentPage > TotalPages) _currentPage = TotalPages;
+        base.OnParametersSet();
+    }
+
+    private void OnRowSelectedChanged(MemoDetailModel item, ChangeEventArgs e)
+    {
+        var isChecked = Convert.ToBoolean(e.Value);
+        if (isChecked)
+            _selected.Add(item);
+        else
+            _selected.Remove(item);
+    }
+
+    private void SelectAllFiltered()
+    {
+        _selected.Clear();
+        foreach (var it in FilteredItems)
+            _selected.Add(it);
+    }
+
+    private async Task DeleteSelected()
+    {
+        if (_selected.Count == 0)
+            return;
+
+        var ok = await JS.InvokeAsync<bool>("confirm", $"Delete {_selected.Count} selected rows?");
+        if (!ok)
+            return;
+
+        foreach (var s in _selected.ToList())
+        {
+            Items.Remove(s);
+        }
+        _selected.Clear();
+        // adjust page if needed
+        if (_currentPage > TotalPages) _currentPage = TotalPages;
+
+        if (ItemsChanged.HasDelegate)
+            await ItemsChanged.InvokeAsync(Items);
+    }
+
+    private void PrevPage()
+    {
+        if (_currentPage > 1) _currentPage--;
+    }
+
+    private void NextPage()
+    {
+        if (_currentPage < TotalPages) _currentPage++;
+    }
+
+    private void GotoPage(int p)
+    {
+        _currentPage = Math.Min(Math.Max(1, p), TotalPages);
+    }
 }

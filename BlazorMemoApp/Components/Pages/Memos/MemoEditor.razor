@@ -3,6 +3,8 @@
 @using BlazorMemoApp.Models
 @inject BlazorMemoApp.Services.PoApiClient PoApi
 @inject NavigationManager Nav
+@inject BlazorMemoApp.Data.ApplicationDbContext Db
+
 
 <h1>Create Memo</h1>
 
@@ -146,10 +148,29 @@
 
     private void Cancel() => Nav.NavigateTo("/memos");
 
-    private void Save()
+private async Task Save()
+{
+    if (
+        string.IsNullOrWhiteSpace(header.PONumber) ||
+        header.MemoDate == default ||
+        header.Details == null || !header.Details.Any())
     {
-        // Placeholder for saving logic (EF/repository not implemented in this minimal PR)
-        // Could post to an API endpoint in future.
+        // Optionally show validation feedback
+        return;
+    }
+
+    try
+    {
+        // Add the memo header and its details
+        Db.Memos.Add(header);
+        await Db.SaveChangesAsync();
+
         Nav.NavigateTo("/memos");
     }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"Error saving memo: {ex.Message}");
+        // Optionally show error feedback to the user
+    }
+}
 }

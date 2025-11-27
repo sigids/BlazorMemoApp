@@ -8,5 +8,7 @@ namespace BlazorMemoApp.Data
     {
         public DbSet<MemoHeaderModel> Memos { get; set; }
         public DbSet<MemoDetailModel> MemoDetails { get; set; }
+        public DbSet<MemoAdressModel> MemoAddresses { get; set; }
+        public DbSet<BuyerStyleModel> BuyerStyles { get; set; }
     }
 }

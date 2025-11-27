@@ -1,0 +1,148 @@
+﻿@page "/admin/roles"
+@* @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin")] *@
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Identity
+@using BlazorMemoApp.Data
+
+@inject UserManager<ApplicationUser> UserManager
+@inject RoleManager<IdentityRole> RoleManager
+@inject IJSRuntime JS
+
+<h1>Role Management</h1>
+<p class="text-muted">Assign roles to users. Only Admins can access this page.</p>
+
+@if (_loading)
+{
+    <p><em>Loading...</em></p>
+}
+else if (_users.Count == 0)
+{
+    <div class="alert alert-warning">No users found. Register a user first.</div>
+}
+else
+{
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-sm-6">
+                    <label class="form-label">User</label>
+                    <select class="form-select" @bind="_selectedUserId">
+                        @foreach (var u in _users)
+                        {
+                            <option value="@u.Id">@DisplayUser(u)</option>
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (_selectedUser is not null)
+    {
+        <div class="card">
+            <div class="card-header">Roles for @DisplayUser(_selectedUser)</div>
+            <div class="card-body">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="role-admin" @bind="_roleAdmin" />
+                    <label class="form-check-label" for="role-admin">Admin</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="role-supervisor" @bind="_roleSupervisor" />
+                    <label class="form-check-label" for="role-supervisor">Supervisor</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="role-user" @bind="_roleUser" />
+                    <label class="form-check-label" for="role-user">User</label>
+                </div>
+                <div class="mt-3">
+                    <button class="btn btn-primary" @onclick="SaveRoles">Save</button>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    private List<ApplicationUser> _users = new();
+    private ApplicationUser? _selectedUser;
+    private string? _selectedUserId;
+    private bool _loading = true;
+
+    // Role checkboxes
+    private bool _roleAdmin;
+    private bool _roleSupervisor;
+    private bool _roleUser;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsersAsync();
+        _loading = false;
+    }
+
+    private async Task LoadUsersAsync()
+    {
+        // UserManager.Users may require ToListAsync if backed by EF
+        _users = UserManager.Users.OrderBy(u => u.Email ?? u.UserName).ToList();
+        if (_users.Count > 0)
+        {
+            _selectedUserId = _users.First().Id;
+            await LoadSelectedUserAsync();
+        }
+    }
+
+    private async Task OnUserChanged(Microsoft.AspNetCore.Components.ChangeEventArgs _)
+    {
+        await LoadSelectedUserAsync();
+    }
+
+    private async Task LoadSelectedUserAsync()
+    {
+        _selectedUser = _users.FirstOrDefault(u => u.Id == _selectedUserId);
+        if (_selectedUser is null)
+        {
+            _roleAdmin = _roleSupervisor = _roleUser = false;
+            return;
+        }
+
+        var roles = await UserManager.GetRolesAsync(_selectedUser);
+        _roleAdmin = roles.Contains("Admin", StringComparer.OrdinalIgnoreCase);
+        _roleSupervisor = roles.Contains("Supervisor", StringComparer.OrdinalIgnoreCase);
+        _roleUser = roles.Contains("User", StringComparer.OrdinalIgnoreCase);
+    }
+
+    private async Task SaveRoles()
+    {
+        if (_selectedUser is null) return;
+
+        var desired = new List<string>();
+        if (_roleAdmin) desired.Add("Admin");
+        if (_roleSupervisor) desired.Add("Supervisor");
+        if (_roleUser) desired.Add("User");
+
+        var current = await UserManager.GetRolesAsync(_selectedUser);
+        var toAdd = desired.Except(current, StringComparer.OrdinalIgnoreCase).ToArray();
+        var toRemove = current.Except(desired, StringComparer.OrdinalIgnoreCase).ToArray();
+
+        IdentityResult addResult = IdentityResult.Success;
+        IdentityResult removeResult = IdentityResult.Success;
+
+        if (toAdd.Length > 0)
+            addResult = await UserManager.AddToRolesAsync(_selectedUser, toAdd);
+
+        if (toRemove.Length > 0)
+            removeResult = await UserManager.RemoveFromRolesAsync(_selectedUser, toRemove);
+
+        if (addResult.Succeeded && removeResult.Succeeded)
+        {
+            await JS.InvokeVoidAsync("alert", "Roles updated successfully.");
+        }
+        else
+        {
+            var errors = string.Join("; ", addResult.Errors.Select(e => e.Description).Concat(removeResult.Errors.Select(e => e.Description)));
+            await JS.InvokeVoidAsync("alert", $"Failed to update roles: {errors}");
+        }
+    }
+
+    private static string DisplayUser(ApplicationUser u)
+        => string.IsNullOrWhiteSpace(u.Email) ? u.UserName ?? u.Id : $"{u.Email} ({u.UserName})";
+}

@@ -1,49 +1,101 @@
 ﻿@page "/memos/new"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,User")]
 @rendermode InteractiveServer
 @using BlazorMemoApp.Models
+@using System.Security.Claims
+@using Microsoft.EntityFrameworkCore
 @inject BlazorMemoApp.Services.PoApiClient PoApi
 @inject NavigationManager Nav
 @inject BlazorMemoApp.Data.ApplicationDbContext Db
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 
 <h1>Create Memo</h1>
+<hr />
 
 <EditForm Model="header">
     <div class="row g-3">
-        <div class="col-sm-3">
+@*         <AuthorizeView Roles="Admin,Supervisor">
+            <Authorized Context="auth">
+        @if ((header.ApproveStatus ?? "") != "Approved")
+        {
+            <button class="btn btn-success" title="Approve this memo" @onclick="Approve">Approve</button>
+        }
+        else
+        {
+            <span class="badge bg-success">Approved @header.ApproveDate?.ToString("yyyy-MM-dd HH:mm")</span>
+        }
+            </Authorized>
+        </AuthorizeView> *@
+        <div class="col-sm-2">
             <label class="form-label">Memo No</label>
-            <input class="form-control" value="@header.MemoNo" disabled />
+            <input class="form-control" value="@header.MemoNo" disabled/>
         </div>
-        <div class="col-sm-3">
+        <div class="col-sm-2">
             <label class="form-label">Memo Date</label>
-            <InputDate class="form-control" @bind-Value="header.MemoDate" />
+            <InputDate class="form-control" @bind-Value="header.MemoDate"/>
         </div>
-        <div class="col-sm-3">
+        <div class="col-sm-2 position-relative">
             <label class="form-label">Buyer</label>
-            <InputSelect class="form-select" @bind-Value="header.BuyerId">
-                <option value="">-- Select --</option>
-                <option value="1">Buyer A</option>
-            </InputSelect>
+            <input class="form-control" 
+                   @bind-value="buyerSearchText" 
+                   @bind-value:event="oninput"
+                   @onfocus="() => showBuyerDropdown = true"
+                   placeholder="Type to filter..." />
+            @if (showBuyerDropdown && filteredBuyers.Any())
+            {
+                <div class="list-group position-absolute z-3" style="max-height:200px; overflow:auto; width:100%;">
+                    @foreach (var buyer in filteredBuyers)
+                    {
+                        <button type="button" class="list-group-item list-group-item-action" @onclick="() => SelectBuyer(buyer)">
+                            @buyer.Name - @buyer.NameAbbr
+                        </button>
+                    }
+                </div>
+            }
         </div>
-        <div class="col-sm-3">
+        <div class="col-sm-2">
             <label class="form-label">Style</label>
-            <InputSelect class="form-select" @bind-Value="header.StyleId">
+            <InputSelect class="form-select" @bind-Value="header.StyleId" disabled="@(header.BuyerId == null)">
                 <option value="">-- Select --</option>
-                <option value="1">Style A</option>
+                @foreach (var style in filteredStyles)
+                {
+                    <option value="@style.Id">@style.StyleName</option>
+                }
             </InputSelect>
         </div>
-        <div class="col-sm-3">
+        <div class="col-sm-2">
+            <label class="form-label">Garment Qty</label>
+            <InputNumber class="form-control" @bind-Value="header.GmtQty"/>
+        </div>
+        <div class="col-sm-2">
+            <label class="form-label">FOB Value</label>
+            <InputNumber class="form-control" @bind-Value="header.GmtFobValue" />
+        </div>
+        <div class="col-sm-2 position-relative">
             <label class="form-label">Supplier</label>
-            <InputSelect class="form-select" @bind-Value="header.SupplierId">
-                <option value="">-- Select --</option>
-                <option value="1">Supplier A</option>
-            </InputSelect>
+            <input class="form-control" 
+                   @bind-value="supplierSearchText" 
+                   @bind-value:event="oninput"
+                   @onfocus="() => showSupplierDropdown = true"
+                   placeholder="Type to filter..." />
+            @if (showSupplierDropdown && filteredSuppliers.Any())
+            {
+                <div class="list-group position-absolute z-3" style="max-height:200px; overflow:auto; width:100%;">
+                    @foreach (var supplier in filteredSuppliers)
+                    {
+                        <button type="button" class="list-group-item list-group-item-action" @onclick="() => SelectSupplier(supplier)">
+                            @supplier.Name - @supplier.NameAbbr
+                        </button>
+                    }
+                </div>
+            }
         </div>
-        <div class="col-sm-3 position-relative">
+        <div class="col-sm-2 position-relative">
             <label class="form-label">PO Number</label>
             <div class="input-group">
                 @* <input class="form-control" @bind-value="SearchText" @bind-value:event="oninput" placeholder="Type part of PO No..." /> *@
-                <input class="form-control" @bind-value="SearchText" placeholder="Type part of PO No..." />
+                <input class="form-control" @bind-value="SearchText" placeholder="Type part of PO No..."/>
                 <button type="button" class="btn btn-outline-primary" title="Search PO" @onclick="SearchPosAsync">Search PO</button>
             </div>
             @if (suggestions.Count > 0 && showSuggestions)
@@ -56,9 +108,9 @@
                 </div>
             }
         </div>
-        <div class="col-sm-3">
+        <div class="col-sm-2">
             <label class="form-label">PO Selected</label>
-            <input class="form-control" value="@header.PONumber" disabled />
+            <input class="form-control" value="@header.PONumber" disabled/>
         </div>
     </div>
 </EditForm>
@@ -67,9 +119,22 @@
 
 <BlazorMemoApp.Components.Memos.MemoDetailGrid Items="header.Details" />
 
-<div class="mt-3">
+<div class="mt-3 d-flex gap-2 align-items-center flex-wrap">
     <button class="btn btn-secondary" @onclick="Cancel">Cancel</button>
-    <button class="btn btn-primary ms-2" @onclick="Save">Save</button>
+    <button class="btn btn-primary" @onclick="Save">Save</button>
+
+    <AuthorizeView Roles="Admin,Supervisor">
+        <Authorized>
+            @if ((header.ApproveStatus ?? "") != "Approved")
+            {
+                <button class="btn btn-success" title="Approve this memo" @onclick="Approve">Approve</button>
+            }
+            else
+            {
+                <span class="badge bg-success">Approved @header.ApproveDate?.ToString("yyyy-MM-dd HH:mm")</span>
+            }
+        </Authorized>
+    </AuthorizeView>
 </div>
 
 @code {
@@ -82,6 +147,35 @@
     private bool showSuggestions = false;
     private List<string> suggestions = new();
     private System.Timers.Timer? debounceTimer;
+    
+    private List<MemoAdressModel> buyers = new();
+    private List<MemoAdressModel> suppliers = new();
+    private List<BuyerStyleModel> styles = new();
+    
+    private IEnumerable<BuyerStyleModel> filteredStyles => 
+        header.BuyerId == null 
+            ? Enumerable.Empty<BuyerStyleModel>() 
+            : styles.Where(s => s.BuyerId == header.BuyerId);
+    
+    private string buyerSearchText = string.Empty;
+    private bool showBuyerDropdown = false;
+    
+    private IEnumerable<MemoAdressModel> filteredBuyers => 
+        string.IsNullOrWhiteSpace(buyerSearchText)
+            ? buyers
+            : buyers.Where(b => 
+                (b.Name?.Contains(buyerSearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (b.NameAbbr?.Contains(buyerSearchText, StringComparison.OrdinalIgnoreCase) ?? false));
+    
+    private string supplierSearchText = string.Empty;
+    private bool showSupplierDropdown = false;
+    
+    private IEnumerable<MemoAdressModel> filteredSuppliers => 
+        string.IsNullOrWhiteSpace(supplierSearchText)
+            ? suppliers
+            : suppliers.Where(s => 
+                (s.Name?.Contains(supplierSearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (s.NameAbbr?.Contains(supplierSearchText, StringComparison.OrdinalIgnoreCase) ?? false));
 
     private string SearchText
     {
@@ -94,11 +188,15 @@
         }
     }
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         debounceTimer = new System.Timers.Timer(300);
         debounceTimer.AutoReset = false;
         debounceTimer.Elapsed += async (_, _) => await InvokeAsync(SearchPosAsync);
+        
+        buyers = await Db.MemoAddresses.Where(a => a.Type.Contains("B")).ToListAsync();
+        suppliers = await Db.MemoAddresses.Where(a => a.Type.Contains("V") || a.Type.Contains("F")).ToListAsync();
+        styles = await Db.BuyerStyles.ToListAsync();
     }
 
     private static string GenerateMemoNo()
@@ -121,7 +219,7 @@
         StateHasChanged();
     }
 
-    private void OnSearchInput(ChangeEventArgs e)
+    private void OnSearchInput(Microsoft.AspNetCore.Components.ChangeEventArgs e)
     {
         searchText = e.Value?.ToString() ?? string.Empty;
         debounceTimer?.Stop();
@@ -136,14 +234,34 @@
         searchText = po;
 
         var details = await PoApi.GetPoDetailsAsync(po);
-        header.Details = details.Select(d => new MemoDetailModel
+        var newItems = details.Select(d => new MemoDetailModel
         {
             Article = d.Article,
             Color = d.Color,
-            Size = d.Size,
+            Size = d.Spec_Value,
             Price = d.Rate,
-            Unit = d.UOM
+            Unit = d.Uom_Po,
+            PONumber = po
         }).ToList();
+        
+        // Append new items to existing list instead of replacing
+        header.Details ??= new List<MemoDetailModel>();
+        header.Details.AddRange(newItems);
+    }
+
+    private void SelectBuyer(MemoAdressModel buyer)
+    {
+        header.BuyerId = buyer.Id;
+        header.StyleId = null;
+        buyerSearchText = $"{buyer.Name} - {buyer.NameAbbr}";
+        showBuyerDropdown = false;
+    }
+
+    private void SelectSupplier(MemoAdressModel supplier)
+    {
+        header.SupplierId = supplier.Id;
+        supplierSearchText = $"{supplier.Name} - {supplier.NameAbbr}";
+        showSupplierDropdown = false;
     }
 
     private void Cancel() => Nav.NavigateTo("/memos");
@@ -171,6 +289,43 @@ private async Task Save()
     {
         Console.Error.WriteLine($"Error saving memo: {ex.Message}");
         // Optionally show error feedback to the user
+    }
+}
+
+private async Task Approve()
+{
+    // Only Admin/Supervisor should see the button via UI guard, but re-check
+    var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+    var user = authState.User;
+    if (user?.Identity?.IsAuthenticated != true) return;
+    var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+    if (string.IsNullOrWhiteSpace(header.PONumber) || header.MemoDate == default || header.Details == null || !header.Details.Any())
+    {
+        // Require minimal valid memo before approving
+        return;
+    }
+
+    try
+    {
+        if (header.Id == 0)
+        {
+            // Persist first time if it's a new memo
+            Db.Memos.Add(header);
+            await Db.SaveChangesAsync();
+        }
+
+        header.ApproveStatus = "Approved";
+        header.ApproveUserId = userId;
+        header.ApproveDate = DateTime.UtcNow;
+
+        await Db.SaveChangesAsync();
+        // After approval, take user back to list in approval context if they came from there
+        Nav.NavigateTo("/memos/approval");
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"Error approving memo: {ex.Message}");
     }
 }
 }

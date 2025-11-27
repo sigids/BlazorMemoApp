@@ -2,6 +2,8 @@
 @using System.Linq
 @inject IJSRuntime JS
 
+<br />
+
 <div class="mb-2 d-flex flex-wrap gap-2 align-items-center">
     <div class="input-group" style="max-width:320px;">
         <span class="input-group-text">Filter</span>
@@ -30,30 +32,31 @@ else
     <div style="overflow-x: auto;">
         <table class="table table-bordered table-sm align-middle">
             <thead class="table-light">
-                <tr>
+                <tr class="align-middle">
                     <th style="width:36px;"></th>
+                    <th>PO</th>
                     <th>Article</th>
                     <th>Color</th>
                     <th>Size</th>
                     <th>Price</th>
                     <th>Unit</th>
-                    <th>BOMQty</th>
-                    <th>BOMAmount</th>
-                    <th>AvailStockQty</th>
-                    <th>StockAmount</th>
-                    <th>PurchaseQty</th>
-                    <th>PurchaseAmount</th>
-                    <th>MCQQty</th>
-                    <th>MCQAmount</th>
+                    <th>BOM Qty</th>
+                    <th>BOM Amount</th>
+                    <th>Avail Stock Qty</th>
+                    <th>Stock Amount</th>
+                    <th>Purchase Qty</th>
+                    <th>Purchase Amount</th>
+                    <th>MCQ Qty</th>
+                    <th>MCQ Amount</th>
                     <th>Diff</th>
-                    <th>SurchargePaid</th>
-                    <th>TotalExtraPaid</th>
-                    <th>StockFromMCQ</th>
-                    <th>StockUsableQty</th>
-                    <th>StockUsableAmount</th>
-                    <th>StockNonUsableQty</th>
-                    <th>StockNonUsableAmount</th>
-                    <th>TotalExtraCollected</th>
+                    <th>Surcharge Paid</th>
+                    <th>Total Extra Paid</th>
+                    <th>Stock From MCQ</th>
+                    <th>Stock Usable Qty</th>
+                    <th>Stock Usable Amount</th>
+                    <th>Stock Non Usable Qty</th>
+                    <th>Stock Non Usable Amount</th>
+                    <th>Total Extra Collected</th>
                 </tr>
             </thead>
             <tbody>
@@ -63,39 +66,40 @@ else
                     <td class="text-center">
                         <input type="checkbox" class="form-check-input" checked="@(_selected.Contains(it))" @onchange="(e) => OnRowSelectedChanged(it, e)" />
                     </td>
+                    <td>@it.PONumber</td>
                     <td>@it.Article</td>
                     <td>@it.Color</td>
                     <td>@it.Size</td>
-                    <td>@it.Price</td>
+                        <td>@it.Price.ToString("F2")</td>
                     <td>@it.Unit</td>
                     <td>
-                        <input type="number" class="form-control form-control-sm" @bind-value="it.BOMQty" @bind-value:event="oninput" />
+                            <input type="number" class="form-control form-control-sm" style="width:75px" step="0.01" @bind-value="it.BOMQty" @bind-value:event="oninput" />
                     </td>
-                    <td>@it.BOMAmount</td>
+                        <td>@it.BOMAmount.ToString("F2")</td>
                     <td>
-                        <input type="number" class="form-control form-control-sm" @bind-value="it.AvailStockQty" @bind-value:event="oninput" />
+                            <input type="number" class="form-control form-control-sm" style="width:75px" @bind-value="it.AvailStockQty" @bind-value:event="oninput" />
                     </td>
-                    <td>@it.StockAmount</td>
-                    <td>@it.PurchaseQty</td>
-                    <td>@it.PurchaseAmount</td>
+                        <td>@it.StockAmount.ToString("F2")</td>
+                        <td>@it.PurchaseQty.ToString("F2")</td>
+                        <td>@it.PurchaseAmount.ToString("F2")</td>
                     <td>
-                        <input type="number" class="form-control form-control-sm" @bind-value="it.MCQQty" @bind-value:event="oninput" />
+                            <input type="number" class="form-control form-control-sm" style="width:75px" @bind-value="it.MCQQty" @bind-value:event="oninput" />
                     </td>
-                    <td>@it.MCQAmount</td>
-                    <td>@it.Diff</td>
+                        <td>@it.MCQAmount.ToString("F2")</td>
+                        <td>@it.Diff.ToString("F2")</td>
                     <td>
                         <input type="number" step="0.01" class="form-control form-control-sm" @bind-value="it.SurchargePaid" @bind-value:event="oninput" />
                     </td>
-                    <td>@it.TotalExtraPaid</td>
-                    <td>@it.StockFromMCQ</td>
+                        <td style="width:75px">@it.TotalExtraPaid.ToString("F2")</td>
+                        <td style="width:75px">@it.StockFromMCQ.ToString("F2")</td>
                     <td>
-                        <input type="number" class="form-control form-control-sm" @bind-value="it.StockUsableQty" @bind-value:event="oninput" />
+                            <input type="number" class="form-control form-control-sm" style="width:75px" @bind-value="it.StockUsableQty" @bind-value:event="oninput" />
                     </td>
-                    <td>@it.StockUsableAmount</td>
-                    <td>@it.StockNonUsableQty</td>
-                    <td>@it.StockNonUsableAmount</td>
+                        <td>@it.StockUsableAmount.ToString("F2")</td>
+                        <td>@it.StockNonUsableQty.ToString("F2")</td>
+                        <td>@it.StockNonUsableAmount.ToString("F2")</td>
                     <td>
-                        <input type="number" step="0.01" class="form-control form-control-sm" @bind-value="it.TotalExtraCollected" @bind-value:event="oninput" />
+                            <input type="number" step="0.01" class="form-control form-control-sm" style="width:75px" @bind-value="it.TotalExtraCollected" @bind-value:event="oninput" />
                     </td>
                 </tr>
             }
@@ -145,7 +149,7 @@ else
         base.OnParametersSet();
     }
 
-    private void OnRowSelectedChanged(MemoDetailModel item, ChangeEventArgs e)
+    private void OnRowSelectedChanged(MemoDetailModel item, Microsoft.AspNetCore.Components.ChangeEventArgs e)
     {
         var isChecked = Convert.ToBoolean(e.Value);
         if (isChecked)

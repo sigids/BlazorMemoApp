@@ -1,8 +1,10 @@
-﻿using System.Net.Http.Json;
+﻿using BlazorMemoApp.Models;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Diagnostics;
+using System.Net.Http.Json;
 using System.Text.Json;
 using System.Xml.Linq;
-using BlazorMemoApp.Models;
-using Microsoft.Extensions.Logging;
 
 namespace BlazorMemoApp.Services;
 
@@ -110,6 +112,9 @@ public class PoApiClient
         {
             var xml = await _http.GetStringAsync(url, ct);
             var list = ParsePoDetailsFromXml(xml);
+
+            //_logger.LogInformation("Fetched {xml} PO detail items for PO {PONumber}",xml , poNumber);
+
             return list;
         }
         catch (Exception ex)
@@ -125,15 +130,17 @@ public class PoApiClient
         if (string.IsNullOrWhiteSpace(xml)) return items;
 
         var doc = XDocument.Parse(xml);
+        System.Diagnostics.Debug.WriteLine("cek xml detail " + xml);
         // Find item-like elements that have expected children (namespace-agnostic)
+        // 
         var candidates = doc
             .Descendants()
             .Where(e => e.Elements().Any())
             .Where(e => e.Elements().Any(c => c.Name.LocalName == "Article")
                         && e.Elements().Any(c => c.Name.LocalName == "Color")
-                        && e.Elements().Any(c => c.Name.LocalName == "Size")
+                        && e.Elements().Any(c => c.Name.LocalName == "Spec_Value")
                         && e.Elements().Any(c => c.Name.LocalName == "Rate")
-                        && e.Elements().Any(c => c.Name.LocalName == "UOM"));
+                        && e.Elements().Any(c => c.Name.LocalName == "Uom_Po"));
 
         foreach (var el in candidates)
         {
@@ -148,9 +155,9 @@ public class PoApiClient
             {
                 Article = GetStr("Article"),
                 Color = GetStr("Color"),
-                Size = GetStr("Size"),
+                Spec_Value = GetStr("Spec_Value"),
                 Rate = GetDec("Rate"),
-                UOM = GetStr("UOM")
+                Uom_Po = GetStr("Uom_Po")
             };
             items.Add(item);
         }

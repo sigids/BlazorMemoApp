@@ -1,18 +1,35 @@
 ﻿@page "/memos"
+@page "/memos/approval"
 @rendermode InteractiveServer
 @inject NavigationManager Nav
 @inject BlazorMemoApp.Data.ApplicationDbContext Db
 @inject IJSRuntime JS
 
+
+
 @using BlazorMemoApp.Models
 @using Microsoft.EntityFrameworkCore
 @using System.Text
 @using System.Globalization
+@using System.Security.Claims
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <h1>Memo List</h1>
 
+@if (_approvalMode)
+{
+    <div class="alert alert-info py-2">Approval Mode — select a memo and/or approve inline. Showing Pending only.</div>
+}
+
 <div class="mb-3 d-flex gap-2 flex-wrap align-items-center">
-    <button class="btn btn-primary" @onclick="CreateNew">Create Memo</button>
+    @if (!_approvalMode)
+    {
+        <AuthorizeView Roles="Admin,User">
+            <Authorized>
+                <button class="btn btn-primary" @onclick="CreateNew">Create Memo</button>
+            </Authorized>
+        </AuthorizeView>
+    }
 
     <div class="input-group" style="max-width:340px;">
         <span class="input-group-text">Search</span>
@@ -39,22 +56,26 @@ else if (!_allMemos.Any())
 }
 else
 {
-    <div class="table-responsive">
-        <table class="table table-sm table-bordered align-middle">
+    <div class="memo-table-wrap" style="overflow-x:auto;">
+        <table class="table table-sm table-bordered align-middle memo-table" style="min-width: max-content;">
             <thead class="table-light">
                 <tr>
-                    <th>Memo No</th>
-                    <th>Memo Date</th>
-                    <th>PO Number</th>
-                    <th>GmtQty</th>
-                    <th>GmtFobValue</th>
-                    <th class="text-end">SurchargePaid (sum)</th>
-                    <th class="text-end">TotalExtraCollected (sum)</th>
-                    <th class="text-end">TotalExtraPaid (sum)</th>
-                    <th style="width:220px;">Actions</th>
+                    <th class="align-middle">Memo No</th>
+                    <th class="align-middle">Memo Date</th>
+                    <th class="align-middle">PO Number</th>
+                    <th class="align-middle text-md-center" style="width:100px;">Qty<br />(Gmt)</th>
+                    <th class="align-middle">Fob Value</th>
+                    <th class="align-middle text-md-center" style="width:120px;">Surcharge<br />Paid (sum)</th>
+                    <th class="align-middle text-md-center" style="width:120px;">Collected<br />(sum)</th>
+                    <th class="align-middle text-md-center" style="width:120px;">Paid<br />(sum)</th>
+                    <th class="align-middle">Approval Status</th>
+                    <th class="align-middle">Approved By</th>
+                    <th class="align-middle">Approved Date</th>
+                    <th class="align-middle  text-md-center" style="width:280px;">Actions</th>
                 </tr>
             </thead>
             <tbody>
+
             @foreach (var memo in PagedMemos)
             {
                 <tr>
@@ -66,12 +87,30 @@ else
                     <td class="text-end">@memo.Details?.Sum(d => d.SurchargePaid).ToString("N2")</td>
                     <td class="text-end">@memo.Details?.Sum(d => d.TotalExtraCollected).ToString("N2")</td>
                     <td class="text-end">@memo.Details?.Sum(d => d.TotalExtraPaid).ToString("N2")</td>
+                    <td>@(memo.ApproveStatus)</td>
+                    <td>@(memo.ApproveUser?.UserName)</td>
+                    <td>@(memo.ApproveDate?.ToString("yyyy-MM-dd HH:mm") ?? "")</td>
                     <td>
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-sm btn-outline-primary" @onclick="() => EditMemo(memo.Id)">Edit</button>
-                            <button class="btn btn-sm btn-outline-secondary" @onclick="() => ViewMemo(memo.Id)">View/Print</button>
-                            <button class="btn btn-sm btn-outline-success" @onclick="() => ExportCsv(memo.Id)">CSV</button>
-                            <button class="btn btn-sm btn-danger" @onclick="() => DeleteMemo(memo.Id)">Delete</button>
+                        <div class="d-flex gap-2 flex-wrap">
+                            @if (_approvalMode)
+                            {
+                                <button class="btn btn-sm btn-outline-primary" title="Open" @onclick="() => ViewMemo(memo.Id)">Select</button>
+                                <AuthorizeView Roles="Admin,Supervisor">
+                                    <Authorized>
+                                        @if ((memo.ApproveStatus ?? "") != "Approved")
+                                        {
+                                            <button class="btn btn-sm btn-success" @onclick="() => ApproveMemo(memo.Id)">Approve</button>
+                                        }
+                                    </Authorized>
+                                </AuthorizeView>
+                            }
+                            else
+                            {
+                                <button class="btn btn-sm btn-outline-primary" @onclick="() => EditMemo(memo.Id)">Edit</button>
+                                <button class="btn btn-sm btn-outline-secondary" @onclick="() => ViewMemo(memo.Id)">View/Print</button>
+                                <button class="btn btn-sm btn-outline-success" @onclick="() => ExportCsv(memo.Id)">CSV</button>
+                                <button class="btn btn-sm btn-danger" @onclick="() => DeleteMemo(memo.Id)">Delete</button>
+                            }
                         </div>
                     </td>
                 </tr>
@@ -100,12 +139,14 @@ else
     private string _filter = string.Empty;
     private int _pageSize = 10;
     private int _currentPage = 1;
+    private bool _approvalMode = false;
 
-    private IEnumerable<MemoHeaderModel> FilteredMemos => string.IsNullOrWhiteSpace(_filter)
-        ? _allMemos ?? Enumerable.Empty<MemoHeaderModel>()
-        : (_allMemos ?? Enumerable.Empty<MemoHeaderModel>()).Where(m =>
-            (m.MemoNo ?? string.Empty).Contains(_filter, StringComparison.OrdinalIgnoreCase)
-            || (m.PONumber ?? string.Empty).Contains(_filter, StringComparison.OrdinalIgnoreCase));
+    private IEnumerable<MemoHeaderModel> FilteredMemos
+        => (_allMemos ?? Enumerable.Empty<MemoHeaderModel>())
+            .Where(m => string.IsNullOrWhiteSpace(_filter)
+                        || (m.MemoNo ?? string.Empty).Contains(_filter, StringComparison.OrdinalIgnoreCase)
+                        || (m.PONumber ?? string.Empty).Contains(_filter, StringComparison.OrdinalIgnoreCase))
+            .Where(m => !_approvalMode || string.Equals(m.ApproveStatus ?? "", "Pending", StringComparison.OrdinalIgnoreCase));
 
     private IEnumerable<MemoHeaderModel> PagedMemos => FilteredMemos.Skip((_currentPage - 1) * _pageSize).Take(_pageSize);
 
@@ -113,9 +154,58 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        UpdateMode();
         // load memos including details for totals
         _allMemos = await Db.Memos.Include(m => m.Details).OrderByDescending(m => m.MemoDate).ToListAsync();
         if (_currentPage > TotalPages) _currentPage = TotalPages;
+
+        if (_approvalMode)
+        {
+            // Non-authorized users should not access approval mode; redirect to regular list
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            if (!(user?.IsInRole("Admin") == true || user?.IsInRole("Supervisor") == true))
+            {
+                Nav.NavigateTo("/memos", forceLoad: false);
+            }
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        UpdateMode();
+    }
+
+    private void UpdateMode()
+    {
+        var path = Nav.ToBaseRelativePath(Nav.Uri);
+        _approvalMode = path.StartsWith("memos/approval", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async Task ApproveMemo(int id)
+    {
+        // Only Supervisor/Admin should reach here due to UI guard
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if (user?.Identity?.IsAuthenticated != true) return;
+        var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        var memo = _allMemos?.FirstOrDefault(m => m.Id == id);
+        if (memo == null) return;
+
+        memo.ApproveStatus = "Approved";
+        memo.ApproveUserId = userId;
+        memo.ApproveDate = DateTime.UtcNow;
+
+        try
+        {
+            await Db.SaveChangesAsync();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error approving memo: {ex.Message}");
+        }
     }
 
     private void CreateNew()
@@ -169,6 +259,9 @@ else
         sb.AppendLine($"PONumber,{EscapeCsv(memo.PONumber)}");
         sb.AppendLine($"GmtQty,{memo.GmtQty}");
         sb.AppendLine($"GmtFobValue,{memo.GmtFobValue?.ToString("F2", CultureInfo.InvariantCulture) ?? string.Empty}");
+        sb.AppendLine($"ApproveStatus,{EscapeCsv(memo.ApproveStatus)}");
+        sb.AppendLine($"ApproveUserId,{EscapeCsv(memo.ApproveUserId)}");
+        sb.AppendLine($"ApproveDate,{(memo.ApproveDate?.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) ?? string.Empty)}");
         sb.AppendLine();
 
         // Details header

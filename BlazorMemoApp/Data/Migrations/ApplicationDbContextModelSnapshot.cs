@@ -87,6 +87,64 @@ namespace BlazorMemoApp.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("BlazorMemoApp.Models.BuyerStyleModel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BuyerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("StyleName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BuyerId");
+
+                    b.ToTable("BuyerStyles");
+                });
+
+            modelBuilder.Entity("BlazorMemoApp.Models.MemoAdressModel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NameAbbr")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("MemoAddresses");
+                });
+
             modelBuilder.Entity("BlazorMemoApp.Models.MemoDetailModel", b =>
                 {
                     b.Property<int>("Id")
@@ -150,6 +208,16 @@ namespace BlazorMemoApp.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime?>("ApproveDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ApproveStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ApproveUserId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<int?>("BuyerId")
                         .HasColumnType("int");
 
@@ -176,6 +244,8 @@ namespace BlazorMemoApp.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ApproveUserId");
 
                     b.ToTable("Memos");
                 });
@@ -313,6 +383,17 @@ namespace BlazorMemoApp.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("BlazorMemoApp.Models.BuyerStyleModel", b =>
+                {
+                    b.HasOne("BlazorMemoApp.Models.MemoAdressModel", "Buyer")
+                        .WithMany()
+                        .HasForeignKey("BuyerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Buyer");
+                });
+
             modelBuilder.Entity("BlazorMemoApp.Models.MemoDetailModel", b =>
                 {
                     b.HasOne("BlazorMemoApp.Models.MemoHeaderModel", "MemoHeader")
@@ -322,6 +403,15 @@ namespace BlazorMemoApp.Migrations
                         .IsRequired();
 
                     b.Navigation("MemoHeader");
+                });
+
+            modelBuilder.Entity("BlazorMemoApp.Models.MemoHeaderModel", b =>
+                {
+                    b.HasOne("BlazorMemoApp.Data.ApplicationUser", "ApproveUser")
+                        .WithMany()
+                        .HasForeignKey("ApproveUserId");
+
+                    b.Navigation("ApproveUser");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

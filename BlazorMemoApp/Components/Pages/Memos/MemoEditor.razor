@@ -259,6 +259,7 @@
         header.StyleId = null;
         buyerSearchText = $"{buyer.Name} - {buyer.NameAbbr}";
         showBuyerDropdown = false;
+        Console.WriteLine($"Selected Buyer: Id={buyer.Id}, Name={buyer.Name}");
     }
 
     private void SelectSupplier(MemoAdressModel supplier)
@@ -277,36 +278,44 @@ private async Task Save()
         header.MemoDate == default ||
         header.Details == null || !header.Details.Any())
     {
-        // Optionally show validation feedback
         return;
     }
 
     try
     {
-        // Add the memo header and its details
+        Console.WriteLine($"Saving Memo - BuyerId: {header.BuyerId}, SupplierId: {header.SupplierId}, StyleId: {header.StyleId}");
+        
         Db.Memos.Add(header);
         await Db.SaveChangesAsync();
+        
+        Console.WriteLine($"Saved Memo - Id: {header.Id}");
 
         Nav.NavigateTo("/memos");
     }
     catch (Exception ex)
     {
         Console.Error.WriteLine($"Error saving memo: {ex.Message}");
-        // Optionally show error feedback to the user
     }
 }
 
 private async Task Approve()
 {
-    // Only Admin/Supervisor should see the button via UI guard, but re-check
     var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
     var user = authState.User;
     if (user?.Identity?.IsAuthenticated != true) return;
+    
     var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    Console.WriteLine($"Approve - UserId from NameIdentifier: {userId}");
+    Console.WriteLine($"Approve - User.Identity.Name: {user.Identity?.Name}");
+    
+    if (string.IsNullOrEmpty(userId))
+    {
+        Console.WriteLine("Warning: UserId is null or empty!");
+        return;
+    }
 
     if (string.IsNullOrWhiteSpace(header.PONumber) || header.MemoDate == default || header.Details == null || !header.Details.Any())
     {
-        // Require minimal valid memo before approving
         return;
     }
 
@@ -314,7 +323,6 @@ private async Task Approve()
     {
         if (header.Id == 0)
         {
-            // Persist first time if it's a new memo
             Db.Memos.Add(header);
             await Db.SaveChangesAsync();
         }
@@ -322,9 +330,10 @@ private async Task Approve()
         header.ApproveStatus = "Approved";
         header.ApproveUserId = userId;
         header.ApproveDate = DateTime.UtcNow;
+        
+        Console.WriteLine($"Saving Approval - ApproveUserId: {header.ApproveUserId}, ApproveDate: {header.ApproveDate}");
 
         await Db.SaveChangesAsync();
-        // After approval, take user back to list in approval context if they came from there
         Nav.NavigateTo("/memos/approval");
     }
     catch (Exception ex)

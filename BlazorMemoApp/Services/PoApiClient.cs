@@ -130,7 +130,7 @@ public class PoApiClient
         if (string.IsNullOrWhiteSpace(xml)) return items;
 
         var doc = XDocument.Parse(xml);
-        System.Diagnostics.Debug.WriteLine("cek xml detail " + xml);
+        //System.Diagnostics.Debug.WriteLine("cek xml detail " + xml);
         // Find item-like elements that have expected children (namespace-agnostic)
         // 
         var candidates = doc

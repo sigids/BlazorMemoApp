@@ -1,5 +1,5 @@
 ﻿@page "/admin/roles"
-@* @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin")] *@
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin")]
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Identity
 @using BlazorMemoApp.Data
@@ -26,7 +26,7 @@ else
             <div class="row g-3 align-items-end">
                 <div class="col-sm-6">
                     <label class="form-label">User</label>
-                    <select class="form-select" @bind="_selectedUserId">
+                    <select class="form-select" value="@_selectedUserId" @onchange="OnUserChanged">
                         @foreach (var u in _users)
                         {
                             <option value="@u.Id">@DisplayUser(u)</option>
@@ -90,8 +90,9 @@ else
         }
     }
 
-    private async Task OnUserChanged(Microsoft.AspNetCore.Components.ChangeEventArgs _)
+    private async Task OnUserChanged(Microsoft.AspNetCore.Components.ChangeEventArgs e)
     {
+        _selectedUserId = e.Value?.ToString();
         await LoadSelectedUserAsync();
     }
 

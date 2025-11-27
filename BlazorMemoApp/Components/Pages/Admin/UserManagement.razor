@@ -1,0 +1,323 @@
+@page "/admin/users"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin")]
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Identity
+@using BlazorMemoApp.Data
+
+@inject UserManager<ApplicationUser> UserManager
+@inject IJSRuntime JS
+
+<h1>User Management</h1>
+<p class="text-muted">Create, edit users and reset passwords. Only Admins can access this page.</p>
+
+<div class="mb-3">
+    <button class="btn btn-success" @onclick="ShowCreateForm">+ New User</button>
+</div>
+
+@if (_loading)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Email</th>
+                    <th>Username</th>
+                    <th>Email Confirmed</th>
+                    <th style="width:200px">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in _users)
+                {
+                    <tr>
+                        <td>@user.Email</td>
+                        <td>@user.UserName</td>
+                        <td>@(user.EmailConfirmed ? "Yes" : "No")</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" @onclick="() => EditUser(user)">Edit</button>
+                            <button class="btn btn-sm btn-warning" @onclick="() => ShowChangePassword(user)">Change Password</button>
+                            <button class="btn btn-sm btn-danger" @onclick="() => DeleteUser(user)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@if (_showForm)
+{
+    <div class="modal d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(_isEdit ? "Edit User" : "Create New User")</h5>
+                    <button type="button" class="btn-close" @onclick="CloseForm"></button>
+                </div>
+                <div class="modal-body">
+                    @if (!string.IsNullOrEmpty(_errorMessage))
+                    {
+                        <div class="alert alert-danger">@_errorMessage</div>
+                    }
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" @bind="_formEmail" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Username</label>
+                        <input type="text" class="form-control" @bind="_formUserName" />
+                    </div>
+                    @if (!_isEdit)
+                    {
+                        <div class="mb-3">
+                            <label class="form-label">Password</label>
+                            <input type="password" class="form-control" @bind="_formPassword" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Confirm Password</label>
+                            <input type="password" class="form-control" @bind="_formConfirmPassword" />
+                        </div>
+                    }
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="emailConfirmed" @bind="_formEmailConfirmed" />
+                        <label class="form-check-label" for="emailConfirmed">Email Confirmed</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseForm">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="SaveUser">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (_showPasswordForm)
+{
+    <div class="modal d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Change Password for @_selectedUser?.Email</h5>
+                    <button type="button" class="btn-close" @onclick="ClosePasswordForm"></button>
+                </div>
+                <div class="modal-body">
+                    @if (!string.IsNullOrEmpty(_errorMessage))
+                    {
+                        <div class="alert alert-danger">@_errorMessage</div>
+                    }
+                    <div class="mb-3">
+                        <label class="form-label">New Password</label>
+                        <input type="password" class="form-control" @bind="_newPassword" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Confirm New Password</label>
+                        <input type="password" class="form-control" @bind="_confirmNewPassword" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="ClosePasswordForm">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="ChangePassword">Change Password</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<ApplicationUser> _users = new();
+    private bool _loading = true;
+    
+    private bool _showForm;
+    private bool _isEdit;
+    private ApplicationUser? _selectedUser;
+    private string _formEmail = string.Empty;
+    private string _formUserName = string.Empty;
+    private string _formPassword = string.Empty;
+    private string _formConfirmPassword = string.Empty;
+    private bool _formEmailConfirmed;
+    private string _errorMessage = string.Empty;
+    
+    private bool _showPasswordForm;
+    private string _newPassword = string.Empty;
+    private string _confirmNewPassword = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsersAsync();
+        _loading = false;
+    }
+
+    private Task LoadUsersAsync()
+    {
+        _users = UserManager.Users.OrderBy(u => u.Email ?? u.UserName).ToList();
+        return Task.CompletedTask;
+    }
+
+    private void ShowCreateForm()
+    {
+        _isEdit = false;
+        _selectedUser = null;
+        _formEmail = string.Empty;
+        _formUserName = string.Empty;
+        _formPassword = string.Empty;
+        _formConfirmPassword = string.Empty;
+        _formEmailConfirmed = true;
+        _errorMessage = string.Empty;
+        _showForm = true;
+    }
+
+    private void EditUser(ApplicationUser user)
+    {
+        _isEdit = true;
+        _selectedUser = user;
+        _formEmail = user.Email ?? string.Empty;
+        _formUserName = user.UserName ?? string.Empty;
+        _formEmailConfirmed = user.EmailConfirmed;
+        _errorMessage = string.Empty;
+        _showForm = true;
+    }
+
+    private void CloseForm()
+    {
+        _showForm = false;
+        _errorMessage = string.Empty;
+    }
+
+    private async Task SaveUser()
+    {
+        _errorMessage = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(_formEmail))
+        {
+            _errorMessage = "Email is required.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_formUserName))
+        {
+            _errorMessage = "Username is required.";
+            return;
+        }
+
+        if (_isEdit && _selectedUser != null)
+        {
+            _selectedUser.Email = _formEmail;
+            _selectedUser.UserName = _formUserName;
+            _selectedUser.EmailConfirmed = _formEmailConfirmed;
+            
+            var result = await UserManager.UpdateAsync(_selectedUser);
+            if (result.Succeeded)
+            {
+                await LoadUsersAsync();
+                CloseForm();
+                await JS.InvokeVoidAsync("alert", "User updated successfully.");
+            }
+            else
+            {
+                _errorMessage = string.Join("; ", result.Errors.Select(e => e.Description));
+            }
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(_formPassword))
+            {
+                _errorMessage = "Password is required.";
+                return;
+            }
+
+            if (_formPassword != _formConfirmPassword)
+            {
+                _errorMessage = "Passwords do not match.";
+                return;
+            }
+
+            var newUser = new ApplicationUser
+            {
+                Email = _formEmail,
+                UserName = _formUserName,
+                EmailConfirmed = _formEmailConfirmed
+            };
+
+            var result = await UserManager.CreateAsync(newUser, _formPassword);
+            if (result.Succeeded)
+            {
+                await LoadUsersAsync();
+                CloseForm();
+                await JS.InvokeVoidAsync("alert", "User created successfully.");
+            }
+            else
+            {
+                _errorMessage = string.Join("; ", result.Errors.Select(e => e.Description));
+            }
+        }
+    }
+
+    private async Task DeleteUser(ApplicationUser user)
+    {
+        var confirmed = await JS.InvokeAsync<bool>("confirm", $"Are you sure you want to delete user '{user.Email}'?");
+        if (!confirmed) return;
+
+        var result = await UserManager.DeleteAsync(user);
+        if (result.Succeeded)
+        {
+            await LoadUsersAsync();
+            await JS.InvokeVoidAsync("alert", "User deleted successfully.");
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("alert", $"Failed to delete user: {string.Join("; ", result.Errors.Select(e => e.Description))}");
+        }
+    }
+
+    private void ShowChangePassword(ApplicationUser user)
+    {
+        _selectedUser = user;
+        _newPassword = string.Empty;
+        _confirmNewPassword = string.Empty;
+        _errorMessage = string.Empty;
+        _showPasswordForm = true;
+    }
+
+    private void ClosePasswordForm()
+    {
+        _showPasswordForm = false;
+        _errorMessage = string.Empty;
+    }
+
+    private async Task ChangePassword()
+    {
+        _errorMessage = string.Empty;
+
+        if (_selectedUser == null) return;
+
+        if (string.IsNullOrWhiteSpace(_newPassword))
+        {
+            _errorMessage = "New password is required.";
+            return;
+        }
+
+        if (_newPassword != _confirmNewPassword)
+        {
+            _errorMessage = "Passwords do not match.";
+            return;
+        }
+
+        var token = await UserManager.GeneratePasswordResetTokenAsync(_selectedUser);
+        var result = await UserManager.ResetPasswordAsync(_selectedUser, token, _newPassword);
+
+        if (result.Succeeded)
+        {
+            ClosePasswordForm();
+            await JS.InvokeVoidAsync("alert", "Password changed successfully.");
+        }
+        else
+        {
+            _errorMessage = string.Join("; ", result.Errors.Select(e => e.Description));
+        }
+    }
+}

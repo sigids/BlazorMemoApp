@@ -40,6 +40,24 @@
             </NavLink>
         </div>
 
+        <AuthorizeView Roles="Admin">
+            <Authorized>
+                <div class="nav-item px-3">
+                    <span class="nav-link text-muted"><strong>Admin</strong></span>
+                </div>
+                <div class="nav-item px-3 ps-4">
+                    <NavLink class="nav-link" href="admin/users">
+                        <span class="bi bi-people" aria-hidden="true"></span> Users
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3 ps-4">
+                    <NavLink class="nav-link" href="admin/roles">
+                        <span class="bi bi-shield-lock" aria-hidden="true"></span> Roles
+                    </NavLink>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+
         <AuthorizeView>
             <Authorized>
                 <div class="nav-item px-3">

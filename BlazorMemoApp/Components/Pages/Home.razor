@@ -1,7 +1,193 @@
 ﻿@page "/"
+@rendermode InteractiveServer
+@using BlazorMemoApp.Data
+@using BlazorMemoApp.Models
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext Db
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Dashboard</PageTitle>
 
-<h1>Hello, world!</h1>
+<h1>Dashboard</h1>
+<p class="text-muted">Stock summary by Buyer</p>
 
-Welcome to your new app.
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <strong>Current Month (@DateTime.Now.ToString("MMMM yyyy"))</strong>
+            </div>
+            <div class="card-body">
+                @if (_loadingMonth)
+                {
+                    <p><em>Loading...</em></p>
+                }
+                else if (_monthData.Count == 0)
+                {
+                    <p class="text-muted">No data for current month.</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Buyer</th>
+                                    <th class="text-end">Stock From MCQ</th>
+                                    <th class="text-end">Usable Qty</th>
+                                    <th class="text-end">Usable Amt</th>
+                                    <th class="text-end">Non-Usable Qty</th>
+                                    <th class="text-end">Non-Usable Amt</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var row in _monthData)
+                                {
+                                    <tr>
+                                        <td>@row.BuyerName</td>
+                                        <td class="text-end">@row.StockFromMCQ.ToString("N0")</td>
+                                        <td class="text-end">@row.StockUsableQty.ToString("N0")</td>
+                                        <td class="text-end">@row.StockUsableAmount.ToString("N2")</td>
+                                        <td class="text-end">@row.StockNonUsableQty.ToString("N0")</td>
+                                        <td class="text-end">@row.StockNonUsableAmount.ToString("N2")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot class="table-secondary fw-bold">
+                                <tr>
+                                    <td>Total</td>
+                                    <td class="text-end">@_monthData.Sum(x => x.StockFromMCQ).ToString("N0")</td>
+                                    <td class="text-end">@_monthData.Sum(x => x.StockUsableQty).ToString("N0")</td>
+                                    <td class="text-end">@_monthData.Sum(x => x.StockUsableAmount).ToString("N2")</td>
+                                    <td class="text-end">@_monthData.Sum(x => x.StockNonUsableQty).ToString("N0")</td>
+                                    <td class="text-end">@_monthData.Sum(x => x.StockNonUsableAmount).ToString("N2")</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <strong>Year to Date (@DateTime.Now.Year)</strong>
+            </div>
+            <div class="card-body">
+                @if (_loadingYear)
+                {
+                    <p><em>Loading...</em></p>
+                }
+                else if (_yearData.Count == 0)
+                {
+                    <p class="text-muted">No data for current year.</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Buyer</th>
+                                    <th class="text-end">Stock From MCQ</th>
+                                    <th class="text-end">Usable Qty</th>
+                                    <th class="text-end">Usable Amt</th>
+                                    <th class="text-end">Non-Usable Qty</th>
+                                    <th class="text-end">Non-Usable Amt</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var row in _yearData)
+                                {
+                                    <tr>
+                                        <td>@row.BuyerName</td>
+                                        <td class="text-end">@row.StockFromMCQ.ToString("N0")</td>
+                                        <td class="text-end">@row.StockUsableQty.ToString("N0")</td>
+                                        <td class="text-end">@row.StockUsableAmount.ToString("N2")</td>
+                                        <td class="text-end">@row.StockNonUsableQty.ToString("N0")</td>
+                                        <td class="text-end">@row.StockNonUsableAmount.ToString("N2")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot class="table-secondary fw-bold">
+                                <tr>
+                                    <td>Total</td>
+                                    <td class="text-end">@_yearData.Sum(x => x.StockFromMCQ).ToString("N0")</td>
+                                    <td class="text-end">@_yearData.Sum(x => x.StockUsableQty).ToString("N0")</td>
+                                    <td class="text-end">@_yearData.Sum(x => x.StockUsableAmount).ToString("N2")</td>
+                                    <td class="text-end">@_yearData.Sum(x => x.StockNonUsableQty).ToString("N0")</td>
+                                    <td class="text-end">@_yearData.Sum(x => x.StockNonUsableAmount).ToString("N2")</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<BuyerStockSummary> _monthData = new();
+    private List<BuyerStockSummary> _yearData = new();
+    private bool _loadingMonth = true;
+    private bool _loadingYear = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var now = DateTime.Today;
+        var startOfMonth = new DateTime(now.Year, now.Month, 1);
+        var startOfYear = new DateTime(now.Year, 1, 1);
+
+        _monthData = await GetBuyerSummaryAsync(startOfMonth, now.AddDays(1));
+        _loadingMonth = false;
+
+        _yearData = await GetBuyerSummaryAsync(startOfYear, now.AddDays(1));
+        _loadingYear = false;
+    }
+
+    private async Task<List<BuyerStockSummary>> GetBuyerSummaryAsync(DateTime from, DateTime to)
+    {
+        var memos = await Db.Memos
+            .Where(h => h.MemoDate >= from)
+            .Where(h => h.MemoDate < to)
+            .Include(h => h.Details)
+            .ToListAsync();
+
+        var buyers = await Db.MemoAddresses.ToListAsync();
+
+        var result = memos
+            .SelectMany(h => h.Details.Select(d => new { Header = h, Detail = d }))
+            .GroupBy(x => x.Header.BuyerId)
+            .Select(g =>
+            {
+                var buyer = buyers.FirstOrDefault(b => b.Id == g.Key);
+                return new BuyerStockSummary
+                {
+                    BuyerId = g.Key,
+                    BuyerName = buyer?.Name ?? "Unknown",
+                    StockFromMCQ = g.Sum(x => x.Detail.MCQQty - (x.Detail.BOMQty - x.Detail.AvailStockQty)),
+                    StockUsableQty = g.Sum(x => x.Detail.StockUsableQty),
+                    StockUsableAmount = g.Sum(x => x.Detail.Price * x.Detail.StockUsableQty),
+                    StockNonUsableQty = g.Sum(x => x.Detail.MCQQty - (x.Detail.BOMQty - x.Detail.AvailStockQty) - x.Detail.StockUsableQty),
+                    StockNonUsableAmount = g.Sum(x => x.Detail.Price * (x.Detail.MCQQty - (x.Detail.BOMQty - x.Detail.AvailStockQty) - x.Detail.StockUsableQty))
+                };
+            })
+            .OrderBy(x => x.BuyerName)
+            .ToList();
+
+        return result;
+    }
+
+    private class BuyerStockSummary
+    {
+        public int? BuyerId { get; set; }
+        public string BuyerName { get; set; } = string.Empty;
+        public int StockFromMCQ { get; set; }
+        public int StockUsableQty { get; set; }
+        public decimal StockUsableAmount { get; set; }
+        public int StockNonUsableQty { get; set; }
+        public decimal StockNonUsableAmount { get; set; }
+    }
+}

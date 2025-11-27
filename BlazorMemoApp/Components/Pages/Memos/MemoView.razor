@@ -18,18 +18,6 @@
 else
 {
     <div class="row g-3">
-        @*         <AuthorizeView Roles="Admin,Supervisor">
-            <Authorized Context="auth">
-        @if ((header.ApproveStatus ?? "") != "Approved")
-        {
-            <button class="btn btn-success" title="Approve this memo" @onclick="Approve">Approve</button>
-        }
-        else
-        {
-            <span class="badge bg-success">Approved @header.ApproveDate?.ToString("yyyy-MM-dd HH:mm")</span>
-        }
-            </Authorized>
-        </AuthorizeView> *@
         <div class="col-sm-2">
             <label class="form-label">Memo No</label>
             <input class="form-control" value="@header.MemoNo" disabled />
@@ -42,14 +30,20 @@ else
             <label class="form-label">Buyer</label>
             <InputSelect class="form-select" @bind-Value="header.BuyerId">
                 <option value="">-- Select --</option>
-                <option value="1">Buyer A</option>
+                @foreach (var buyer in buyers)
+                {
+                    <option value="@buyer.Id">@buyer.Name - @buyer.NameAbbr</option>
+                }
             </InputSelect>
         </div>
         <div class="col-sm-2">
             <label class="form-label">Style</label>
-            <InputSelect class="form-select" @bind-Value="header.StyleId">
+            <InputSelect class="form-select" @bind-Value="header.StyleId" disabled="@(header.BuyerId == null)">
                 <option value="">-- Select --</option>
-                <option value="1">Style A</option>
+                @foreach (var style in filteredStyles)
+                {
+                    <option value="@style.Id">@style.StyleName</option>
+                }
             </InputSelect>
         </div>
         <div class="col-sm-2">
@@ -63,6 +57,11 @@ else
         <div class="col-sm-2">
             <label class="form-label">Supplier</label>
             <InputSelect class="form-select" @bind-Value="header.SupplierId">
+                <option value="">-- Select --</option>
+                @foreach (var supplier in suppliers)
+                {
+                    <option value="@supplier.Id">@supplier.Name - @supplier.NameAbbr</option>
+                }
             </InputSelect>
         </div>
 
@@ -108,10 +107,23 @@ else
 @code {
     [Parameter] public int Id { get; set; }
     private MemoHeaderModel? header;
+    
+    private List<MemoAdressModel> buyers = new();
+    private List<MemoAdressModel> suppliers = new();
+    private List<BuyerStyleModel> styles = new();
+    
+    private IEnumerable<BuyerStyleModel> filteredStyles => 
+        header?.BuyerId == null 
+            ? Enumerable.Empty<BuyerStyleModel>() 
+            : styles.Where(s => s.BuyerId == header.BuyerId);
 
     protected override async Task OnInitializedAsync()
     {
         header = await Db.Memos.Include(m => m.Details).FirstOrDefaultAsync(m => m.Id == Id);
+        
+        buyers = await Db.MemoAddresses.Where(a => a.Type.Contains("B")).ToListAsync();
+        suppliers = await Db.MemoAddresses.Where(a => a.Type.Contains("V") || a.Type.Contains("F")).ToListAsync();
+        styles = await Db.BuyerStyles.ToListAsync();
     }
 
     private void Back() => Nav.NavigateTo("/memos");

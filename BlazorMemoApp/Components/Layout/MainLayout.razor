@@ -1,12 +1,15 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="page">
+<div class="page" id="page-container">
     <div class="sidebar">
         <NavMenu />
     </div>
 
     <main>
         <div class="top-row px-4">
+            <button class="btn btn-link sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar">
+                <span class="bi bi-list"></span>
+            </button>
             <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
         </div>
 
@@ -21,3 +24,33 @@
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+
+<script>
+    function toggleSidebar() {
+        var page = document.getElementById('page-container');
+        page.classList.toggle('sidebar-collapsed');
+        var isCollapsed = page.classList.contains('sidebar-collapsed');
+        localStorage.setItem('sidebarCollapsed', isCollapsed);
+    }
+    
+    function applySidebarState() {
+        var isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+        var page = document.getElementById('page-container');
+        if (page && isCollapsed) {
+            page.classList.add('sidebar-collapsed');
+        }
+    }
+    
+    applySidebarState();
+    document.addEventListener('DOMContentLoaded', applySidebarState);
+    
+    if (typeof Blazor !== 'undefined') {
+        Blazor.addEventListener('enhancedload', applySidebarState);
+    } else {
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof Blazor !== 'undefined') {
+                Blazor.addEventListener('enhancedload', applySidebarState);
+            }
+        });
+    }
+</script>

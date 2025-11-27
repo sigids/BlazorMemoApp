@@ -9,4 +9,5 @@ public class PoDetailItem
     public string Spec_Value { get; set; } = string.Empty;
     public decimal Rate { get; set; }
     public string Uom_Po { get; set; } = string.Empty;
+    public string Custom1 { get; set; }
 }

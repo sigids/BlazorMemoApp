@@ -58,6 +58,8 @@ public class MemoDetailModel
     public int StockUsableQty { get; set; }
     public decimal TotalExtraCollected { get; set; }
 
+    public string ItemCode { get; set; } = string.Empty;
+
     // Computed fields (per PRD)
     public decimal BOMAmount => Price * BOMQty;
     public decimal StockAmount => Price * AvailStockQty;

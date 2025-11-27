@@ -241,12 +241,16 @@
             Size = d.Spec_Value,
             Price = d.Rate,
             Unit = d.Uom_Po,
-            PONumber = po
+            PONumber = po,
+            ItemCode = d.Custom1
         }).ToList();
         
         // Append new items to existing list instead of replacing
         header.Details ??= new List<MemoDetailModel>();
         header.Details.AddRange(newItems);
+
+        // Trigger re-render grid
+        StateHasChanged();
     }
 
     private void SelectBuyer(MemoAdressModel buyer)

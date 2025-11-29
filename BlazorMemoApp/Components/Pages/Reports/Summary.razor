@@ -69,6 +69,7 @@ else
                     <th class="text-end">Stock Usable Qty</th>
                     <th class="text-end">Stock Non-Usable Qty</th>
                     <th class="text-end">Total Extra Paid</th>
+                    <th class="text-end">Percent Of Fob Value</th>
                 </tr>
             </thead>
             <tbody>
@@ -88,6 +89,7 @@ else
                         <td class="text-end">@row.StockUsableQty.ToString("N0")</td>
                         <td class="text-end">@row.StockNonUsableQty.ToString("N0")</td>
                         <td class="text-end">@row.TotalExtraPaid.ToString("N2")</td>
+                        <td class="text-end">@string.Format("{0:P2}",@row.PercentOfFobValue)</td>
                     </tr>
                 }
             </tbody>
@@ -100,6 +102,7 @@ else
                     <td class="text-end">@_data.Sum(x => x.StockUsableQty).ToString("N0")</td>
                     <td class="text-end">@_data.Sum(x => x.StockNonUsableQty).ToString("N0")</td>
                     <td class="text-end">@_data.Sum(x => x.TotalExtraPaid).ToString("N2")</td>
+                    
                 </tr>
             </tfoot>
         </table>
@@ -128,6 +131,7 @@ else
 }
 
 @code {
+
     private List<ReportRow> _data = new();
     private bool _loading = true;
     private string _searchText = string.Empty;
@@ -135,14 +139,14 @@ else
     private DateTime? _dateTo;
     private int _pageSize = 25;
     private int _currentPage = 1;
-    
+
     private IEnumerable<ReportRow> FilteredData => string.IsNullOrWhiteSpace(_searchText)
         ? _data
         : _data.Where(r => 
             (r.BuyerName ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
             (r.MemoNo ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
             (r.StyleName ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase));
-    
+
     private List<ReportRow> PagedData => FilteredData.Skip((_currentPage - 1) * _pageSize).Take(_pageSize).ToList();
     private int TotalPages => Math.Max(1, (int)Math.Ceiling(FilteredData.Count() / (double)_pageSize));
 
@@ -155,21 +159,25 @@ else
     {
         _loading = true;
         _currentPage = 1;
-        
+
         var query = Db.Memos
             .Include(m => m.Details)
             .AsQueryable();
-        
+
         if (_dateFrom.HasValue)
             query = query.Where(m => m.MemoDate >= _dateFrom.Value);
-        
+
         if (_dateTo.HasValue)
             query = query.Where(m => m.MemoDate <= _dateTo.Value);
-        
+
         var memos = await query.ToListAsync();
         var buyers = await Db.MemoAddresses.Where(a => a.Type.Contains("B")).ToListAsync();
         var styles = await Db.BuyerStyles.ToListAsync();
-        
+
+
+
+        //var gmtFobValue = m.GmtFobValue;
+
         _data = memos.SelectMany(m => m.Details.Select(d => new ReportRow
         {
             MemoId = m.Id,
@@ -184,7 +192,13 @@ else
             SurchargePaid = d.SurchargePaid,
             StockUsableQty = d.StockUsableQty,
             StockNonUsableQty = d.MCQQty - (d.BOMQty - d.AvailStockQty) - d.StockUsableQty,
-            TotalExtraPaid = (d.Price * d.MCQQty) - (d.Price * (d.BOMQty - d.AvailStockQty)) + d.SurchargePaid
+            TotalExtraPaid = (d.Price * d.MCQQty) - (d.Price * (d.BOMQty - d.AvailStockQty)) + d.SurchargePaid,
+            PercentOfFobValue = m.GmtFobValue != 0
+                    ? ((d.Price * d.MCQQty)
+                      - (d.Price * (d.BOMQty - d.AvailStockQty))
+                      + d.SurchargePaid) / m.GmtFobValue
+                    : 0
+
         })).ToList();
         
         _loading = false;
@@ -261,5 +275,6 @@ else
         public int StockUsableQty { get; set; }
         public int StockNonUsableQty { get; set; }
         public decimal TotalExtraPaid { get; set; }
+        public decimal? PercentOfFobValue { get; set; }
     }
 }

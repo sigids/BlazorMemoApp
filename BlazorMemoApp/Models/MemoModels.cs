@@ -44,10 +44,12 @@ public class MemoDetailModel
 
     // From PO Detail API
     public string? PONumber { get; set; }
+    public string? SpiNo { get; set; }
     public string Article { get; set; } = string.Empty;
     public string Color { get; set; } = string.Empty;
     public string Size { get; set; } = string.Empty;
     public decimal Price { get; set; }
+    public string Currency { get; set; } = string.Empty;
     public string Unit { get; set; } = string.Empty;
 
     // Editable inputs

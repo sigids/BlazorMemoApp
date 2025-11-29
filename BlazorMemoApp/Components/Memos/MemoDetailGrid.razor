@@ -39,6 +39,7 @@ else
                     <th>Color</th>
                     <th>Size</th>
                     <th>Price</th>
+                    <th>Curency</th>
                     <th>Unit</th>
                     <th>BOM Qty</th>
                     <th>BOM Amount</th>
@@ -71,7 +72,8 @@ else
                     <td>@it.Article</td>
                     <td>@it.Color</td>
                     <td>@it.Size</td>
-                        <td>@it.Price.ToString("F2")</td>
+                    <td>@it.Price.ToString("F2")</td>
+                        <td>@it.Currency</td>
                     <td>@it.Unit</td>
                     <td>
                             <input type="number" class="form-control form-control-sm" style="width:75px" step="0.01" @bind-value="it.BOMQty" @bind-value:event="oninput" />

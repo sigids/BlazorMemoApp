@@ -240,6 +240,7 @@
             Color = d.Color,
             Size = d.Spec_Value,
             Price = d.Rate,
+            Currency = d.Currency,
             Unit = d.Uom_Po,
             PONumber = po,
             ItemCode = d.Custom1
@@ -305,6 +306,7 @@ private async Task Approve()
     if (user?.Identity?.IsAuthenticated != true) return;
     
     var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
     Console.WriteLine($"Approve - UserId from NameIdentifier: {userId}");
     Console.WriteLine($"Approve - User.Identity.Name: {user.Identity?.Name}");
     

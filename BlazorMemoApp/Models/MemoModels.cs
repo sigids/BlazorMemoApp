@@ -59,6 +59,9 @@ public class MemoDetailModel
     public decimal TotalExtraCollected { get; set; }
 
     public string ItemCode { get; set; } = string.Empty;
+    
+    // Mode of Collect: C = Costing, D = DN, F = Future Commitment
+    public string ModeOfCollect { get; set; } = string.Empty;
 
     // Computed fields (per PRD)
     public decimal BOMAmount => Price * BOMQty;

@@ -57,6 +57,7 @@ else
                     <th>Stock Non Usable Qty</th>
                     <th>Stock Non Usable Amount</th>
                     <th>Total Extra Collected</th>
+                    <th>Mode Of Collect</th>
                 </tr>
             </thead>
             <tbody>
@@ -100,6 +101,14 @@ else
                         <td>@it.StockNonUsableAmount.ToString("F2")</td>
                     <td>
                             <input type="number" step="0.01" class="form-control form-control-sm" style="width:75px" @bind-value="it.TotalExtraCollected" @bind-value:event="oninput" />
+                    </td>
+                    <td>
+                        <select class="form-select form-select-sm" style="width:100px" @bind="it.ModeOfCollect">
+                            <option value="">-- Select --</option>
+                            <option value="C">Costing</option>
+                            <option value="D">DN</option>
+                            <option value="F">Future Commitment</option>
+                        </select>
                     </td>
                 </tr>
             }

@@ -156,7 +156,7 @@ else
     {
         UpdateMode();
         // load memos including details for totals
-        _allMemos = await Db.Memos.Include(m => m.Details).OrderByDescending(m => m.MemoDate).ToListAsync();
+        _allMemos = await Db.Memos.Include(m => m.Details).Include(m => m.ApproveUser).OrderByDescending(m => m.MemoDate).ToListAsync();
         if (_currentPage > TotalPages) _currentPage = TotalPages;
 
         if (_approvalMode)

@@ -65,9 +65,25 @@ else
             @foreach (var it in PagedItems)
             {
                 <tr>
-                    <td class="text-center">
-                        <input type="checkbox" class="form-check-input" checked="@(_selected.Contains(it))" @onchange="(e) => OnRowSelectedChanged(it, e)" />
-                    </td>
+                        <td class="text-center">
+                            <div class="d-flex justify-content-center gap-1">
+                                <span style="cursor: pointer;" @onclick="() => ToggleExpansion(it.Id)">
+                                    @if (_expandedRows.Contains(it.Id))
+                                    {
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-down" viewBox="0 0 16 16">
+                                            <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z" />
+                                        </svg>
+                                    }
+                                    else
+                                    {
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-right" viewBox="0 0 16 16">
+                                            <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z" />
+                                        </svg>
+                                    }
+                                </span>
+                                <input type="checkbox" class="form-check-input" checked="@(_selected.Contains(it))" @onchange="(e) => OnRowSelectedChanged(it, e)" />
+                            </div>
+                        </td>
                     <td>@it.PONumber</td>
                     <td>@it.Article</td>
                     <td>@it.Color</td>
@@ -75,9 +91,11 @@ else
                     <td>@it.Price.ToString("F2")</td>
                         <td>@it.Currency</td>
                     <td>@it.Unit</td>
-                    <td>
+                    @* <td>
                             <input type="number" class="form-control form-control-sm" style="width:75px" step="0.01" @bind-value="it.BOMQty" @bind-value:event="oninput" />
-                    </td>
+                    </td> *@
+                        @* MODIFIED: BOM Qty is now a display field, not an input *@
+                        <td class="text-end">@it.BOMQty</td>
                         <td>@it.BOMAmount.ToString("F2")</td>
                     <td>
                             <input type="number" class="form-control form-control-sm" style="width:75px" @bind-value="it.AvailStockQty" @bind-value:event="oninput" />
@@ -113,6 +131,49 @@ else
                         </select>
                     </td>
                 </tr>
+
+                    @* NEW: Inline sub-grid for SPI and BOM Details *@
+                    @if (_expandedRows.Contains(it.Id))
+                    {
+                        <tr>
+                            <td colspan="28" class="p-0">
+                                <div class="p-3 bg-light">
+                                    <h6>SPI & BOM Details for @it.Article - @it.Color - @it.Size</h6>
+                                    <table class="table table-sm table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>SPI Number</th>
+                                                <th>BOM Qty</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var detail in it.SpiBomDetails)
+                                            {
+                                                <tr>
+                                                    <td>
+                                                        <input class="form-control form-control-sm" @bind-value="detail.SpiNo" />
+                                                    </td>
+                                                    <td style="width: 100px;">
+                                                        <input type="number" class="form-control form-control-sm" @bind-value="detail.BomQty" @bind-value:event="oninput" />
+                                                    </td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteSpiBom(it, detail)">Delete</button>
+                                                    </td>
+                                                </tr>
+                                            }
+                                            <tr>
+                                                <td colspan="3">
+                                                    <button class="btn btn-sm btn-primary" @onclick="() => AddSpiBom(it)">+ Add New SPI/BOM</button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+
             }
             </tbody>
         </table>
@@ -141,6 +202,11 @@ else
     private string _filter = string.Empty;
     private int _pageSize = 10;
     private int _currentPage = 1;
+
+    // NEW: State to track which rows are expanded
+    private HashSet<int> _expandedRows = new();
+    // A simple counter for new item IDs to avoid collisions
+    private int _newSpiBomIdCounter = -1;
 
     private IEnumerable<MemoDetailModel> FilteredItems => string.IsNullOrWhiteSpace(_filter)
         ? Items
@@ -211,4 +277,31 @@ else
     {
         _currentPage = Math.Min(Math.Max(1, p), TotalPages);
     }
+
+    // NEW: Methods for handling expansion and sub-grid actions
+    private void ToggleExpansion(int id)
+    {
+        if (_expandedRows.Contains(id))
+        {
+            _expandedRows.Remove(id);
+        }
+        else
+        {
+            _expandedRows.Add(id);
+        }
+    }
+
+    private void AddSpiBom(MemoDetailModel parent)
+    {
+        parent.SpiBomDetails.Add(new SpiBomDetailModel { Id = _newSpiBomIdCounter-- });
+        // Blazor should re-render automatically because the state of the list has changed.
+        // If not, you might need to call StateHasChanged();
+    }
+
+    private void DeleteSpiBom(MemoDetailModel parent, SpiBomDetailModel itemToDelete)
+    {
+        parent.SpiBomDetails.Remove(itemToDelete);
+        // Blazor should re-render automatically.
+    }
+
 }

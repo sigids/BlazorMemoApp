@@ -44,6 +44,9 @@ public class MemoDetailModel
 
     // From PO Detail API
     public string? PONumber { get; set; }
+
+    // NEW: List to hold multiple SPI and BOMQty details
+    public List<SpiBomDetailModel> SpiBomDetails { get; set; } = new List<SpiBomDetailModel>();
     public string? SpiNo { get; set; }
     public string Article { get; set; } = string.Empty;
     public string Color { get; set; } = string.Empty;
@@ -53,7 +56,10 @@ public class MemoDetailModel
     public string Unit { get; set; } = string.Empty;
 
     // Editable inputs
-    public int BOMQty { get; set; }
+    //public int BOMQty { get; set; }
+
+    // MODIFIED: BOMQty is now a computed property
+    public int BOMQty => SpiBomDetails.Sum(d => d.BomQty);
     public int AvailStockQty { get; set; }
     public int MCQQty { get; set; }
     public decimal SurchargePaid { get; set; }
@@ -79,6 +85,15 @@ public class MemoDetailModel
     public decimal TotalExtraPaid => Diff + SurchargePaid;
 
 }
+
+public class SpiBomDetailModel
+{
+    // Using a simple int for ID, in a real app this might be a Guid or a composite key
+    public int Id { get; set; }
+    public string SpiNo { get; set; } = string.Empty;
+    public int BomQty { get; set; }
+}
+
 
 public class MemoAdressModel
 {

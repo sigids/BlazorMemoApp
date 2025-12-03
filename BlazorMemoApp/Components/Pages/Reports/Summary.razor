@@ -174,13 +174,9 @@ else
         var buyers = await Db.MemoAddresses.Where(a => a.Type.Contains("B")).ToListAsync();
         var styles = await Db.BuyerStyles.ToListAsync();
 
-
-
-        //var gmtFobValue = m.GmtFobValue;
-
-        _data = memos.SelectMany(m => m.Details.Select(d => new ReportRow
+        // create flat detail items first, then group by the requested keys and aggregate the sums
+        var detailRows = memos.SelectMany(m => m.Details.Select(d => new
         {
-            MemoId = m.Id,
             MemoNo = m.MemoNo,
             MemoDate = m.MemoDate,
             BuyerId = m.BuyerId,
@@ -192,14 +188,32 @@ else
             SurchargePaid = d.SurchargePaid,
             StockUsableQty = d.StockUsableQty,
             StockNonUsableQty = d.MCQQty - (d.BOMQty - d.AvailStockQty) - d.StockUsableQty,
-            TotalExtraPaid = (d.Price * d.MCQQty) - (d.Price * (d.BOMQty - d.AvailStockQty)) + d.SurchargePaid,
-            PercentOfFobValue = m.GmtFobValue != 0
-                    ? ((d.Price * d.MCQQty)
-                      - (d.Price * (d.BOMQty - d.AvailStockQty))
-                      + d.SurchargePaid) / m.GmtFobValue
-                    : 0
+            TotalExtraPaid = (d.Price * d.MCQQty) - (d.Price * (d.BOMQty - d.AvailStockQty)) + d.SurchargePaid
+        }));
 
-        })).ToList();
+        //var gmtFobValue = m.GmtFobValue;
+
+        _data = detailRows
+             .GroupBy(x => new { x.MemoNo, x.MemoDate, x.BuyerId, x.BuyerName, x.StyleId, x.StyleName, x.GmtQty, x.GmtFobValue })
+             .Select(g => new ReportRow
+             {
+                 MemoNo = g.Key.MemoNo,
+                 MemoDate = g.Key.MemoDate,
+                 BuyerId = g.Key.BuyerId,
+                 BuyerName = g.Key.BuyerName,
+                 StyleId = g.Key.StyleId,
+                 StyleName = g.Key.StyleName,
+                 GmtQty = g.Key.GmtQty,
+                 GmtFobValue = g.Key.GmtFobValue,
+                 SurchargePaid = g.Sum(i => i.SurchargePaid),
+                 StockUsableQty = g.Sum(i => i.StockUsableQty),
+                 StockNonUsableQty = g.Sum(i => i.StockNonUsableQty),
+                 TotalExtraPaid = g.Sum(i => i.TotalExtraPaid),
+                 PercentOfFobValue = (g.Key.GmtFobValue.HasValue && g.Key.GmtFobValue.Value != 0m)
+                     ? g.Sum(i => i.TotalExtraPaid) / g.Key.GmtFobValue.Value
+                     : 0m
+             })
+             .ToList();
         
         _loading = false;
     }

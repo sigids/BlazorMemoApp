@@ -15,6 +15,7 @@ builder.Services.AddRazorComponents()
 
 //builder.Services.AddSyncfusionBlazor();
 
+
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();

@@ -112,6 +112,9 @@
             <label class="form-label">PO Selected</label>
             <input class="form-control" value="@header.PONumber" disabled/>
         </div>
+        <div class="col-sm-2 d-flex align-items-end">
+            <button type="button" class="btn btn-outline-info" @onclick="CalculateUsd">Calculate USD</button>
+        </div>
     </div>
 </EditForm>
 
@@ -176,6 +179,17 @@
             : suppliers.Where(s => 
                 (s.Name?.Contains(supplierSearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
                 (s.NameAbbr?.Contains(supplierSearchText, StringComparison.OrdinalIgnoreCase) ?? false));
+
+    private string ExRates
+    {
+        get => ExRates;
+        set
+        {
+            ExRates = value ?? string.Empty;
+            debounceTimer?.Stop();
+            debounceTimer?.Start();
+        }
+    }
 
     private string SearchText
     {
@@ -297,6 +311,19 @@ private async Task Save()
     {
         Console.Error.WriteLine($"Error saving memo: {ex.Message}");
     }
+}
+
+private void CalculateUsd()
+{
+    // TODO: Implement USD calculation logic
+
+        // Example of fetching historical exchange rates (commented out) using jQuery AJAX
+    //         var date = "2010-10-10";
+
+    // $.get('https:openexchangerates.org/api/historical/' + date + '.json', { app_id: 'YOUR_APP_ID'}, function(data) {
+    //             console.log("On " + date + ", 1 US Dollar was worth " + data.rates.IDR + " GBP");
+    //         });
+
 }
 
 private async Task Approve()

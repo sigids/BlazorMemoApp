@@ -160,9 +160,6 @@ namespace BlazorMemoApp.Migrations
                     b.Property<int>("AvailStockQty")
                         .HasColumnType("int");
 
-                    b.Property<int>("BOMQty")
-                        .HasColumnType("int");
-
                     b.Property<string>("Color")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -193,6 +190,9 @@ namespace BlazorMemoApp.Migrations
 
                     b.Property<string>("Size")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SpiNo")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("StockUsableQty")
@@ -263,6 +263,58 @@ namespace BlazorMemoApp.Migrations
                     b.HasIndex("ApproveUserId");
 
                     b.ToTable("Memos");
+                });
+
+            modelBuilder.Entity("BlazorMemoApp.Models.PoExchangeRateModel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BaseCurrency")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("ExcDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("ExcRate")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("PoCurrency")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PoExchangeRates");
+                });
+
+            modelBuilder.Entity("BlazorMemoApp.Models.SpiBomDetailModel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BomQty")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MemoDetailId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SpiNo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MemoDetailId");
+
+                    b.ToTable("SpiBomDetails");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -429,6 +481,17 @@ namespace BlazorMemoApp.Migrations
                     b.Navigation("ApproveUser");
                 });
 
+            modelBuilder.Entity("BlazorMemoApp.Models.SpiBomDetailModel", b =>
+                {
+                    b.HasOne("BlazorMemoApp.Models.MemoDetailModel", "MemoDetail")
+                        .WithMany("SpiBomDetails")
+                        .HasForeignKey("MemoDetailId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("MemoDetail");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -478,6 +541,11 @@ namespace BlazorMemoApp.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("BlazorMemoApp.Models.MemoDetailModel", b =>
+                {
+                    b.Navigation("SpiBomDetails");
                 });
 
             modelBuilder.Entity("BlazorMemoApp.Models.MemoHeaderModel", b =>

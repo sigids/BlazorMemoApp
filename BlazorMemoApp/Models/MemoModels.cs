@@ -88,10 +88,11 @@ public class MemoDetailModel
 
 public class SpiBomDetailModel
 {
-    // Using a simple int for ID, in a real app this might be a Guid or a composite key
     public int Id { get; set; }
+    public int MemoDetailId { get; set; }
     public string SpiNo { get; set; } = string.Empty;
     public int BomQty { get; set; }
+    public MemoDetailModel? MemoDetail { get; set; }
 }
 
 

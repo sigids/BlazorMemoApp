@@ -384,6 +384,8 @@ C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\compressed\4
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\compressed\ilegvi5a0v-h1s4sie4z3.gz
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\compressed\twslwemktt-63fj8s7r0e.gz
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\compressed\32qha71mnw-0j3bgjxly4.gz
+C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\compressed\acwxp3lxrz-flbkz8mx72.gz
+C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\compressed\75lppqiqmr-flbkz8mx72.gz
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\staticwebassets.build.json
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\staticwebassets.build.json.cache
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\staticwebassets.development.json
@@ -394,6 +396,3 @@ C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\refint\Blazo
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\BlazorMemoApp.pdb
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\BlazorMemoApp.genruntimeconfig.cache
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\ref\BlazorMemoApp.dll
-C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\compressed\acwxp3lxrz-flbkz8mx72.gz
-C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\compressed\75lppqiqmr-flbkz8mx72.gz
-C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\staticwebassets.upToDateCheck.txt

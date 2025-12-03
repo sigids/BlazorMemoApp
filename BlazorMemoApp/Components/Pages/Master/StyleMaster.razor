@@ -9,8 +9,22 @@
 <hr />
 
 <div class="row mb-3">
-    <div class="col">
+    <div class="col-auto">
         <button class="btn btn-primary" @onclick="ShowAddForm">Add New Style</button>
+    </div>
+    <div class="col-auto">
+        <div class="input-group">
+            <span class="input-group-text">Search</span>
+            <input class="form-control" style="width:250px;" @bind="_searchText" @bind:event="oninput" placeholder="Buyer, Style Name..." />
+        </div>
+    </div>
+    <div class="col-auto">
+        <select class="form-select" style="width:100px;" @bind="_pageSize" @bind:after="OnPageSizeChanged">
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+        </select>
     </div>
 </div>
 
@@ -74,7 +88,7 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (var style in styles)
+        @foreach (var style in PagedData)
         {
             <tr>
                 <td>@style.Id</td>
@@ -90,6 +104,34 @@
     </tbody>
 </table>
 
+<div class="d-flex justify-content-between align-items-center">
+    <div>Showing @(FilteredData.Any() ? (_currentPage - 1) * _pageSize + 1 : 0) - @(Math.Min(_currentPage * _pageSize, FilteredData.Count())) of @FilteredData.Count()</div>
+    <nav>
+        <ul class="pagination pagination-sm mb-0">
+            <li class="page-item @(_currentPage == 1 ? "disabled" : "")">
+                <a class="page-link" href="#" @onclick="PrevPage" @onclick:preventDefault>Prev</a>
+            </li>
+            @for (var p = 1; p <= Math.Min(TotalPages, 10); p++)
+            {
+                var page = p;
+                <li class="page-item @(p == _currentPage ? "active" : "")">
+                    <a class="page-link" href="#" @onclick="() => GotoPage(page)" @onclick:preventDefault>@p</a>
+                </li>
+            }
+            @if (TotalPages > 10)
+            {
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+                <li class="page-item @(TotalPages == _currentPage ? "active" : "")">
+                    <a class="page-link" href="#" @onclick="() => GotoPage(TotalPages)" @onclick:preventDefault>@TotalPages</a>
+                </li>
+            }
+            <li class="page-item @(_currentPage == TotalPages ? "disabled" : "")">
+                <a class="page-link" href="#" @onclick="NextPage" @onclick:preventDefault>Next</a>
+            </li>
+        </ul>
+    </nav>
+</div>
+
 @code {
     private List<BuyerStyleModel> styles = new();
     private List<MemoAdressModel> buyers = new();
@@ -98,6 +140,9 @@
     
     private string buyerSearchText = string.Empty;
     private bool showBuyerDropdown = false;
+    private string _searchText = string.Empty;
+    private int _pageSize = 10;
+    private int _currentPage = 1;
     
     private IEnumerable<MemoAdressModel> filteredBuyers => 
         string.IsNullOrWhiteSpace(buyerSearchText)
@@ -105,6 +150,22 @@
             : buyers.Where(b => 
                 (b.Name?.Contains(buyerSearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
                 (b.NameAbbr?.Contains(buyerSearchText, StringComparison.OrdinalIgnoreCase) ?? false));
+
+    private IEnumerable<BuyerStyleModel> FilteredData => string.IsNullOrWhiteSpace(_searchText)
+        ? styles
+        : styles.Where(s =>
+            (s.Buyer?.Name ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+            (s.Buyer?.NameAbbr ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+            (s.StyleName ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+            (s.Description ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase));
+
+    private List<BuyerStyleModel> PagedData => FilteredData.Skip((_currentPage - 1) * _pageSize).Take(_pageSize).ToList();
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(FilteredData.Count() / (double)_pageSize));
+
+    private void OnPageSizeChanged() => _currentPage = 1;
+    private void PrevPage() { if (_currentPage > 1) _currentPage--; }
+    private void NextPage() { if (_currentPage < TotalPages) _currentPage++; }
+    private void GotoPage(int p) => _currentPage = Math.Clamp(p, 1, TotalPages);
 
     protected override async Task OnInitializedAsync()
     {

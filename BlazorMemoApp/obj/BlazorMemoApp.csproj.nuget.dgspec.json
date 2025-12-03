@@ -78,6 +78,10 @@
             "Syncfusion.Blazor.Navigations": {
               "target": "Package",
               "version": "[23.2.7, )"
+            },
+            "System.Data.Odbc": {
+              "target": "Package",
+              "version": "[9.0.0, )"
             }
           },
           "imports": [

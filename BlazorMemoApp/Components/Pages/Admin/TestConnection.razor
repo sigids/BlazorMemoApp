@@ -1,0 +1,240 @@
+@page "/admin/test-db"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin")]
+@rendermode InteractiveServer
+@using System.Data.Odbc
+@using System.Data
+@inject ILogger<TestConnection> Logger
+
+<h1>Test DB Connection</h1>
+<p class="text-muted">Test ODBC User DSN connection to SQL Anywhere v12 database.</p>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">DSN Name</label>
+                <input type="text" class="form-control" @bind="_dsnName" placeholder="e.g. Stage7" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">User ID (optional)</label>
+                <input type="text" class="form-control" @bind="_userId" placeholder="Leave blank if in DSN" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Password (optional)</label>
+                <input type="password" class="form-control" @bind="_password" placeholder="Leave blank if in DSN" />
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-primary w-100" @onclick="TestDbConnection" disabled="@_testing">
+                    @(_testing ? "Testing..." : "Test Connection")
+                </button>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-8">
+                <label class="form-label">Test Query (optional)</label>
+                <input type="text" class="form-control" @bind="_testQuery" placeholder="e.g. SELECT @@version" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">&nbsp;</label>
+                <button class="btn btn-outline-secondary w-100" @onclick="ExecuteTestQuery" disabled="@(_testing || string.IsNullOrWhiteSpace(_testQuery))">
+                    Execute Query
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (_resultMessage is not null)
+{
+    <div class="alert @(_success ? "alert-success" : "alert-danger")">
+        <strong>@(_success ? "Success" : "Error"):</strong> @_resultMessage
+    </div>
+}
+
+@if (_connectionInfo.Count > 0)
+{
+    <div class="card mb-4">
+        <div class="card-header">Connection Info</div>
+        <div class="card-body">
+            <table class="table table-sm table-bordered mb-0">
+                <tbody>
+                    @foreach (var info in _connectionInfo)
+                    {
+                        <tr>
+                            <th style="width:200px;">@info.Key</th>
+                            <td>@info.Value</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@if (_queryResults.Count > 0)
+{
+    <div class="card">
+        <div class="card-header">Query Results (@_queryResults.Count rows)</div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered table-striped mb-0">
+                    <thead>
+                        <tr>
+                            @foreach (var col in _queryColumns)
+                            {
+                                <th>@col</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in _queryResults)
+                        {
+                            <tr>
+                                @foreach (var val in row)
+                                {
+                                    <td>@val</td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool _testing;
+    private bool _success;
+    private string? _resultMessage;
+    private string _dsnName = "Stage7";
+    private string _userId = string.Empty;
+    private string _password = string.Empty;
+    private string _testQuery = string.Empty;
+    private Dictionary<string, string> _connectionInfo = new();
+    private List<string> _queryColumns = new();
+    private List<List<string>> _queryResults = new();
+
+    private string BuildConnectionString()
+    {
+        var cs = $"DSN={_dsnName};";
+        if (!string.IsNullOrWhiteSpace(_userId))
+            cs += $"UID={_userId};";
+        if (!string.IsNullOrWhiteSpace(_password))
+            cs += $"PWD={_password};";
+        return cs;
+    }
+
+    private async Task TestDbConnection()
+    {
+        _testing = true;
+        _success = false;
+        _resultMessage = null;
+        _connectionInfo.Clear();
+        _queryResults.Clear();
+        _queryColumns.Clear();
+        StateHasChanged();
+
+        try
+        {
+            if (string.IsNullOrWhiteSpace(_dsnName))
+            {
+                _resultMessage = "DSN Name is required.";
+                return;
+            }
+
+            var connectionString = BuildConnectionString();
+
+            using var conn = new OdbcConnection(connectionString);
+            await conn.OpenAsync();
+
+            _success = conn.State == ConnectionState.Open;
+            _resultMessage = _success
+                ? "Connection opened successfully!"
+                : $"Connection opened but state is {conn.State}.";
+
+            if (_success)
+            {
+                _connectionInfo["State"] = conn.State.ToString();
+                _connectionInfo["Database"] = conn.Database ?? "(N/A)";
+                _connectionInfo["Server Version"] = conn.ServerVersion ?? "(N/A)";
+                _connectionInfo["Driver"] = conn.Driver ?? "(N/A)";
+                _connectionInfo["Data Source"] = conn.DataSource ?? "(N/A)";
+                _connectionInfo["Connection Timeout"] = conn.ConnectionTimeout.ToString() + " seconds";
+            }
+
+            conn.Close();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "ODBC test connection failed for DSN: {DSN}", _dsnName);
+            _resultMessage = $"{ex.Message}";
+        }
+        finally
+        {
+            _testing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ExecuteTestQuery()
+    {
+        _testing = true;
+        _success = false;
+        _resultMessage = null;
+        _queryResults.Clear();
+        _queryColumns.Clear();
+        StateHasChanged();
+
+        try
+        {
+            if (string.IsNullOrWhiteSpace(_dsnName))
+            {
+                _resultMessage = "DSN Name is required.";
+                return;
+            }
+
+            var connectionString = BuildConnectionString();
+
+            using var conn = new OdbcConnection(connectionString);
+            await conn.OpenAsync();
+
+            using var cmd = new OdbcCommand(_testQuery, conn);
+            cmd.CommandTimeout = 30;
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            
+            for (int i = 0; i < reader.FieldCount; i++)
+            {
+                _queryColumns.Add(reader.GetName(i));
+            }
+
+            while (await reader.ReadAsync())
+            {
+                var row = new List<string>();
+                for (int i = 0; i < reader.FieldCount; i++)
+                {
+                    row.Add(reader.IsDBNull(i) ? "(NULL)" : reader.GetValue(i)?.ToString() ?? "");
+                }
+                _queryResults.Add(row);
+                
+                if (_queryResults.Count >= 100) break;
+            }
+
+            _success = true;
+            _resultMessage = $"Query executed successfully. Returned {_queryResults.Count} row(s).";
+
+            conn.Close();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "ODBC query execution failed for DSN: {DSN}", _dsnName);
+            _resultMessage = $"{ex.Message}";
+        }
+        finally
+        {
+            _testing = false;
+            StateHasChanged();
+        }
+    }
+}

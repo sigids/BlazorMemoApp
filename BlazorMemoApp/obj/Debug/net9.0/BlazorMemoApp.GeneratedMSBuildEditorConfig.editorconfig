@@ -192,6 +192,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xNZW1vc1xNZW1vRGV0YWlsR3JpZC5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/APPS-DEV/ASPNETCORE/BlazorMemoApp/BlazorMemoApp/Components/Pages/Admin/TestConnection.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xBZG1pblxUZXN0Q29ubmVjdGlvbi5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/APPS-DEV/ASPNETCORE/BlazorMemoApp/BlazorMemoApp/Components/Pages/Admin/UserManagement.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xBZG1pblxVc2VyTWFuYWdlbWVudC5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
@@ -212,6 +216,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xIb21lLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/APPS-DEV/ASPNETCORE/BlazorMemoApp/BlazorMemoApp/Components/Pages/Master/AddressMaster.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xNYXN0ZXJcQWRkcmVzc01hc3Rlci5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/APPS-DEV/ASPNETCORE/BlazorMemoApp/BlazorMemoApp/Components/Pages/Master/StyleMaster.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xNYXN0ZXJcU3R5bGVNYXN0ZXIucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
@@ -222,6 +230,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/APPS-DEV/ASPNETCORE/BlazorMemoApp/BlazorMemoApp/Components/Pages/Memos/MemoView.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xNZW1vc1xNZW1vVmlldy5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/APPS-DEV/ASPNETCORE/BlazorMemoApp/BlazorMemoApp/Components/Pages/Reports/Detail.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xSZXBvcnRzXERldGFpbC5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/APPS-DEV/ASPNETCORE/BlazorMemoApp/BlazorMemoApp/Components/Pages/Reports/Summary.razor]

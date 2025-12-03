@@ -51,6 +51,9 @@ builder.Services.AddHttpClient<PoApiClient>(client =>
     client.BaseAddress = new Uri(resolvedPoBaseUrl);
 });
 
+// HttpClient for Exchange Rate API
+builder.Services.AddScoped(sp => new HttpClient());
+
 var app = builder.Build();
 //Register Syncfusion license https://help.syncfusion.com/common/essential-studio/licensing/how-to-generate
 // Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("Ngo9BigBOggjHTQxAR8/V1NHaF5cWWdCf1FpRmJGdld5fUVHYVZUTXxaS00DNHVRdkdmWH5ednZVRGddWUB2X0RWYUo=");

@@ -8,6 +8,7 @@
 @inject NavigationManager Nav
 @inject BlazorMemoApp.Data.ApplicationDbContext Db
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject HttpClient Http
 
 
 <h1>Create Memo</h1>
@@ -313,17 +314,82 @@ private async Task Save()
     }
 }
 
-private void CalculateUsd()
+private async Task CalculateUsd()
 {
-    // TODO: Implement USD calculation logic
+    if (header.MemoDate == default || header.Details == null || !header.Details.Any())
+        return;
 
-        // Example of fetching historical exchange rates (commented out) using jQuery AJAX
-    //         var date = "2010-10-10";
+    try
+    {
+        var dateStr = header.MemoDate.ToString("yyyy-MM-dd");
+            var appId = "e483ad469b1142d6aaccb2f472658efd"; // Replace with actual API key
+        var apiUrl = $"https://openexchangerates.org/api/historical/{dateStr}.json?app_id={appId}";
 
-    // $.get('https:openexchangerates.org/api/historical/' + date + '.json', { app_id: 'YOUR_APP_ID'}, function(data) {
-    //             console.log("On " + date + ", 1 US Dollar was worth " + data.rates.IDR + " GBP");
-    //         });
+        var response = await Http.GetFromJsonAsync<ExchangeRateResponse>(apiUrl);
+        if (response?.rates == null)
+        {
+            Console.WriteLine("Failed to fetch exchange rates");
+            return;
+        }
 
+        var currencies = header.Details.Select(d => d.Currency).Distinct().ToList();
+        var exchangeRatesToSave = new List<PoExchangeRateModel>();
+        var memoDateOnly = header.MemoDate.Date;
+
+        foreach (var currency in currencies)
+        {
+            if (string.IsNullOrWhiteSpace(currency) || currency.Equals("USD", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            if (response.rates.TryGetValue(currency, out var rate) && rate > 0)
+            {
+                var usdRate = 1m / rate;
+
+                foreach (var detail in header.Details.Where(d => d.Currency.Equals(currency, StringComparison.OrdinalIgnoreCase)))
+                {
+                    detail.Price = detail.Price * usdRate;
+                    detail.Currency = "USD";
+                }
+
+                var existingRate = await Db.PoExchangeRates
+                    .FirstOrDefaultAsync(r => r.PoCurrency == currency 
+                        && r.BaseCurrency == "USD" 
+                        && r.ExcDate.Date == memoDateOnly);
+
+                if (existingRate == null)
+                {
+                    exchangeRatesToSave.Add(new PoExchangeRateModel
+                    {
+                        PoCurrency = currency,
+                        BaseCurrency = "USD",
+                        ExcDate = header.MemoDate,
+                        ExcRate = rate
+                    });
+                }
+            }
+        }
+
+        if (exchangeRatesToSave.Any())
+        {
+            Db.PoExchangeRates.AddRange(exchangeRatesToSave);
+            await Db.SaveChangesAsync();
+        }
+
+        StateHasChanged();
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"Error calculating USD: {ex.Message}");
+    }
+}
+
+public class ExchangeRateResponse
+{
+    public string? disclaimer { get; set; }
+    public string? license { get; set; }
+    public long timestamp { get; set; }
+    public string? @base { get; set; }
+    public Dictionary<string, decimal> rates { get; set; } = new();
 }
 
 private async Task Approve()

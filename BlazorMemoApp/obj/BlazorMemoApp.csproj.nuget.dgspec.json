@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\blazormemoapp\\BlazorMemoApp.csproj": {}
+    "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\BlazorMemoApp.csproj": {}
   },
   "projects": {
-    "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\blazormemoapp\\BlazorMemoApp.csproj": {
+    "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\BlazorMemoApp.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\blazormemoapp\\BlazorMemoApp.csproj",
+        "projectUniqueName": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\BlazorMemoApp.csproj",
         "projectName": "BlazorMemoApp",
-        "projectPath": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\blazormemoapp\\BlazorMemoApp.csproj",
+        "projectPath": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\BlazorMemoApp.csproj",
         "packagesPath": "C:\\Users\\sigid\\.nuget\\packages\\",
-        "outputPath": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\blazormemoapp\\obj\\",
+        "outputPath": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

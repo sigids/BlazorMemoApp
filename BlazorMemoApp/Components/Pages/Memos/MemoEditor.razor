@@ -321,51 +321,66 @@ private async Task CalculateUsd()
 
     try
     {
-        var dateStr = header.MemoDate.ToString("yyyy-MM-dd");
-            var appId = "e483ad469b1142d6aaccb2f472658efd"; // Replace with actual API key
-        var apiUrl = $"https://openexchangerates.org/api/historical/{dateStr}.json?app_id={appId}";
+        var memoDateOnly = header.MemoDate.Date;
+        var currencies = header.Details
+            .Select(d => d.Currency)
+            .Where(c => !string.IsNullOrWhiteSpace(c) && !c.Equals("USD", StringComparison.OrdinalIgnoreCase))
+            .Distinct()
+            .ToList();
 
-        var response = await Http.GetFromJsonAsync<ExchangeRateResponse>(apiUrl);
-        if (response?.rates == null)
-        {
-            Console.WriteLine("Failed to fetch exchange rates");
+        if (!currencies.Any())
             return;
+
+        var existingRates = await Db.PoExchangeRates
+            .Where(r => currencies.Contains(r.PoCurrency) 
+                && r.BaseCurrency == "USD" 
+                && r.ExcDate.Date == memoDateOnly)
+            .ToListAsync();
+
+        var currenciesFromDb = existingRates.Select(r => r.PoCurrency).ToHashSet();
+        var currenciesToFetch = currencies.Where(c => !currenciesFromDb.Contains(c)).ToList();
+
+        ExchangeRateResponse? response = null;
+        if (currenciesToFetch.Any())
+        {
+            var dateStr = header.MemoDate.ToString("yyyy-MM-dd");
+            var appId = "e483ad469b1142d6aaccb2f472658efd";
+            var apiUrl = $"https://openexchangerates.org/api/historical/{dateStr}.json?app_id={appId}";
+            response = await Http.GetFromJsonAsync<ExchangeRateResponse>(apiUrl);
         }
 
-        var currencies = header.Details.Select(d => d.Currency).Distinct().ToList();
         var exchangeRatesToSave = new List<PoExchangeRateModel>();
-        var memoDateOnly = header.MemoDate.Date;
 
         foreach (var currency in currencies)
         {
-            if (string.IsNullOrWhiteSpace(currency) || currency.Equals("USD", StringComparison.OrdinalIgnoreCase))
-                continue;
+            decimal rate;
+            var existingRate = existingRates.FirstOrDefault(r => r.PoCurrency == currency);
 
-            if (response.rates.TryGetValue(currency, out var rate) && rate > 0)
+            if (existingRate != null)
             {
-                var usdRate = 1m / rate;
-
-                foreach (var detail in header.Details.Where(d => d.Currency.Equals(currency, StringComparison.OrdinalIgnoreCase)))
+                rate = existingRate.ExcRate;
+            }
+            else if (response?.rates != null && response.rates.TryGetValue(currency, out var apiRate) && apiRate > 0)
+            {
+                rate = apiRate;
+                exchangeRatesToSave.Add(new PoExchangeRateModel
                 {
-                    detail.Price = detail.Price * usdRate;
-                    detail.Currency = "USD";
-                }
+                    PoCurrency = currency,
+                    BaseCurrency = "USD",
+                    ExcDate = header.MemoDate,
+                    ExcRate = rate
+                });
+            }
+            else
+            {
+                continue;
+            }
 
-                var existingRate = await Db.PoExchangeRates
-                    .FirstOrDefaultAsync(r => r.PoCurrency == currency 
-                        && r.BaseCurrency == "USD" 
-                        && r.ExcDate.Date == memoDateOnly);
-
-                if (existingRate == null)
-                {
-                    exchangeRatesToSave.Add(new PoExchangeRateModel
-                    {
-                        PoCurrency = currency,
-                        BaseCurrency = "USD",
-                        ExcDate = header.MemoDate,
-                        ExcRate = rate
-                    });
-                }
+            var usdRate = 1m / rate;
+            foreach (var detail in header.Details.Where(d => d.Currency.Equals(currency, StringComparison.OrdinalIgnoreCase)))
+            {
+                detail.Price = detail.Price * usdRate;
+                detail.Currency = "USD";
             }
         }
 

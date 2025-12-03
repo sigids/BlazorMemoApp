@@ -3,7 +3,10 @@
 @rendermode InteractiveServer
 @using BlazorMemoApp.Models
 @using Microsoft.EntityFrameworkCore
+@using System.Data.Odbc
+@using System.Text.RegularExpressions
 @inject BlazorMemoApp.Data.ApplicationDbContext Db
+@inject ILogger<AddressMaster> Logger
 
 <h1>Address Master</h1>
 <hr />
@@ -11,6 +14,11 @@
 <div class="row mb-3">
     <div class="col-auto">
         <button class="btn btn-primary" @onclick="ShowAddForm">Add New Address</button>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-info" @onclick="SyncFromSybase" disabled="@_syncing">
+            <span class="bi bi-arrow-repeat"></span> @(_syncing ? "Synchronizing..." : "Synchronize")
+        </button>
     </div>
     <div class="col-auto">
         <div class="input-group">
@@ -27,6 +35,14 @@
         </select>
     </div>
 </div>
+
+@if (!string.IsNullOrEmpty(_syncMessage))
+{
+    <div class="alert @(_syncSuccess ? "alert-success" : "alert-danger") alert-dismissible fade show" role="alert">
+        @_syncMessage
+        <button type="button" class="btn-close" @onclick="() => _syncMessage = string.Empty"></button>
+    </div>
+}
 
 @if (showForm)
 {
@@ -144,6 +160,11 @@
     private string _searchText = string.Empty;
     private int _pageSize = 10;
     private int _currentPage = 1;
+    private bool _syncing = false;
+    private string _syncMessage = string.Empty;
+    private bool _syncSuccess = false;
+
+    private const string CODE_PREFIX = "HO/";
 
     private IEnumerable<MemoAdressModel> FilteredData => string.IsNullOrWhiteSpace(_searchText)
         ? addresses
@@ -243,5 +264,108 @@
             "BS" => "Buyer & Supplier",
             _ => type
         };
+    }
+
+    private int ExtractNumericPart(string code)
+    {
+        if (string.IsNullOrEmpty(code) || !code.StartsWith(CODE_PREFIX))
+            return 0;
+
+        var numericPart = code.Substring(CODE_PREFIX.Length);
+        var match = Regex.Match(numericPart, @"^\d+");
+        if (match.Success && int.TryParse(match.Value, out int result))
+            return result;
+        return 0;
+    }
+
+    private async Task SyncFromSybase()
+    {
+        _syncing = true;
+        _syncMessage = string.Empty;
+        _syncSuccess = false;
+        StateHasChanged();
+
+        try
+        {
+            var maxLocalCode = addresses
+                .Where(a => !string.IsNullOrEmpty(a.Code) && a.Code.StartsWith(CODE_PREFIX))
+                .Select(a => ExtractNumericPart(a.Code))
+                .DefaultIfEmpty(0)
+                .Max();
+
+            var existingCodes = addresses
+                .Where(a => !string.IsNullOrEmpty(a.Code))
+                .Select(a => a.Code)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var newRecords = new List<MemoAdressModel>();
+
+            var connectionString = "DSN=Stage7;UID=sql;PWD=sql;";
+
+            using var conn = new OdbcConnection(connectionString);
+            await conn.OpenAsync();
+
+            var query = @"SELECT add_name, add_name_abbr, add_code, add_country, add_type 
+                          FROM dba.address 
+                          WHERE add_code LIKE 'HO/%'";
+
+            using var cmd = new OdbcCommand(query, conn);
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                var addCode = reader.IsDBNull(2) ? "" : reader.GetString(2).Trim();
+                
+                if (string.IsNullOrEmpty(addCode) || !addCode.StartsWith(CODE_PREFIX))
+                    continue;
+
+                var numericPart = ExtractNumericPart(addCode);
+                if (numericPart <= maxLocalCode)
+                    continue;
+
+                if (existingCodes.Contains(addCode))
+                    continue;
+
+                var newAddress = new MemoAdressModel
+                {
+                    Name = reader.IsDBNull(0) ? "" : reader.GetString(0).Trim(),
+                    NameAbbr = reader.IsDBNull(1) ? "" : reader.GetString(1).Trim(),
+                    Code = addCode,
+                    Country = reader.IsDBNull(3) ? "" : reader.GetString(3).Trim(),
+                    Type = reader.IsDBNull(4) ? "" : reader.GetString(4).Trim()
+                };
+
+                newRecords.Add(newAddress);
+                existingCodes.Add(addCode);
+            }
+
+            conn.Close();
+
+            if (newRecords.Count > 0)
+            {
+                Db.MemoAddresses.AddRange(newRecords);
+                await Db.SaveChangesAsync();
+                await LoadData();
+
+                _syncSuccess = true;
+                _syncMessage = $"Synchronization completed. Added {newRecords.Count} new record(s).";
+            }
+            else
+            {
+                _syncSuccess = true;
+                _syncMessage = "Synchronization completed. No new records to add.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to sync addresses from Sybase");
+            _syncSuccess = false;
+            _syncMessage = $"Synchronization failed: {ex.Message}";
+        }
+        finally
+        {
+            _syncing = false;
+            StateHasChanged();
+        }
     }
 }

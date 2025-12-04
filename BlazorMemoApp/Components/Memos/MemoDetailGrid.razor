@@ -151,8 +151,23 @@ else
                                             @foreach (var detail in it.SpiBomDetails)
                                             {
                                                 <tr>
-                                                    <td>
-                                                        <input class="form-control form-control-sm" @bind-value="detail.SpiNo" />
+                                                    <td class="position-relative" style="min-width: 200px;">
+                                                        <input class="form-control form-control-sm" 
+                                                               value="@GetSpiSearchText(detail)"
+                                                               @oninput="(e) => SetSpiSearchText(detail, e.Value?.ToString() ?? string.Empty)"
+                                                               @onfocus="() => ShowSpiDropdown(detail)"
+                                                               placeholder="Type to filter..." />
+                                                        @if (IsSpiDropdownVisible(detail) && GetFilteredOrdersForSpi(detail).Any())
+                                                        {
+                                                            <div class="list-group position-absolute z-3" style="max-height:150px; overflow:auto; width:100%;">
+                                                                @foreach (var order in GetFilteredOrdersForSpi(detail))
+                                                                {
+                                                                    <button type="button" class="list-group-item list-group-item-action py-1" @onclick="() => SelectSpiOrder(detail, order)">
+                                                                        @order.OrderNo
+                                                                    </button>
+                                                                }
+                                                            </div>
+                                                        }
                                                     </td>
                                                     <td style="width: 100px;">
                                                         <input type="number" class="form-control form-control-sm" @bind-value="detail.BomQty" @bind-value:event="oninput" />
@@ -198,6 +213,9 @@ else
 @code {
     [Parameter] public List<MemoDetailModel> Items { get; set; } = new();
     [Parameter] public EventCallback<List<MemoDetailModel>> ItemsChanged { get; set; }
+    [Parameter] public int? BuyerId { get; set; }
+    [Parameter] public int? StyleId { get; set; }
+    [Parameter] public List<BuyerStyleOrderModel> Orders { get; set; } = new();
 
     private HashSet<MemoDetailModel> _selected = new();
     private string _filter = string.Empty;
@@ -206,6 +224,50 @@ else
 
     // NEW: State to track which rows are expanded (using object reference instead of Id)
     private HashSet<MemoDetailModel> _expandedRows = new();
+    
+    // SPI dropdown state - keyed by SpiBomDetailModel reference
+    private Dictionary<SpiBomDetailModel, string> _spiSearchTexts = new();
+    private Dictionary<SpiBomDetailModel, bool> _spiDropdownVisible = new();
+    
+    private IEnumerable<BuyerStyleOrderModel> FilteredOrders => 
+        (BuyerId == null || StyleId == null)
+            ? Enumerable.Empty<BuyerStyleOrderModel>()
+            : Orders.Where(o => o.BuyerId == BuyerId && o.StyleId == StyleId);
+    
+    private IEnumerable<BuyerStyleOrderModel> GetFilteredOrdersForSpi(SpiBomDetailModel detail)
+    {
+        var searchText = _spiSearchTexts.GetValueOrDefault(detail, string.Empty);
+        return string.IsNullOrWhiteSpace(searchText)
+            ? FilteredOrders
+            : FilteredOrders.Where(o => o.OrderNo.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+    }
+    
+    private string GetSpiSearchText(SpiBomDetailModel detail)
+    {
+        return _spiSearchTexts.GetValueOrDefault(detail, detail.SpiNo ?? string.Empty);
+    }
+    
+    private void SetSpiSearchText(SpiBomDetailModel detail, string value)
+    {
+        _spiSearchTexts[detail] = value;
+    }
+    
+    private bool IsSpiDropdownVisible(SpiBomDetailModel detail)
+    {
+        return _spiDropdownVisible.GetValueOrDefault(detail, false);
+    }
+    
+    private void ShowSpiDropdown(SpiBomDetailModel detail)
+    {
+        _spiDropdownVisible[detail] = true;
+    }
+    
+    private void SelectSpiOrder(SpiBomDetailModel detail, BuyerStyleOrderModel order)
+    {
+        detail.SpiNo = order.OrderNo;
+        _spiSearchTexts[detail] = order.OrderNo;
+        _spiDropdownVisible[detail] = false;
+    }
 
     private IEnumerable<MemoDetailModel> FilteredItems => string.IsNullOrWhiteSpace(_filter)
         ? Items

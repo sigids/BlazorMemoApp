@@ -55,15 +55,25 @@
                 </div>
             }
         </div>
-        <div class="col-sm-2">
+        <div class="col-sm-2 position-relative">
             <label class="form-label">Style</label>
-            <InputSelect class="form-select" @bind-Value="header.StyleId" disabled="@(header.BuyerId == null)">
-                <option value="">-- Select --</option>
-                @foreach (var style in filteredStyles)
-                {
-                    <option value="@style.Id">@style.StyleName</option>
-                }
-            </InputSelect>
+            <input class="form-control" 
+                   @bind-value="styleSearchText" 
+                   @bind-value:event="oninput"
+                   @onfocus="() => showStyleDropdown = true"
+                   placeholder="Type to filter..."
+                   disabled="@(header.BuyerId == null)" />
+            @if (showStyleDropdown && filteredStylesDropdown.Any())
+            {
+                <div class="list-group position-absolute z-3" style="max-height:200px; overflow:auto; width:100%;">
+                    @foreach (var style in filteredStylesDropdown)
+                    {
+                        <button type="button" class="list-group-item list-group-item-action" @onclick="() => SelectStyle(style)">
+                            @style.StyleName
+                        </button>
+                    }
+                </div>
+            }
         </div>
         <div class="col-sm-2">
             <label class="form-label">Garment Qty</label>
@@ -121,7 +131,7 @@
 
 <hr />
 
-<BlazorMemoApp.Components.Memos.MemoDetailGrid Items="header.Details" />
+<BlazorMemoApp.Components.Memos.MemoDetailGrid Items="header.Details" BuyerId="header.BuyerId" StyleId="header.StyleId" Orders="orders" />
 
 <div class="mt-3 d-flex gap-2 align-items-center flex-wrap">
     <button class="btn btn-secondary" @onclick="Cancel">Cancel</button>
@@ -155,6 +165,7 @@
     private List<MemoAdressModel> buyers = new();
     private List<MemoAdressModel> suppliers = new();
     private List<BuyerStyleModel> styles = new();
+    private List<BuyerStyleOrderModel> orders = new();
     
     private IEnumerable<BuyerStyleModel> filteredStyles => 
         header.BuyerId == null 
@@ -163,6 +174,17 @@
     
     private string buyerSearchText = string.Empty;
     private bool showBuyerDropdown = false;
+    
+    private string styleSearchText = string.Empty;
+    private bool showStyleDropdown = false;
+    
+    private IEnumerable<BuyerStyleModel> filteredStylesDropdown => 
+        header.BuyerId == null 
+            ? Enumerable.Empty<BuyerStyleModel>() 
+            : string.IsNullOrWhiteSpace(styleSearchText)
+                ? styles.Where(s => s.BuyerId == header.BuyerId)
+                : styles.Where(s => s.BuyerId == header.BuyerId &&
+                    (s.StyleName?.Contains(styleSearchText, StringComparison.OrdinalIgnoreCase) ?? false));
     
     private IEnumerable<MemoAdressModel> filteredBuyers => 
         string.IsNullOrWhiteSpace(buyerSearchText)
@@ -212,6 +234,7 @@
         buyers = await Db.MemoAddresses.Where(a => a.Type.Contains("B")).ToListAsync();
         suppliers = await Db.MemoAddresses.Where(a => a.Type.Contains("V") || a.Type.Contains("F")).ToListAsync();
         styles = await Db.BuyerStyles.ToListAsync();
+        orders = await Db.BuyerStyleOrders.ToListAsync();
     }
 
     private static string GenerateMemoNo()
@@ -273,9 +296,18 @@
     {
         header.BuyerId = buyer.Id;
         header.StyleId = null;
+        styleSearchText = string.Empty;
         buyerSearchText = $"{buyer.Name} - {buyer.NameAbbr}";
         showBuyerDropdown = false;
         Console.WriteLine($"Selected Buyer: Id={buyer.Id}, Name={buyer.Name}");
+    }
+
+    private void SelectStyle(BuyerStyleModel style)
+    {
+        header.StyleId = style.Id;
+        styleSearchText = style.StyleName;
+        showStyleDropdown = false;
+        Console.WriteLine($"Selected Style: Id={style.Id}, Name={style.StyleName}");
     }
 
     private void SelectSupplier(MemoAdressModel supplier)

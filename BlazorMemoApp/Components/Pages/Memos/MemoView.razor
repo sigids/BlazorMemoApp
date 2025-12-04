@@ -82,7 +82,7 @@ else
         </div>
     </div> *@
 
-    <BlazorMemoApp.Components.Memos.MemoDetailGrid Items="header.Details" />
+    <BlazorMemoApp.Components.Memos.MemoDetailGrid Items="header.Details" BuyerId="header.BuyerId" StyleId="header.StyleId" Orders="orders" />
 
     <div class="mt-3 d-flex gap-2 align-items-center flex-wrap">
         <button class="btn btn-secondary" @onclick="Back">Back</button>
@@ -111,6 +111,7 @@ else
     private List<MemoAdressModel> buyers = new();
     private List<MemoAdressModel> suppliers = new();
     private List<BuyerStyleModel> styles = new();
+    private List<BuyerStyleOrderModel> orders = new();
     
     private IEnumerable<BuyerStyleModel> filteredStyles => 
         header?.BuyerId == null 
@@ -119,11 +120,12 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        header = await Db.Memos.Include(m => m.Details).FirstOrDefaultAsync(m => m.Id == Id);
+        header = await Db.Memos.Include(m => m.Details).ThenInclude(d => d.SpiBomDetails).FirstOrDefaultAsync(m => m.Id == Id);
         
         buyers = await Db.MemoAddresses.Where(a => a.Type.Contains("B")).ToListAsync();
         suppliers = await Db.MemoAddresses.Where(a => a.Type.Contains("V") || a.Type.Contains("F")).ToListAsync();
         styles = await Db.BuyerStyles.ToListAsync();
+        orders = await Db.BuyerStyleOrders.ToListAsync();
     }
 
     private void Back() => Nav.NavigateTo("/memos");

@@ -114,3 +114,22 @@ public class BuyerStyleModel
     public string StyleName { get; set; } = string.Empty;
     public string? Description { get; set; }
 }
+
+public class BuyerStyleOrderModel
+{
+    public int Id { get; set; }
+    public int BuyerId { get; set; }
+    public MemoAdressModel? Buyer { get; set; }
+    public int StyleId { get; set; }
+    public BuyerStyleModel? Style { get; set; }
+    public string OrderNo { get; set; } = string.Empty;
+}
+
+public class SynchronizingModel
+{
+    public int Id { get; set; }
+    public string ModelName { get; set; } = string.Empty;
+    public int BuyerId { get; set; }
+    public int? StyleId { get; set; }
+    public DateTime SynchDate { get; set; } = DateTime.Parse("2025-01-01");
+}

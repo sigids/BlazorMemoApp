@@ -122,17 +122,17 @@ else
         <nav>
             <ul class="pagination pagination-sm mb-0">
                 <li class="page-item @(_currentPage == 1 ? "disabled" : "")">
-                    <a class="page-link" href="#" @onclick="PrevPage" @onclick:preventDefault>Prev</a>
+                    <button type="button" class="page-link" @onclick="PrevPage" disabled="@(_currentPage == 1)">Prev</button>
                 </li>
                 @for (var p = 1; p <= TotalPages; p++)
                 {
                     var page = p;
                     <li class="page-item @(p == _currentPage ? "active" : "")">
-                        <a class="page-link" href="#" @onclick="() => GotoPage(page)" @onclick:preventDefault>@p</a>
+                        <button type="button" class="page-link" @onclick="() => GotoPage(page)">@p</button>
                     </li>
                 }
                 <li class="page-item @(_currentPage == TotalPages ? "disabled" : "")">
-                    <a class="page-link" href="#" @onclick="NextPage" @onclick:preventDefault>Next</a>
+                    <button type="button" class="page-link" @onclick="NextPage" disabled="@(_currentPage == TotalPages)">Next</button>
                 </li>
             </ul>
         </nav>

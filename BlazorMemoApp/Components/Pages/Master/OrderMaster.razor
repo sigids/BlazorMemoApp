@@ -1,23 +1,23 @@
-@page "/master/styles"
+@page "/master/orders"
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,User")]
 @rendermode InteractiveServer
 @using BlazorMemoApp.Models
 @using Microsoft.EntityFrameworkCore
 @using System.Data.Odbc
 @inject BlazorMemoApp.Data.ApplicationDbContext Db
-@inject ILogger<StyleMaster> Logger
+@inject ILogger<OrderMaster> Logger
 
-<h1>Style Master</h1>
+<h1>Order Master</h1>
 <hr />
 
 <div class="row mb-3">
     <div class="col-auto">
-        <button class="btn btn-primary" @onclick="ShowAddForm">Add New Style</button>
+        <button class="btn btn-primary" @onclick="ShowAddForm">Add New Order</button>
     </div>
     <div class="col-auto">
         <div class="input-group">
             <span class="input-group-text">Search</span>
-            <input class="form-control" style="width:250px;" @bind="_searchText" @bind:event="oninput" placeholder="Buyer, Style Name..." />
+            <input class="form-control" style="width:250px;" @bind="_searchText" @bind:event="oninput" placeholder="Buyer, Style, Order No..." />
         </div>
     </div>
     <div class="col-auto">
@@ -34,10 +34,10 @@
 {
     <div class="card mb-4">
         <div class="card-header">
-            @(editingStyle.Id == 0 ? "Add New Style" : "Edit Style")
+            @(editingOrder.Id == 0 ? "Add New Order" : "Edit Order")
         </div>
         <div class="card-body">
-            <EditForm Model="editingStyle" OnValidSubmit="SaveStyle">
+            <EditForm Model="editingOrder" OnValidSubmit="SaveOrder">
                 <DataAnnotationsValidator />
                 <div class="row g-3">
                     <div class="col-md-4 position-relative">
@@ -58,22 +58,39 @@
                                 }
                             </div>
                         }
-                        <ValidationMessage For="() => editingStyle.BuyerId" />
+                        <ValidationMessage For="() => editingOrder.BuyerId" />
+                    </div>
+                    <div class="col-md-4 position-relative">
+                        <label class="form-label">Style</label>
+                        <input class="form-control" 
+                               @bind-value="styleSearchText" 
+                               @bind-value:event="oninput"
+                               @onfocus="() => showStyleDropdown = true"
+                               placeholder="Type to filter..."
+                               disabled="@(editingOrder.BuyerId == 0)" />
+                        @if (showStyleDropdown && filteredStyles.Any())
+                        {
+                            <div class="list-group position-absolute z-3" style="max-height:200px; overflow:auto; width:100%;">
+                                @foreach (var style in filteredStyles)
+                                {
+                                    <button type="button" class="list-group-item list-group-item-action" @onclick="() => SelectStyle(style)">
+                                        @style.StyleName - @style.Description
+                                    </button>
+                                }
+                            </div>
+                        }
+                        <ValidationMessage For="() => editingOrder.StyleId" />
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Style Name</label>
-                        <InputText class="form-control" @bind-Value="editingStyle.StyleName" />
-                        <ValidationMessage For="() => editingStyle.StyleName" />
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Description</label>
-                        <InputText class="form-control" @bind-Value="editingStyle.Description" />
+                        <label class="form-label">Order No</label>
+                        <InputText class="form-control" @bind-Value="editingOrder.OrderNo" />
+                        <ValidationMessage For="() => editingOrder.OrderNo" />
                     </div>
                 </div>
                 <div class="mt-3">
                     <button type="submit" class="btn btn-success">Save</button>
                     <button type="button" class="btn btn-secondary" @onclick="CancelEdit">Cancel</button>
-                    <button type="button" class="btn btn-info" @onclick="Synchronize" disabled="@(_syncing || editingStyle.BuyerId == 0)">
+                    <button type="button" class="btn btn-info" @onclick="Synchronize" disabled="@(_syncing || editingOrder.BuyerId == 0 || editingOrder.StyleId == 0)">
                         @(_syncing ? "Synchronizing..." : "Synchronize")
                     </button>
                 </div>
@@ -94,22 +111,22 @@
         <tr>
             <th>ID</th>
             <th>Buyer</th>
-            <th>Style Name</th>
-            <th>Description</th>
+            <th>Style</th>
+            <th>Order No</th>
             <th>Actions</th>
         </tr>
     </thead>
     <tbody>
-        @foreach (var style in PagedData)
+        @foreach (var order in PagedData)
         {
             <tr>
-                <td>@style.Id</td>
-                <td>@(style.Buyer?.Name ?? "-") - @(style.Buyer?.NameAbbr ?? "")</td>
-                <td>@style.StyleName</td>
-                <td>@style.Description</td>
+                <td>@order.Id</td>
+                <td>@(order.Buyer?.Name ?? "-") - @(order.Buyer?.NameAbbr ?? "")</td>
+                <td>@(order.Style?.StyleName ?? "-")</td>
+                <td>@order.OrderNo</td>
                 <td>
-                    <button class="btn btn-sm btn-warning" @onclick="() => EditStyle(style)">Edit</button>
-                    <button class="btn btn-sm btn-danger" @onclick="() => DeleteStyle(style)">Delete</button>
+                    <button class="btn btn-sm btn-warning" @onclick="() => EditOrder(order)">Edit</button>
+                    <button class="btn btn-sm btn-danger" @onclick="() => DeleteOrder(order)">Delete</button>
                 </td>
             </tr>
         }
@@ -145,20 +162,23 @@
 </div>
 
 @code {
-    private List<BuyerStyleModel> styles = new();
+    private List<BuyerStyleOrderModel> orders = new();
     private List<MemoAdressModel> buyers = new();
-    private BuyerStyleModel editingStyle = new();
+    private List<BuyerStyleModel> styles = new();
+    private BuyerStyleOrderModel editingOrder = new();
     private bool showForm = false;
     
     private string buyerSearchText = string.Empty;
+    private string styleSearchText = string.Empty;
     private bool showBuyerDropdown = false;
+    private bool showStyleDropdown = false;
     private string _searchText = string.Empty;
     private int _pageSize = 10;
     private int _currentPage = 1;
     private bool _syncing = false;
     private string _syncMessage = string.Empty;
     private bool _syncSuccess = false;
-    private const string MODEL_NAME = "StyleMaster";
+    private const string MODEL_NAME = "OrderMaster";
     
     private IEnumerable<MemoAdressModel> filteredBuyers => 
         string.IsNullOrWhiteSpace(buyerSearchText)
@@ -167,15 +187,22 @@
                 (b.Name?.Contains(buyerSearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
                 (b.NameAbbr?.Contains(buyerSearchText, StringComparison.OrdinalIgnoreCase) ?? false));
 
-    private IEnumerable<BuyerStyleModel> FilteredData => string.IsNullOrWhiteSpace(_searchText)
-        ? styles
-        : styles.Where(s =>
-            (s.Buyer?.Name ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
-            (s.Buyer?.NameAbbr ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
-            (s.StyleName ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
-            (s.Description ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase));
+    private IEnumerable<BuyerStyleModel> filteredStyles => 
+        string.IsNullOrWhiteSpace(styleSearchText)
+            ? styles.Where(s => s.BuyerId == editingOrder.BuyerId)
+            : styles.Where(s => s.BuyerId == editingOrder.BuyerId &&
+                ((s.StyleName?.Contains(styleSearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (s.Description?.Contains(styleSearchText, StringComparison.OrdinalIgnoreCase) ?? false)));
 
-    private List<BuyerStyleModel> PagedData => FilteredData.Skip((_currentPage - 1) * _pageSize).Take(_pageSize).ToList();
+    private IEnumerable<BuyerStyleOrderModel> FilteredData => string.IsNullOrWhiteSpace(_searchText)
+        ? orders
+        : orders.Where(o =>
+            (o.Buyer?.Name ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+            (o.Buyer?.NameAbbr ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+            (o.Style?.StyleName ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+            (o.OrderNo ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase));
+
+    private List<BuyerStyleOrderModel> PagedData => FilteredData.Skip((_currentPage - 1) * _pageSize).Take(_pageSize).ToList();
     private int TotalPages => Math.Max(1, (int)Math.Ceiling(FilteredData.Count() / (double)_pageSize));
 
     private void OnPageSizeChanged() => _currentPage = 1;
@@ -190,65 +217,80 @@
 
     private async Task LoadData()
     {
-        styles = await Db.BuyerStyles.Include(s => s.Buyer).ToListAsync();
+        orders = await Db.BuyerStyleOrders.Include(o => o.Buyer).Include(o => o.Style).ToListAsync();
         buyers = await Db.MemoAddresses.Where(a => a.Type.Contains("B")).ToListAsync();
+        styles = await Db.BuyerStyles.ToListAsync();
     }
 
     private void ShowAddForm()
     {
-        editingStyle = new BuyerStyleModel();
+        editingOrder = new BuyerStyleOrderModel();
         buyerSearchText = string.Empty;
+        styleSearchText = string.Empty;
         showForm = true;
     }
 
-    private void EditStyle(BuyerStyleModel style)
+    private void EditOrder(BuyerStyleOrderModel order)
     {
-        editingStyle = new BuyerStyleModel
+        editingOrder = new BuyerStyleOrderModel
         {
-            Id = style.Id,
-            BuyerId = style.BuyerId,
-            StyleName = style.StyleName,
-            Description = style.Description
+            Id = order.Id,
+            BuyerId = order.BuyerId,
+            StyleId = order.StyleId,
+            OrderNo = order.OrderNo
         };
-        var buyer = buyers.FirstOrDefault(b => b.Id == style.BuyerId);
+        var buyer = buyers.FirstOrDefault(b => b.Id == order.BuyerId);
         buyerSearchText = buyer != null ? $"{buyer.Name} - {buyer.NameAbbr}" : string.Empty;
+        var style = styles.FirstOrDefault(s => s.Id == order.StyleId);
+        styleSearchText = style != null ? $"{style.StyleName} - {style.Description}" : string.Empty;
         showForm = true;
     }
 
     private void CancelEdit()
     {
         showForm = false;
-        editingStyle = new BuyerStyleModel();
+        editingOrder = new BuyerStyleOrderModel();
         buyerSearchText = string.Empty;
+        styleSearchText = string.Empty;
         showBuyerDropdown = false;
+        showStyleDropdown = false;
     }
 
     private void SelectBuyer(MemoAdressModel buyer)
     {
-        editingStyle.BuyerId = buyer.Id;
+        editingOrder.BuyerId = buyer.Id;
         buyerSearchText = $"{buyer.Name} - {buyer.NameAbbr}";
         showBuyerDropdown = false;
+        editingOrder.StyleId = 0;
+        styleSearchText = string.Empty;
     }
 
-    private async Task SaveStyle()
+    private void SelectStyle(BuyerStyleModel style)
     {
-        if (editingStyle.BuyerId == 0 || string.IsNullOrWhiteSpace(editingStyle.StyleName))
+        editingOrder.StyleId = style.Id;
+        styleSearchText = $"{style.StyleName} - {style.Description}";
+        showStyleDropdown = false;
+    }
+
+    private async Task SaveOrder()
+    {
+        if (editingOrder.BuyerId == 0 || editingOrder.StyleId == 0 || string.IsNullOrWhiteSpace(editingOrder.OrderNo))
         {
             return;
         }
 
-        if (editingStyle.Id == 0)
+        if (editingOrder.Id == 0)
         {
-            Db.BuyerStyles.Add(editingStyle);
+            Db.BuyerStyleOrders.Add(editingOrder);
         }
         else
         {
-            var existing = await Db.BuyerStyles.FindAsync(editingStyle.Id);
+            var existing = await Db.BuyerStyleOrders.FindAsync(editingOrder.Id);
             if (existing != null)
             {
-                existing.BuyerId = editingStyle.BuyerId;
-                existing.StyleName = editingStyle.StyleName;
-                existing.Description = editingStyle.Description;
+                existing.BuyerId = editingOrder.BuyerId;
+                existing.StyleId = editingOrder.StyleId;
+                existing.OrderNo = editingOrder.OrderNo;
             }
         }
 
@@ -257,18 +299,18 @@
         CancelEdit();
     }
 
-    private async Task DeleteStyle(BuyerStyleModel style)
+    private async Task DeleteOrder(BuyerStyleOrderModel order)
     {
-        Db.BuyerStyles.Remove(style);
+        Db.BuyerStyleOrders.Remove(order);
         await Db.SaveChangesAsync();
         await LoadData();
     }
 
     private async Task Synchronize()
     {
-        if (editingStyle.BuyerId == 0)
+        if (editingOrder.BuyerId == 0 || editingOrder.StyleId == 0)
         {
-            _syncMessage = "Please select a buyer first.";
+            _syncMessage = "Please select a buyer and style first.";
             _syncSuccess = false;
             return;
         }
@@ -280,7 +322,7 @@
 
         try
         {
-            var selectedBuyer = buyers.FirstOrDefault(b => b.Id == editingStyle.BuyerId);
+            var selectedBuyer = buyers.FirstOrDefault(b => b.Id == editingOrder.BuyerId);
             if (selectedBuyer == null || string.IsNullOrEmpty(selectedBuyer.Code))
             {
                 _syncMessage = "Selected buyer not found or has no code.";
@@ -288,16 +330,26 @@
                 return;
             }
 
+            var selectedStyle = styles.FirstOrDefault(s => s.Id == editingOrder.StyleId);
+            if (selectedStyle == null || string.IsNullOrEmpty(selectedStyle.StyleName))
+            {
+                _syncMessage = "Selected style not found.";
+                _syncSuccess = false;
+                return;
+            }
+
             var buyerCode = selectedBuyer.Code;
+            var styleName = selectedStyle.StyleName;
 
             var syncRecord = await Db.Synchronizings.FirstOrDefaultAsync(s => 
-                s.ModelName == MODEL_NAME && s.BuyerId == editingStyle.BuyerId);
+                s.ModelName == MODEL_NAME && s.BuyerId == editingOrder.BuyerId && s.StyleId == editingOrder.StyleId);
             if (syncRecord == null)
             {
                 syncRecord = new SynchronizingModel
                 {
                     ModelName = MODEL_NAME,
-                    BuyerId = editingStyle.BuyerId,
+                    BuyerId = editingOrder.BuyerId,
+                    StyleId = editingOrder.StyleId,
                     SynchDate = DateTime.Parse("2025-01-01")
                 };
                 Db.Synchronizings.Add(syncRecord);
@@ -306,72 +358,74 @@
 
             var synchDate = syncRecord.SynchDate.ToString("yyyy-MM-dd");
 
-            var existingStyleNames = styles
-                .Where(s => s.BuyerId == editingStyle.BuyerId)
-                .Select(s => s.StyleName)
+            var existingOrderNos = orders
+                .Where(o => o.BuyerId == editingOrder.BuyerId && o.StyleId == editingOrder.StyleId)
+                .Select(o => o.OrderNo)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            var newStyles = new List<BuyerStyleModel>();
+            var newOrders = new List<BuyerStyleOrderModel>();
 
             var connectionString = "DSN=Stage7;UID=sql;PWD=sql;";
 
             using var conn = new OdbcConnection(connectionString);
             await conn.OpenAsync();
 
-            var query = @"SELECT buyer_code, ord_style_no, ord_garment_name 
+            var query = @"SELECT buyer_code, ord_style_no, ord_ref_no 
                           FROM dba.orders 
                           WHERE order_date >= ?
                             AND ord_type = 'g' 
                             AND buyer_code = ?
-                          GROUP BY buyer_code, ord_style_no, ord_garment_name";
+                            AND ord_style_no = ?
+                          GROUP BY buyer_code, ord_style_no, ord_ref_no";
 
             using var cmd = new OdbcCommand(query, conn);
             cmd.Parameters.AddWithValue("@synchDate", synchDate);
             cmd.Parameters.AddWithValue("@buyer_code", buyerCode);
+            cmd.Parameters.AddWithValue("@ord_style_no", styleName);
             using var reader = await cmd.ExecuteReaderAsync();
 
             while (await reader.ReadAsync())
             {
-                var styleName = reader.IsDBNull(1) ? "" : reader.GetString(1).Trim();
+                var orderNo = reader.IsDBNull(2) ? "" : reader.GetString(2).Trim();
                 
-                if (string.IsNullOrEmpty(styleName))
+                if (string.IsNullOrEmpty(orderNo))
                     continue;
 
-                if (existingStyleNames.Contains(styleName))
+                if (existingOrderNos.Contains(orderNo))
                     continue;
 
-                var newStyle = new BuyerStyleModel
+                var newOrder = new BuyerStyleOrderModel
                 {
-                    BuyerId = editingStyle.BuyerId,
-                    StyleName = styleName,
-                    Description = reader.IsDBNull(2) ? "" : reader.GetString(2).Trim()
+                    BuyerId = editingOrder.BuyerId,
+                    StyleId = editingOrder.StyleId,
+                    OrderNo = orderNo
                 };
 
-                newStyles.Add(newStyle);
-                existingStyleNames.Add(styleName);
+                newOrders.Add(newOrder);
+                existingOrderNos.Add(orderNo);
             }
 
             conn.Close();
 
-            if (newStyles.Count > 0)
+            if (newOrders.Count > 0)
             {
-                Db.BuyerStyles.AddRange(newStyles);
+                Db.BuyerStyleOrders.AddRange(newOrders);
                 syncRecord.SynchDate = DateTime.Today;
                 await Db.SaveChangesAsync();
                 await LoadData();
 
                 _syncSuccess = true;
-                _syncMessage = $"Synchronization completed. Added {newStyles.Count} new style(s) for buyer {selectedBuyer.Name}.";
+                _syncMessage = $"Synchronization completed. Added {newOrders.Count} new order(s) for {selectedBuyer.Name} - {selectedStyle.StyleName}.";
             }
             else
             {
                 _syncSuccess = true;
-                _syncMessage = $"Synchronization completed. No new styles to add for buyer {selectedBuyer.Name}.";
+                _syncMessage = $"Synchronization completed. No new orders to add for {selectedBuyer.Name} - {selectedStyle.StyleName}.";
             }
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to sync styles from Sybase");
+            Logger.LogError(ex, "Failed to sync orders from Sybase");
             _syncSuccess = false;
             _syncMessage = $"Synchronization failed: {ex.Message}";
         }

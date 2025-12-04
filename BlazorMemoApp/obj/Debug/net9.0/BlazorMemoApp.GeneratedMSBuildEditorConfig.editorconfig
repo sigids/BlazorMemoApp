@@ -220,6 +220,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xNYXN0ZXJcQWRkcmVzc01hc3Rlci5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/APPS-DEV/ASPNETCORE/BlazorMemoApp/BlazorMemoApp/Components/Pages/Master/OrderMaster.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xNYXN0ZXJcT3JkZXJNYXN0ZXIucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/APPS-DEV/ASPNETCORE/BlazorMemoApp/BlazorMemoApp/Components/Pages/Master/StyleMaster.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xNYXN0ZXJcU3R5bGVNYXN0ZXIucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 

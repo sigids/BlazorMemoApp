@@ -396,7 +396,7 @@ C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\refint\Blazo
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\BlazorMemoApp.pdb
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\BlazorMemoApp.genruntimeconfig.cache
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\ref\BlazorMemoApp.dll
-C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\staticwebassets.upToDateCheck.txt
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\System.Data.Odbc.dll
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\runtimes\unix\lib\net9.0\System.Data.Odbc.dll
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\bin\Debug\net9.0\runtimes\win\lib\net9.0\System.Data.Odbc.dll
+C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\staticwebassets.upToDateCheck.txt

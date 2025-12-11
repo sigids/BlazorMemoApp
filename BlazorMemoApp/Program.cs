@@ -53,7 +53,10 @@ builder.Services.AddHttpClient<PoApiClient>(client =>
 });
 
 // HttpClient for Exchange Rate API
-builder.Services.AddScoped(sp => new HttpClient());
+builder.Services.AddHttpClient("ExchangeRateApi", client =>
+{
+    client.BaseAddress = new Uri("https://openexchangerates.org/");
+});
 
 var app = builder.Build();
 //Register Syncfusion license https://help.syncfusion.com/common/essential-studio/licensing/how-to-generate

@@ -22,6 +22,7 @@ public class MemoHeaderModel
 
     public int? GmtQty { get; set; }
     public decimal? GmtFobValue { get; set; }
+    public decimal? GmtFobRate { get; set; }
 
     // Approval fields
     [Display(Name = "Approval Status")]
@@ -83,6 +84,7 @@ public class MemoDetailModel
     public int StockNonUsableQty => MCQQty - PurchaseQty - StockUsableQty;
     public decimal StockNonUsableAmount => Price * StockNonUsableQty;
     public decimal TotalExtraPaid => Diff + SurchargePaid;
+    //public decimal SummaryExtraPaid => SurchargePaid + StockUsableAmount + StockNonUsableAmount;
 
 }
 

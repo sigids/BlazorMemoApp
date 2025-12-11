@@ -8,7 +8,7 @@
 @inject NavigationManager Nav
 @inject BlazorMemoApp.Data.ApplicationDbContext Db
 @inject AuthenticationStateProvider AuthenticationStateProvider
-@inject HttpClient Http
+@inject IHttpClientFactory HttpClientFactory
 
 
 <h1>Create Memo</h1>
@@ -80,8 +80,8 @@
             <InputNumber class="form-control" @bind-Value="header.GmtQty"/>
         </div>
         <div class="col-sm-2">
-            <label class="form-label">FOB Value</label>
-            <InputNumber class="form-control" @bind-Value="header.GmtFobValue" />
+            <label class="form-label">FOB Rate</label>
+            <InputNumber class="form-control" @bind-Value="header.GmtFobRate" />
         </div>
         <div class="col-sm-2 position-relative">
             <label class="form-label">Supplier</label>
@@ -123,8 +123,19 @@
             <label class="form-label">PO Selected</label>
             <input class="form-control" value="@header.PONumber" disabled/>
         </div>
-        <div class="col-sm-2 d-flex align-items-end">
-            <button type="button" class="btn btn-outline-info" @onclick="CalculateUsd">Calculate USD</button>
+        <div class="col-sm-4 d-flex align-items-end flex-column">
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-info" @onclick="CalculateUsd" disabled="@_calculating">
+                    @(_calculating ? "Calculating..." : "Calculate USD")
+                </button>
+            </div>
+            @if (!string.IsNullOrEmpty(_calcMessage))
+            {
+                <div class="alert @(_calcSuccess ? "alert-success" : "alert-danger") alert-dismissible py-1 px-2 mt-1 mb-0" style="font-size:0.85rem;">
+                    @_calcMessage
+                    <button type="button" class="btn-close btn-sm" @onclick="() => _calcMessage = string.Empty"></button>
+                </div>
+            }
         </div>
     </div>
 </EditForm>
@@ -177,6 +188,10 @@
     
     private string styleSearchText = string.Empty;
     private bool showStyleDropdown = false;
+    
+    private bool _calculating = false;
+    private string _calcMessage = string.Empty;
+    private bool _calcSuccess = false;
     
     private IEnumerable<BuyerStyleModel> filteredStylesDropdown => 
         header.BuyerId == null 
@@ -348,20 +363,40 @@ private async Task Save()
 
 private async Task CalculateUsd()
 {
-    if (header.MemoDate == default || header.Details == null || !header.Details.Any())
-        return;
+    _calculating = true;
+    _calcMessage = string.Empty;
+    _calcSuccess = false;
+    StateHasChanged();
 
     try
     {
+        if (header.MemoDate == default)
+        {
+            _calcMessage = "Please set Memo Date first.";
+            _calcSuccess = false;
+            return;
+        }
+
+        if (header.Details == null || !header.Details.Any())
+        {
+            _calcMessage = "No details to convert.";
+            _calcSuccess = false;
+            return;
+        }
+
         var memoDateOnly = header.MemoDate.Date;
         var currencies = header.Details
-            .Select(d => d.Currency)
+            .Select(d => d.Currency?.Trim().ToUpper())
             .Where(c => !string.IsNullOrWhiteSpace(c) && !c.Equals("USD", StringComparison.OrdinalIgnoreCase))
             .Distinct()
             .ToList();
 
         if (!currencies.Any())
+        {
+            _calcMessage = "All currencies are already USD.";
+            _calcSuccess = true;
             return;
+        }
 
         var existingRates = await Db.PoExchangeRates
             .Where(r => currencies.Contains(r.PoCurrency) 
@@ -369,24 +404,53 @@ private async Task CalculateUsd()
                 && r.ExcDate.Date == memoDateOnly)
             .ToListAsync();
 
-        var currenciesFromDb = existingRates.Select(r => r.PoCurrency).ToHashSet();
+        var currenciesFromDb = existingRates.Select(r => r.PoCurrency).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var currenciesToFetch = currencies.Where(c => !currenciesFromDb.Contains(c)).ToList();
 
         ExchangeRateResponse? response = null;
         if (currenciesToFetch.Any())
         {
-            var dateStr = header.MemoDate.ToString("yyyy-MM-dd");
+            // var dateStr = header.MemoDate.ToString("yyyy-MM-dd");
+
+                DateTime memoDate = header.MemoDate.Date;
+                DateTime now = DateTime.Now;
+                DateTime combined = memoDate.AddHours(now.Hour)
+                            .AddMinutes(now.Minute)
+                            .AddSeconds(now.Second);
+                DateTime utcDate = combined.ToUniversalTime();
+                var dateStr = utcDate.ToString("yyyy-MM-dd");
+
             var appId = "e483ad469b1142d6aaccb2f472658efd";
-            var apiUrl = $"https://openexchangerates.org/api/historical/{dateStr}.json?app_id={appId}";
-            response = await Http.GetFromJsonAsync<ExchangeRateResponse>(apiUrl);
+            var apiUrl = $"api/historical/{dateStr}.json?app_id={appId}";
+            
+            try
+            {
+                var httpClient = HttpClientFactory.CreateClient("ExchangeRateApi");
+                response = await httpClient.GetFromJsonAsync<ExchangeRateResponse>(apiUrl);
+            }
+            catch (Exception apiEx)
+            {
+                _calcMessage = $"Failed to fetch exchange rates from API: {apiEx.Message} Url {apiUrl}";
+                _calcSuccess = false;
+                return;
+            }
+
+            if (response == null || response.rates == null || !response.rates.Any())
+            {
+                _calcMessage = "No exchange rates returned from API.";
+                _calcSuccess = false;
+                return;
+            }
         }
 
         var exchangeRatesToSave = new List<PoExchangeRateModel>();
+        var convertedCount = 0;
+        var notFoundCurrencies = new List<string>();
 
         foreach (var currency in currencies)
         {
             decimal rate;
-            var existingRate = existingRates.FirstOrDefault(r => r.PoCurrency == currency);
+            var existingRate = existingRates.FirstOrDefault(r => r.PoCurrency.Equals(currency, StringComparison.OrdinalIgnoreCase));
 
             if (existingRate != null)
             {
@@ -405,14 +469,18 @@ private async Task CalculateUsd()
             }
             else
             {
+                notFoundCurrencies.Add(currency);
                 continue;
             }
 
             var usdRate = 1m / rate;
-            foreach (var detail in header.Details.Where(d => d.Currency.Equals(currency, StringComparison.OrdinalIgnoreCase)))
+            foreach (var detail in header.Details.Where(d => 
+                !string.IsNullOrWhiteSpace(d.Currency) && 
+                d.Currency.Trim().Equals(currency, StringComparison.OrdinalIgnoreCase)))
             {
-                detail.Price = detail.Price * usdRate;
+                detail.Price = Math.Round(detail.Price * usdRate, 6);
                 detail.Currency = "USD";
+                convertedCount++;
             }
         }
 
@@ -422,11 +490,34 @@ private async Task CalculateUsd()
             await Db.SaveChangesAsync();
         }
 
+        if (notFoundCurrencies.Any())
+        {
+            _calcMessage = $"Converted {convertedCount} items. Rate not found for: {string.Join(", ", notFoundCurrencies)}";
+            _calcSuccess = convertedCount > 0;
+        }
+        else if (convertedCount > 0)
+        {
+            _calcMessage = $"Successfully converted {convertedCount} item(s) to USD.";
+            _calcSuccess = true;
+        }
+        else
+        {
+            _calcMessage = "No items were converted.";
+            _calcSuccess = false;
+        }
+
         StateHasChanged();
     }
     catch (Exception ex)
     {
+        _calcMessage = $"Error: {ex.Message}";
+        _calcSuccess = false;
         Console.Error.WriteLine($"Error calculating USD: {ex.Message}");
+    }
+    finally
+    {
+        _calculating = false;
+        StateHasChanged();
     }
 }
 

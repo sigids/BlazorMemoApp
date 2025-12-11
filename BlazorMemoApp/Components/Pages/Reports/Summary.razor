@@ -71,6 +71,7 @@ else
                     <th class="text-end">Total Extra Paid</th>
                     <th class="text-end">Amount Costing</th>
                     <th class="text-end">Amount DN</th>
+                    <th class="text-end">Saving</th>
                     <th class="text-end">Amount Commitment</th>
                     <th class="text-end">Percent Of Fob Value</th>
                 </tr>
@@ -94,6 +95,7 @@ else
                         <td class="text-end">@row.TotalExtraPaid.ToString("N2")</td>
                         <td class="text-end">@row.AmountCosting.ToString("N2")</td>
                         <td class="text-end">@row.AmountDN.ToString("N2")</td>
+                        <td class="text-end">@row.Saving.ToString("N2")</td>
                         <td class="text-end">@row.AmountCommitment.ToString("N2")</td>
                         <td class="text-end">@string.Format("{0:P2}",@row.PercentOfFobValue)</td>
                     </tr>
@@ -110,6 +112,7 @@ else
                     <td class="text-end">@_data.Sum(x => x.TotalExtraPaid).ToString("N2")</td>
                     <td class="text-end">@_data.Sum(x => x.AmountCosting).ToString("N2")</td>
                     <td class="text-end">@_data.Sum(x => x.AmountDN).ToString("N2")</td>
+                    <td class="text-end">@_data.Sum(x => x.Saving).ToString("N2")</td>
                     <td class="text-end">@_data.Sum(x => x.AmountCommitment).ToString("N2")</td>
                     <td></td>
                 </tr>
@@ -122,17 +125,17 @@ else
         <nav>
             <ul class="pagination pagination-sm mb-0">
                 <li class="page-item @(_currentPage == 1 ? "disabled" : "")">
-                    <button type="button" class="page-link" @onclick="PrevPage" disabled="@(_currentPage == 1)">Prev</button>
+                    <a class="page-link" href="#" @onclick="PrevPage" @onclick:preventDefault>Prev</a>
                 </li>
                 @for (var p = 1; p <= TotalPages; p++)
                 {
                     var page = p;
                     <li class="page-item @(p == _currentPage ? "active" : "")">
-                        <button type="button" class="page-link" @onclick="() => GotoPage(page)">@p</button>
+                        <a class="page-link" href="#" @onclick="() => GotoPage(page)" @onclick:preventDefault>@p</a>
                     </li>
                 }
                 <li class="page-item @(_currentPage == TotalPages ? "disabled" : "")">
-                    <button type="button" class="page-link" @onclick="NextPage" disabled="@(_currentPage == TotalPages)">Next</button>
+                    <a class="page-link" href="#" @onclick="NextPage" @onclick:preventDefault>Next</a>
                 </li>
             </ul>
         </nav>
@@ -193,20 +196,21 @@ else
             StyleId = m.StyleId,
             StyleName = styles.FirstOrDefault(s => s.Id == m.StyleId)?.StyleName ?? "",
             GmtQty = m.GmtQty,
-            GmtFobValue = m.GmtFobValue,
+            GmtFobRate = m.GmtFobRate,
             SurchargePaid = d.SurchargePaid,
             StockUsableQty = d.StockUsableQty,
             StockNonUsableQty = d.MCQQty - (d.BOMQty - d.AvailStockQty) - d.StockUsableQty,
             TotalExtraPaid = (d.Price * d.MCQQty) - (d.Price * (d.BOMQty - d.AvailStockQty)) + d.SurchargePaid,
             AmountCosting = d.ModeOfCollect == "C" ? d.TotalExtraCollected : 0m,
             AmountDN = d.ModeOfCollect == "D" ? d.TotalExtraCollected : 0m,
+            Saving = (d.ModeOfCollect == "C" ? d.TotalExtraCollected : 0m) + (d.ModeOfCollect == "D" ? d.TotalExtraCollected : 0m) - ((d.Price * d.MCQQty) - (d.Price * (d.BOMQty - d.AvailStockQty)) + d.SurchargePaid),
             AmountCommitment = d.ModeOfCollect == "F" ? d.TotalExtraCollected : 0m
         }));
 
         //var gmtFobValue = m.GmtFobValue;
 
         _data = detailRows
-             .GroupBy(x => new { x.MemoNo, x.MemoDate, x.BuyerId, x.BuyerName, x.StyleId, x.StyleName, x.GmtQty, x.GmtFobValue })
+             .GroupBy(x => new { x.MemoNo, x.MemoDate, x.BuyerId, x.BuyerName, x.StyleId, x.StyleName, x.GmtQty, x.GmtFobRate })
              .Select(g => new ReportRow
              {
                  MemoNo = g.Key.MemoNo,
@@ -216,16 +220,17 @@ else
                  StyleId = g.Key.StyleId,
                  StyleName = g.Key.StyleName,
                  GmtQty = g.Key.GmtQty,
-                 GmtFobValue = g.Key.GmtFobValue,
+                 GmtFobValue = (g.Key.GmtQty * g.Key.GmtFobRate),
                  SurchargePaid = g.Sum(i => i.SurchargePaid),
                  StockUsableQty = g.Sum(i => i.StockUsableQty),
                  StockNonUsableQty = g.Sum(i => i.StockNonUsableQty),
                  TotalExtraPaid = g.Sum(i => i.TotalExtraPaid),
                  AmountCosting = g.Sum(i => i.AmountCosting),
                  AmountDN = g.Sum(i => i.AmountDN),
+                 Saving = g.Sum(i => i.Saving),
                  AmountCommitment = g.Sum(i => i.AmountCommitment),
-                 PercentOfFobValue = (g.Key.GmtFobValue.HasValue && g.Key.GmtFobValue.Value != 0m)
-                     ? g.Sum(i => i.TotalExtraPaid) / g.Key.GmtFobValue.Value
+                 PercentOfFobValue = (g.Key.GmtQty.HasValue && g.Key.GmtFobRate.HasValue && g.Key.GmtFobRate.Value != 0m && g.Key.GmtQty.Value != 0m)
+                     ? g.Sum(i => i.TotalExtraPaid) / (g.Key.GmtQty * g.Key.GmtFobRate)
                      : 0m
              })
              .ToList();
@@ -306,6 +311,7 @@ else
         public decimal TotalExtraPaid { get; set; }
         public decimal AmountCosting { get; set; }
         public decimal AmountDN { get; set; }
+        public decimal Saving { get; set; }
         public decimal AmountCommitment { get; set; }
         public decimal? PercentOfFobValue { get; set; }
     }

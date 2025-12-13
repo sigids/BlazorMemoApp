@@ -59,6 +59,7 @@ else
                     <th>Stock Non Usable Amount</th>
                     <th>Total Extra Collected</th>
                     <th>Mode Of Collect</th>
+                    <th>Remark</th>
                 </tr>
             </thead>
             <tbody>
@@ -130,7 +131,10 @@ else
                             <option value="F">Future Commitment</option>
                         </select>
                     </td>
-                </tr>
+                    <td>
+                            <input type="text" class="form-control form-control-sm" @bind="it.Remark" />
+                    </td>
+                 </tr>
 
                     @* NEW: Inline sub-grid for SPI and BOM Details *@
                     @if (_expandedRows.Contains(it))

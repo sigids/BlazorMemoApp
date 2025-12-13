@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using BlazorMemoApp.Data;
 
 namespace BlazorMemoApp.Models;
@@ -87,6 +88,10 @@ public class MemoDetailModel
     public decimal TotalExtraPaid => Diff + SurchargePaid;
     //public decimal SummaryExtraPaid => SurchargePaid + StockUsableAmount + StockNonUsableAmount;
 
+    [Display(Name = "Remark")]
+    [DataType(DataType.MultilineText)]
+    [Column(TypeName = "nvarchar(max)")]
+    public string? Remark { get; set; } = string.Empty;
 }
 
 public class SpiBomDetailModel

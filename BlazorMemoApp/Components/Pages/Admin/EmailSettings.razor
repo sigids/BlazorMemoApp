@@ -1,0 +1,146 @@
+@page "/admin/email-settings"
+@rendermode InteractiveServer
+@using BlazorMemoApp.Models
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Authorization
+@inject BlazorMemoApp.Data.ApplicationDbContext Db
+@inject NavigationManager Nav
+@attribute [Authorize(Roles = "Admin")]
+
+<h1>Email Settings</h1>
+
+<div class="card">
+    <div class="card-body">
+        <EditForm Model="settings" OnValidSubmit="Save">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">SMTP Host</label>
+                    <InputText class="form-control" @bind-Value="settings.SmtpHost" placeholder="smtp.gmail.com" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">SMTP Port</label>
+                    <InputNumber class="form-control" @bind-Value="settings.SmtpPort" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Enable SSL</label>
+                    <div class="form-check mt-2">
+                        <InputCheckbox class="form-check-input" @bind-Value="settings.EnableSsl" />
+                        <label class="form-check-label">Use SSL/TLS</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mt-2">
+                <div class="col-md-6">
+                    <label class="form-label">Username (Email)</label>
+                    <InputText class="form-control" @bind-Value="settings.Username" placeholder="your-email@gmail.com" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Password (App Password)</label>
+                    <InputText type="password" class="form-control" @bind-Value="settings.Password" placeholder="App Password" />
+                </div>
+            </div>
+
+            <div class="row g-3 mt-2">
+                <div class="col-md-6">
+                    <label class="form-label">Sender Email</label>
+                    <InputText class="form-control" @bind-Value="settings.SenderEmail" placeholder="noreply@yourcompany.com" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Sender Name</label>
+                    <InputText class="form-control" @bind-Value="settings.SenderName" placeholder="Memo System" />
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary">Save Settings</button>
+                <button type="button" class="btn btn-outline-secondary ms-2" @onclick="TestConnection">Test Connection</button>
+            </div>
+        </EditForm>
+
+        @if (!string.IsNullOrEmpty(_message))
+        {
+            <div class="alert @(_success ? "alert-success" : "alert-danger") alert-dismissible mt-3">
+                @_message
+                <button type="button" class="btn-close" @onclick="() => _message = string.Empty"></button>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private EmailSettingsModel settings = new();
+    private string _message = string.Empty;
+    private bool _success = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var existing = await Db.EmailSettings.FirstOrDefaultAsync();
+        if (existing != null)
+        {
+            settings = existing;
+        }
+    }
+
+    private async Task Save()
+    {
+        _message = string.Empty;
+        try
+        {
+            settings.UpdatedAt = DateTime.UtcNow;
+
+            if (settings.Id == 0)
+            {
+                Db.EmailSettings.Add(settings);
+            }
+            else
+            {
+                Db.EmailSettings.Update(settings);
+            }
+
+            await Db.SaveChangesAsync();
+            _message = "Email settings saved successfully.";
+            _success = true;
+        }
+        catch (Exception ex)
+        {
+            _message = $"Error saving settings: {ex.Message}";
+            _success = false;
+        }
+    }
+
+    private async Task TestConnection()
+    {
+        _message = string.Empty;
+        try
+        {
+            using var client = new System.Net.Mail.SmtpClient(settings.SmtpHost, settings.SmtpPort)
+            {
+                Credentials = new System.Net.NetworkCredential(settings.Username, settings.Password),
+                EnableSsl = settings.EnableSsl,
+                Timeout = 10000
+            };
+
+            var message = new System.Net.Mail.MailMessage
+            {
+                From = new System.Net.Mail.MailAddress(settings.SenderEmail, settings.SenderName),
+                Subject = "Test Email - Memo System",
+                Body = "This is a test email from the Memo System to verify email settings.",
+                IsBodyHtml = false
+            };
+            message.To.Add(settings.Username);
+
+            await client.SendMailAsync(message);
+            _message = "Test email sent successfully! Check your inbox.";
+            _success = true;
+        }
+        catch (Exception ex)
+        {
+            _message = $"Test failed: {ex.Message}";
+            _success = false;
+        }
+    }
+}

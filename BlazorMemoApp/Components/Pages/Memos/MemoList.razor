@@ -13,6 +13,7 @@
 @using System.Globalization
 @using System.Security.Claims
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject BlazorMemoApp.Services.EmailService EmailService
 
 <h1>Memo List</h1>
 
@@ -201,6 +202,13 @@ else
         try
         {
             await Db.SaveChangesAsync();
+            
+            // Send email notification to creator
+            if (!string.IsNullOrEmpty(memo.CreatedByEmail))
+            {
+                await EmailService.SendMemoApprovalNotificationAsync(memo, memo.CreatedByEmail);
+            }
+            
             StateHasChanged();
         }
         catch (Exception ex)

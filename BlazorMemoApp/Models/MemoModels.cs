@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using BlazorMemoApp.Data;
 
 namespace BlazorMemoApp.Models;
@@ -24,6 +25,13 @@ public class MemoHeaderModel
     public decimal? GmtFobValue { get; set; }
     public decimal? GmtFobRate { get; set; }
 
+    // Creator tracking
+    public string? CreatedByUserId { get; set; }
+    public ApplicationUser? CreatedByUser { get; set; }
+    
+    [Display(Name = "Creator Email")]
+    public string? CreatedByEmail { get; set; }
+
     // Approval fields
     [Display(Name = "Approval Status")]
     public string ApproveStatus { get; set; } = "Pending"; // Pending | Approved | Rejected (future)
@@ -35,6 +43,7 @@ public class MemoHeaderModel
     public DateTime? ApproveDate { get; set; }
 
     public List<MemoDetailModel> Details { get; set; } = new();
+    public List<MemoAttachmentModel> Attachments { get; set; } = new();
 }
 
 public class MemoDetailModel
@@ -86,6 +95,10 @@ public class MemoDetailModel
     public decimal TotalExtraPaid => Diff + SurchargePaid;
     //public decimal SummaryExtraPaid => SurchargePaid + StockUsableAmount + StockNonUsableAmount;
 
+    [Display(Name = "Remark")]
+    [DataType(DataType.MultilineText)]
+    [Column(TypeName = "nvarchar(max)")]
+    public string? Remark { get; set; } = string.Empty;
 }
 
 public class SpiBomDetailModel
@@ -134,4 +147,44 @@ public class SynchronizingModel
     public int BuyerId { get; set; }
     public int? StyleId { get; set; }
     public DateTime SynchDate { get; set; } = DateTime.Parse("2025-01-01");
+}
+
+public class MemoAttachmentModel
+{
+    public int Id { get; set; }
+    public int MemoHeaderId { get; set; }
+    public MemoHeaderModel? MemoHeader { get; set; }
+    public string FileName { get; set; } = string.Empty;
+    public string StoredFileName { get; set; } = string.Empty;
+    public string ContentType { get; set; } = string.Empty;
+    public long FileSize { get; set; }
+    public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
+}
+
+public class EmailSettingsModel
+{
+    public int Id { get; set; }
+    
+    [Display(Name = "SMTP Host")]
+    public string SmtpHost { get; set; } = string.Empty;
+    
+    [Display(Name = "SMTP Port")]
+    public int SmtpPort { get; set; } = 587;
+    
+    [Display(Name = "Username")]
+    public string Username { get; set; } = string.Empty;
+    
+    [Display(Name = "Password")]
+    public string Password { get; set; } = string.Empty;
+    
+    [Display(Name = "Sender Email")]
+    public string SenderEmail { get; set; } = string.Empty;
+    
+    [Display(Name = "Sender Name")]
+    public string SenderName { get; set; } = string.Empty;
+    
+    [Display(Name = "Enable SSL")]
+    public bool EnableSsl { get; set; } = true;
+    
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }

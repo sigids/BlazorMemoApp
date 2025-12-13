@@ -1,3 +1,0 @@
-C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\wwwroot\uploads\memos\9addaa65-f915-4c3c-8c26-75f5cdd1f78f_Y2_19_OTR_D_T91.pdf
-C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\wwwroot\uploads\memos\aef42791-831d-476a-9f25-99f76faf38b8_Y2_19_OTR_D_F91.pdf
-C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\wwwroot\uploads\memos\f25e05de-a39a-4193-804d-440b9bfb4756_Y2_19_OTR_D_F91.pdf

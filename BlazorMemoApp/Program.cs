@@ -40,6 +40,7 @@ builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.Requ
     .AddDefaultTokenProviders();
 
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+builder.Services.AddScoped<BlazorMemoApp.Services.EmailService>();
 
 // External API HttpClient for PO endpoints
 var poBaseUrl = builder.Configuration["ExternalApis:PoBaseUrl"];

@@ -14,6 +14,8 @@ namespace BlazorMemoApp.Data
         public DbSet<BuyerStyleOrderModel> BuyerStyleOrders { get; set; }
         public DbSet<SynchronizingModel> Synchronizings { get; set; }
         public DbSet<PoExchangeRateModel> PoExchangeRates { get; set; }
+        public DbSet<MemoAttachmentModel> MemoAttachments { get; set; }
+        public DbSet<EmailSettingsModel> EmailSettings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -36,6 +38,12 @@ namespace BlazorMemoApp.Data
                 .WithMany()
                 .HasForeignKey(o => o.StyleId)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<MemoAttachmentModel>()
+                .HasOne(a => a.MemoHeader)
+                .WithMany(h => h.Attachments)
+                .HasForeignKey(a => a.MemoHeaderId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

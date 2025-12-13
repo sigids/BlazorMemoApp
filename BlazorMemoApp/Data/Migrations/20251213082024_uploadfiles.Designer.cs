@@ -4,6 +4,7 @@ using BlazorMemoApp.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BlazorMemoApp.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251213082024_uploadfiles")]
+    partial class uploadfiles
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -139,48 +142,6 @@ namespace BlazorMemoApp.Migrations
                     b.ToTable("BuyerStyleOrders");
                 });
 
-            modelBuilder.Entity("BlazorMemoApp.Models.EmailSettingsModel", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("EnableSsl")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Password")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SenderEmail")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SenderName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SmtpHost")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("SmtpPort")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Username")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("EmailSettings");
-                });
-
             modelBuilder.Entity("BlazorMemoApp.Models.MemoAdressModel", b =>
                 {
                     b.Property<int>("Id")
@@ -293,9 +254,6 @@ namespace BlazorMemoApp.Migrations
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("Remark")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Size")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -344,12 +302,6 @@ namespace BlazorMemoApp.Migrations
                     b.Property<int?>("BuyerId")
                         .HasColumnType("int");
 
-                    b.Property<string>("CreatedByEmail")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("CreatedByUserId")
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<decimal?>("GmtFobRate")
                         .HasColumnType("decimal(18,2)");
 
@@ -378,8 +330,6 @@ namespace BlazorMemoApp.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ApproveUserId");
-
-                    b.HasIndex("CreatedByUserId");
 
                     b.ToTable("Memos");
                 });
@@ -653,13 +603,7 @@ namespace BlazorMemoApp.Migrations
                         .WithMany()
                         .HasForeignKey("ApproveUserId");
 
-                    b.HasOne("BlazorMemoApp.Data.ApplicationUser", "CreatedByUser")
-                        .WithMany()
-                        .HasForeignKey("CreatedByUserId");
-
                     b.Navigation("ApproveUser");
-
-                    b.Navigation("CreatedByUser");
                 });
 
             modelBuilder.Entity("BlazorMemoApp.Models.SpiBomDetailModel", b =>

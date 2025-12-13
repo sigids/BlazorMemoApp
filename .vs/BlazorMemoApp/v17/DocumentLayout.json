@@ -3,12 +3,36 @@
   "WorkspaceRootPath": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|c:\\apps-dev\\aspnetcore\\blazormemoapp\\blazormemoapp\\components\\pages\\reports\\summary.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|solutionrelative:blazormemoapp\\components\\pages\\reports\\summary.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|c:\\apps-dev\\aspnetcore\\blazormemoapp\\blazormemoapp\\components\\pages\\master\\stylemaster.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|solutionrelative:blazormemoapp\\components\\pages\\master\\stylemaster.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|c:\\apps-dev\\aspnetcore\\blazormemoapp\\blazormemoapp\\components\\pages\\memos\\memoview.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|solutionrelative:blazormemoapp\\components\\pages\\memos\\memoview.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|c:\\apps-dev\\aspnetcore\\blazormemoapp\\blazormemoapp\\components\\pages\\master\\addressmaster.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|solutionrelative:blazormemoapp\\components\\pages\\master\\addressmaster.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|c:\\apps-dev\\aspnetcore\\blazormemoapp\\blazormemoapp\\components\\pages\\admin\\testconnection.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|solutionrelative:blazormemoapp\\components\\pages\\admin\\testconnection.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|c:\\apps-dev\\aspnetcore\\blazormemoapp\\blazormemoapp\\components\\pages\\master\\ordermaster.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|solutionrelative:blazormemoapp\\components\\pages\\master\\ordermaster.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|c:\\apps-dev\\aspnetcore\\blazormemoapp\\blazormemoapp\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|solutionrelative:blazormemoapp\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|c:\\apps-dev\\aspnetcore\\blazormemoapp\\blazormemoapp\\components\\layout\\mainlayout.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|solutionrelative:blazormemoapp\\components\\layout\\mainlayout.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|c:\\apps-dev\\aspnetcore\\blazormemoapp\\blazormemoapp\\components\\layout\\navmenu.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|solutionrelative:blazormemoapp\\components\\layout\\navmenu.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|c:\\apps-dev\\aspnetcore\\blazormemoapp\\blazormemoapp\\components\\layout\\navmenu.razor.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}",
+      "RelativeMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|solutionrelative:blazormemoapp\\components\\layout\\navmenu.razor.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|c:\\apps-dev\\aspnetcore\\blazormemoapp\\blazormemoapp\\components\\pages\\memos\\memoeditor.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
@@ -17,6 +41,14 @@
     {
       "AbsoluteMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|c:\\apps-dev\\aspnetcore\\blazormemoapp\\blazormemoapp\\components\\memos\\memodetailgrid.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
       "RelativeMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|solutionrelative:blazormemoapp\\components\\memos\\memodetailgrid.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|c:\\apps-dev\\aspnetcore\\blazormemoapp\\blazormemoapp\\components\\pages\\memos\\memoview.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|solutionrelative:blazormemoapp\\components\\pages\\memos\\memoview.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|c:\\apps-dev\\aspnetcore\\blazormemoapp\\blazormemoapp\\components\\pages\\reports\\summary.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|solutionrelative:blazormemoapp\\components\\pages\\reports\\summary.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|c:\\apps-dev\\aspnetcore\\blazormemoapp\\blazormemoapp\\models\\memomodels.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -31,10 +63,6 @@
       "RelativeMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|solutionrelative:blazormemoapp\\components\\pages\\memos\\memolist.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|c:\\apps-dev\\aspnetcore\\blazormemoapp\\blazormemoapp\\components\\layout\\navmenu.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|solutionrelative:blazormemoapp\\components\\layout\\navmenu.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|c:\\apps-dev\\aspnetcore\\blazormemoapp\\blazormemoapp\\components\\pages\\home.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
       "RelativeMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|solutionrelative:blazormemoapp\\components\\pages\\home.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
@@ -47,36 +75,12 @@
       "RelativeMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|solutionrelative:blazormemoapp\\services\\poapiclient.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|c:\\apps-dev\\aspnetcore\\blazormemoapp\\blazormemoapp\\components\\pages\\admin\\testconnection.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|solutionrelative:blazormemoapp\\components\\pages\\admin\\testconnection.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|c:\\apps-dev\\aspnetcore\\blazormemoapp\\blazormemoapp\\components\\pages\\master\\addressmaster.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|solutionrelative:blazormemoapp\\components\\pages\\master\\addressmaster.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|c:\\apps-dev\\aspnetcore\\blazormemoapp\\blazormemoapp\\components\\pages\\master\\stylemaster.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|solutionrelative:blazormemoapp\\components\\pages\\master\\stylemaster.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|c:\\apps-dev\\aspnetcore\\blazormemoapp\\blazormemoapp\\components\\pages\\master\\ordermaster.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|solutionrelative:blazormemoapp\\components\\pages\\master\\ordermaster.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|c:\\apps-dev\\aspnetcore\\blazormemoapp\\blazormemoapp\\components\\layout\\mainlayout.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|solutionrelative:blazormemoapp\\components\\layout\\mainlayout.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|c:\\apps-dev\\aspnetcore\\blazormemoapp\\blazormemoapp\\data\\applicationdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|solutionrelative:blazormemoapp\\data\\applicationdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|c:\\apps-dev\\aspnetcore\\blazormemoapp\\blazormemoapp\\components\\app.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
       "RelativeMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|solutionrelative:blazormemoapp\\components\\app.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|c:\\apps-dev\\aspnetcore\\blazormemoapp\\blazormemoapp\\components\\layout\\navmenu.razor.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}",
-      "RelativeMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|solutionrelative:blazormemoapp\\components\\layout\\navmenu.razor.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{02081DC6-AF68-4BE7-82EE-7BDF32FF2823}|BlazorMemoApp\\BlazorMemoApp.csproj|c:\\apps-dev\\aspnetcore\\blazormemoapp\\blazormemoapp\\components\\account\\pages\\manage\\changepassword.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
@@ -114,11 +118,11 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 8,
+          "SelectedChildIndex": 12,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 17,
               "Title": "PoApiClient.cs",
               "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Services\\PoApiClient.cs",
               "RelativeDocumentMoniker": "BlazorMemoApp\\Services\\PoApiClient.cs",
@@ -131,7 +135,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 12,
               "Title": "MemoModels.cs",
               "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Models\\MemoModels.cs",
               "RelativeDocumentMoniker": "BlazorMemoApp\\Models\\MemoModels.cs",
@@ -140,12 +144,11 @@
               "ViewState": "AgIAAFUAAAAAAAAAAAA0wFUAAAA6AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-11-17T08:41:38.065Z",
-              "IsPinned": true,
-              "EditorCaption": ""
+              "IsPinned": true
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 13,
               "Title": "PoModels.cs",
               "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Models\\PoModels.cs",
               "RelativeDocumentMoniker": "BlazorMemoApp\\Models\\PoModels.cs",
@@ -154,12 +157,11 @@
               "ViewState": "AgIAAAYAAAAAAAAAAAA1wAQAAAANAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-11-26T03:57:53.158Z",
-              "IsPinned": true,
-              "EditorCaption": ""
+              "IsPinned": true
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 9,
               "Title": "MemoDetailGrid.razor",
               "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Memos\\MemoDetailGrid.razor",
               "RelativeDocumentMoniker": "BlazorMemoApp\\Components\\Memos\\MemoDetailGrid.razor",
@@ -168,26 +170,24 @@
               "ViewState": "AgIAAHgAAAAAAAAAAAAewHEAAAAsAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
               "WhenOpened": "2025-11-13T22:09:03.275Z",
-              "IsPinned": true,
-              "EditorCaption": ""
+              "IsPinned": true
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 8,
               "Title": "MemoEditor.razor",
               "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Pages\\Memos\\MemoEditor.razor",
               "RelativeDocumentMoniker": "BlazorMemoApp\\Components\\Pages\\Memos\\MemoEditor.razor",
               "ToolTip": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Pages\\Memos\\MemoEditor.razor",
               "RelativeToolTip": "BlazorMemoApp\\Components\\Pages\\Memos\\MemoEditor.razor",
-              "ViewState": "AgIAADYAAAAAAAAAAAAAAD8AAAAyAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
               "WhenOpened": "2025-11-17T08:39:06.246Z",
-              "IsPinned": true,
-              "EditorCaption": ""
+              "IsPinned": true
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 15,
               "Title": "Home.razor",
               "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Pages\\Home.razor",
               "RelativeDocumentMoniker": "BlazorMemoApp\\Components\\Pages\\Home.razor",
@@ -196,6 +196,32 @@
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAHAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
               "WhenOpened": "2025-11-14T01:35:29.167Z",
+              "IsPinned": true
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "MemoView.razor",
+              "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Pages\\Memos\\MemoView.razor",
+              "RelativeDocumentMoniker": "BlazorMemoApp\\Components\\Pages\\Memos\\MemoView.razor",
+              "ToolTip": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Pages\\Memos\\MemoView.razor",
+              "RelativeToolTip": "BlazorMemoApp\\Components\\Pages\\Memos\\MemoView.razor",
+              "ViewState": "AgIAAFoAAAAAAAAAAAAAAGcAAAAKAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-11-17T08:39:32.114Z",
+              "IsPinned": true
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "OrderMaster.razor",
+              "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Pages\\Master\\OrderMaster.razor",
+              "RelativeDocumentMoniker": "BlazorMemoApp\\Components\\Pages\\Master\\OrderMaster.razor",
+              "ToolTip": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Pages\\Master\\OrderMaster.razor",
+              "RelativeToolTip": "BlazorMemoApp\\Components\\Pages\\Master\\OrderMaster.razor",
+              "ViewState": "AgIAAGYBAAAAAAAAAAAYwG8BAAAvAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-12-04T16:24:44.811Z",
               "IsPinned": true
             },
             {
@@ -208,80 +234,56 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "Summary.razor",
-              "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Pages\\Reports\\Summary.razor",
-              "RelativeDocumentMoniker": "BlazorMemoApp\\Components\\Pages\\Reports\\Summary.razor",
-              "ToolTip": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Pages\\Reports\\Summary.razor",
-              "RelativeToolTip": "BlazorMemoApp\\Components\\Pages\\Reports\\Summary.razor",
-              "ViewState": "AgIAALoAAAAAAAAAAAAwwM4AAABSAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-12-04T14:21:00.053Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 12,
-              "Title": "AddressMaster.razor",
-              "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Pages\\Master\\AddressMaster.razor",
-              "RelativeDocumentMoniker": "BlazorMemoApp\\Components\\Pages\\Master\\AddressMaster.razor",
-              "ToolTip": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Pages\\Master\\AddressMaster.razor",
-              "RelativeToolTip": "BlazorMemoApp\\Components\\Pages\\Master\\AddressMaster.razor",
-              "ViewState": "AgIAACAAAAAAAAAAAAAlwCgAAABxAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-12-03T11:14:22.772Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 11,
+              "DocumentIndex": 2,
               "Title": "TestConnection.razor",
               "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Pages\\Admin\\TestConnection.razor",
               "RelativeDocumentMoniker": "BlazorMemoApp\\Components\\Pages\\Admin\\TestConnection.razor",
               "ToolTip": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Pages\\Admin\\TestConnection.razor",
               "RelativeToolTip": "BlazorMemoApp\\Components\\Pages\\Admin\\TestConnection.razor",
-              "ViewState": "AgIAAB4AAAAAAAAAAAAAADUAAAAfAAAAAAAAAA==",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAYwA8AAABiAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
               "WhenOpened": "2025-12-03T15:35:56.725Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": "Program.cs",
-              "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Program.cs",
-              "RelativeDocumentMoniker": "BlazorMemoApp\\Program.cs",
-              "ToolTip": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Program.cs",
-              "RelativeToolTip": "BlazorMemoApp\\Program.cs",
-              "ViewState": "AgIAADoAAAAAAAAAAAAAAC8AAAA8AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-30T00:40:23.665Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "NavMenu.razor",
-              "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Layout\\NavMenu.razor",
-              "RelativeDocumentMoniker": "BlazorMemoApp\\Components\\Layout\\NavMenu.razor",
-              "ToolTip": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Layout\\NavMenu.razor",
-              "RelativeToolTip": "BlazorMemoApp\\Components\\Layout\\NavMenu.razor",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAWAAAAAAAAAA==",
+              "DocumentIndex": 1,
+              "Title": "AddressMaster.razor",
+              "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Pages\\Master\\AddressMaster.razor",
+              "RelativeDocumentMoniker": "BlazorMemoApp\\Components\\Pages\\Master\\AddressMaster.razor",
+              "ToolTip": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Pages\\Master\\AddressMaster.razor",
+              "RelativeToolTip": "BlazorMemoApp\\Components\\Pages\\Master\\AddressMaster.razor",
+              "ViewState": "AgIAACgBAAAAAAAAAAAAAC4BAABCAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-11-14T01:39:28.66Z"
+              "WhenOpened": "2025-12-03T11:14:22.772Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 14,
-              "Title": "OrderMaster.razor",
-              "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Pages\\Master\\OrderMaster.razor",
-              "RelativeDocumentMoniker": "BlazorMemoApp\\Components\\Pages\\Master\\OrderMaster.razor",
-              "ToolTip": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Pages\\Master\\OrderMaster.razor",
-              "RelativeToolTip": "BlazorMemoApp\\Components\\Pages\\Master\\OrderMaster.razor",
-              "ViewState": "AgIAAFUAAAAAAAAAAAAkwGIAAACGAAAAAAAAAA==",
+              "DocumentIndex": 0,
+              "Title": "StyleMaster.razor",
+              "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Pages\\Master\\StyleMaster.razor",
+              "RelativeDocumentMoniker": "BlazorMemoApp\\Components\\Pages\\Master\\StyleMaster.razor",
+              "ToolTip": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Pages\\Master\\StyleMaster.razor",
+              "RelativeToolTip": "BlazorMemoApp\\Components\\Pages\\Master\\StyleMaster.razor",
+              "ViewState": "AgIAADIBAAAAAAAAAAAAADwBAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-12-04T16:24:44.811Z"
+              "WhenOpened": "2025-12-04T14:44:42.934Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 15,
+              "DocumentIndex": 4,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\appsettings.json",
+              "RelativeDocumentMoniker": "BlazorMemoApp\\appsettings.json",
+              "ToolTip": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\appsettings.json",
+              "RelativeToolTip": "BlazorMemoApp\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAqAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-12-11T02:50:10.671Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
               "Title": "MainLayout.razor",
               "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Layout\\MainLayout.razor",
               "RelativeDocumentMoniker": "BlazorMemoApp\\Components\\Layout\\MainLayout.razor",
@@ -293,20 +295,43 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "MemoView.razor",
-              "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Pages\\Memos\\MemoView.razor",
-              "RelativeDocumentMoniker": "BlazorMemoApp\\Components\\Pages\\Memos\\MemoView.razor",
-              "ToolTip": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Pages\\Memos\\MemoView.razor",
-              "RelativeToolTip": "BlazorMemoApp\\Components\\Pages\\Memos\\MemoView.razor",
-              "ViewState": "AgIAAEsAAAAAAAAAAAAAADUAAAA2AAAAAAAAAA==",
+              "DocumentIndex": 6,
+              "Title": "NavMenu.razor",
+              "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Layout\\NavMenu.razor",
+              "RelativeDocumentMoniker": "BlazorMemoApp\\Components\\Layout\\NavMenu.razor",
+              "ToolTip": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Layout\\NavMenu.razor",
+              "RelativeToolTip": "BlazorMemoApp\\Components\\Layout\\NavMenu.razor",
+              "ViewState": "AgIAAEUAAAAAAAAAAADgv1YAAAAWAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-11-17T08:39:32.114Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-14T01:39:28.66Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 11,
+              "Title": "Summary.razor",
+              "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Pages\\Reports\\Summary.razor",
+              "RelativeDocumentMoniker": "BlazorMemoApp\\Components\\Pages\\Reports\\Summary.razor",
+              "ToolTip": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Pages\\Reports\\Summary.razor",
+              "RelativeToolTip": "BlazorMemoApp\\Components\\Pages\\Reports\\Summary.razor",
+              "ViewState": "AgIAAKUAAAAAAAAAAAAwwMkAAAAsAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-12-04T14:21:00.053Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Program.cs",
+              "RelativeDocumentMoniker": "BlazorMemoApp\\Program.cs",
+              "ToolTip": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Program.cs",
+              "RelativeToolTip": "BlazorMemoApp\\Program.cs",
+              "ViewState": "AgIAADoAAAAAAAAAAAAAAC8AAAA8AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-30T00:40:23.665Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
               "Title": "MemoList.razor",
               "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Pages\\Memos\\MemoList.razor",
               "RelativeDocumentMoniker": "BlazorMemoApp\\Components\\Pages\\Memos\\MemoList.razor",
@@ -314,28 +339,23 @@
               "RelativeToolTip": "BlazorMemoApp\\Components\\Pages\\Memos\\MemoList.razor",
               "ViewState": "AgIAAFUAAAAAAAAAAAAAAF8AAAAdAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-11-17T08:41:24.862Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-17T08:41:24.862Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 13,
-              "Title": "StyleMaster.razor",
-              "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Pages\\Master\\StyleMaster.razor",
-              "RelativeDocumentMoniker": "BlazorMemoApp\\Components\\Pages\\Master\\StyleMaster.razor",
-              "ToolTip": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Pages\\Master\\StyleMaster.razor",
-              "RelativeToolTip": "BlazorMemoApp\\Components\\Pages\\Master\\StyleMaster.razor",
-              "ViewState": "AgIAAEQAAAAAAAAAAAAkwFEAAACGAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-12-04T14:44:42.934Z"
-            },
-            {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{56df62a4-05a3-4e5b-aa1a-99371ccfb997}"
+              "DocumentIndex": 7,
+              "Title": "NavMenu.razor.css",
+              "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Layout\\NavMenu.razor.css",
+              "RelativeDocumentMoniker": "BlazorMemoApp\\Components\\Layout\\NavMenu.razor.css",
+              "ToolTip": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Layout\\NavMenu.razor.css",
+              "RelativeToolTip": "BlazorMemoApp\\Components\\Layout\\NavMenu.razor.css",
+              "ViewState": "AgIAACQAAAAAAAAAAAAAAE8AAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003000|",
+              "WhenOpened": "2025-11-28T01:36:59.183Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 16,
+              "DocumentIndex": 18,
               "Title": "ApplicationDbContext.cs",
               "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Data\\ApplicationDbContext.cs",
               "RelativeDocumentMoniker": "BlazorMemoApp\\Data\\ApplicationDbContext.cs",
@@ -347,7 +367,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 25,
+              "DocumentIndex": 26,
               "Title": "site.css",
               "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\wwwroot\\css\\site.css",
               "RelativeDocumentMoniker": "BlazorMemoApp\\wwwroot\\css\\site.css",
@@ -359,7 +379,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 19,
+              "DocumentIndex": 20,
               "Title": "ChangePassword.razor",
               "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Account\\Pages\\Manage\\ChangePassword.razor",
               "RelativeDocumentMoniker": "BlazorMemoApp\\Components\\Account\\Pages\\Manage\\ChangePassword.razor",
@@ -371,7 +391,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 17,
+              "DocumentIndex": 19,
               "Title": "App.razor",
               "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\App.razor",
               "RelativeDocumentMoniker": "BlazorMemoApp\\Components\\App.razor",
@@ -383,7 +403,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 20,
+              "DocumentIndex": 21,
               "Title": "UserManagement.razor",
               "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Pages\\Admin\\UserManagement.razor",
               "RelativeDocumentMoniker": "BlazorMemoApp\\Components\\Pages\\Admin\\UserManagement.razor",
@@ -395,19 +415,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 18,
-              "Title": "NavMenu.razor.css",
-              "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Layout\\NavMenu.razor.css",
-              "RelativeDocumentMoniker": "BlazorMemoApp\\Components\\Layout\\NavMenu.razor.css",
-              "ToolTip": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Layout\\NavMenu.razor.css",
-              "RelativeToolTip": "BlazorMemoApp\\Components\\Layout\\NavMenu.razor.css",
-              "ViewState": "AgIAAD8AAAAAAAAAAAAAAE8AAAAFAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003000|",
-              "WhenOpened": "2025-11-28T01:36:59.183Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 24,
+              "DocumentIndex": 25,
               "Title": "syncfusion-blazor-icons.css",
               "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\wwwroot\\css\\syncfusion-blazor-icons.css",
               "RelativeDocumentMoniker": "BlazorMemoApp\\wwwroot\\css\\syncfusion-blazor-icons.css",
@@ -419,7 +427,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 22,
+              "DocumentIndex": 23,
               "Title": "Auth.razor",
               "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Pages\\Auth.razor",
               "RelativeDocumentMoniker": "BlazorMemoApp\\Components\\Pages\\Auth.razor",
@@ -431,7 +439,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 21,
+              "DocumentIndex": 22,
               "Title": "Index.razor",
               "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Pages\\Index.razor",
               "RelativeDocumentMoniker": "BlazorMemoApp\\Components\\Pages\\Index.razor",
@@ -443,7 +451,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 23,
+              "DocumentIndex": 24,
               "Title": "NavMenu.razor.css.x",
               "DocumentMoniker": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Layout\\NavMenu.razor.css.x",
               "RelativeDocumentMoniker": "BlazorMemoApp\\Components\\Layout\\NavMenu.razor.css.x",
@@ -452,6 +460,10 @@
               "ViewState": "AgIAAAAAAAAAAAAAAAAYwBcAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
               "WhenOpened": "2025-11-13T22:37:47.425Z"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{56df62a4-05a3-4e5b-aa1a-99371ccfb997}"
             }
           ]
         }

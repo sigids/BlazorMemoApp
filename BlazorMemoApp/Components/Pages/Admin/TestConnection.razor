@@ -13,7 +13,7 @@
         <div class="row g-3 align-items-end">
             <div class="col-md-4">
                 <label class="form-label">DSN Name</label>
-                <input type="text" class="form-control" @bind="_dsnName" placeholder="e.g. Stage7" />
+                <input type="text" class="form-control" @bind="_dsnName" placeholder="e.g. Stage64" />
             </div>
             <div class="col-md-3">
                 <label class="form-label">User ID (optional)</label>
@@ -107,7 +107,7 @@
     private bool _testing;
     private bool _success;
     private string? _resultMessage;
-    private string _dsnName = "Stage7";
+    private string _dsnName = "Stage64";
     private string _userId = string.Empty;
     private string _password = string.Empty;
     private string _testQuery = string.Empty;

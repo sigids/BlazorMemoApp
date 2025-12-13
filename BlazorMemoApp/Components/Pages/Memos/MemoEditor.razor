@@ -162,6 +162,14 @@
     </AuthorizeView>
 </div>
 
+@if (!string.IsNullOrEmpty(_saveMessage))
+{
+    <div class="alert @(_saveSuccess ? "alert-success" : "alert-danger") alert-dismissible fade show mt-2" role="alert">
+        @_saveMessage
+        <button type="button" class="btn-close" @onclick="() => _saveMessage = string.Empty"></button>
+    </div>
+}
+
 @code {
     private MemoHeaderModel header = new()
     {
@@ -192,6 +200,9 @@
     private bool _calculating = false;
     private string _calcMessage = string.Empty;
     private bool _calcSuccess = false;
+    
+    private string _saveMessage = string.Empty;
+    private bool _saveSuccess = false;
     
     private IEnumerable<BuyerStyleModel> filteredStylesDropdown => 
         header.BuyerId == null 
@@ -336,11 +347,17 @@
 
 private async Task Save()
 {
+    _saveMessage = string.Empty;
+    _saveSuccess = false;
+
     if (
         string.IsNullOrWhiteSpace(header.PONumber) ||
         header.MemoDate == default ||
         header.Details == null || !header.Details.Any())
     {
+        _saveMessage = "Please fill in PO Number, Memo Date, and add at least one detail.";
+        _saveSuccess = false;
+        StateHasChanged();
         return;
     }
 
@@ -353,11 +370,19 @@ private async Task Save()
         
         Console.WriteLine($"Saved Memo - Id: {header.Id}");
 
+        _saveMessage = $"Memo {header.MemoNo} saved successfully.";
+        _saveSuccess = true;
+        StateHasChanged();
+        
+        await Task.Delay(1500);
         Nav.NavigateTo("/memos");
     }
     catch (Exception ex)
     {
         Console.Error.WriteLine($"Error saving memo: {ex.Message}");
+        _saveMessage = $"Error saving memo: {ex.Message}";
+        _saveSuccess = false;
+        StateHasChanged();
     }
 }
 

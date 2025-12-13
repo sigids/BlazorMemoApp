@@ -9,6 +9,7 @@
 @inject BlazorMemoApp.Data.ApplicationDbContext Db
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IHttpClientFactory HttpClientFactory
+@inject IWebHostEnvironment Environment
 
 
 <h1>Create Memo</h1>
@@ -144,6 +145,51 @@
 
 <BlazorMemoApp.Components.Memos.MemoDetailGrid Items="header.Details" BuyerId="header.BuyerId" StyleId="header.StyleId" Orders="orders" />
 
+<div class="card mt-3">
+    <div class="card-header">
+        <h5 class="mb-0">Attachments</h5>
+    </div>
+    <div class="card-body">
+        <div class="mb-3">
+            <label class="form-label">Upload Files (max 5MB per file)</label>
+            <InputFile class="form-control" OnChange="OnFilesSelected" multiple accept="*/*" />
+        </div>
+        @if (!string.IsNullOrEmpty(_uploadMessage))
+        {
+            <div class="alert @(_uploadSuccess ? "alert-success" : "alert-danger") alert-dismissible py-2 mb-2">
+                @_uploadMessage
+                <button type="button" class="btn-close btn-sm" @onclick="() => _uploadMessage = string.Empty"></button>
+            </div>
+        }
+        @if (selectedFiles.Any())
+        {
+            <div class="mb-2"><strong>Selected Files:</strong></div>
+            <ul class="list-group mb-3">
+                @foreach (var file in selectedFiles)
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>@file.Name (@FormatFileSize(file.Size))</span>
+                        <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => RemoveSelectedFile(file)">Remove</button>
+                    </li>
+                }
+            </ul>
+        }
+        @if (header.Attachments.Any())
+        {
+            <div class="mb-2"><strong>Uploaded Files:</strong></div>
+            <ul class="list-group">
+                @foreach (var attachment in header.Attachments)
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>@attachment.FileName (@FormatFileSize(attachment.FileSize))</span>
+                        <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => RemoveAttachment(attachment)">Remove</button>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</div>
+
 <div class="mt-3 d-flex gap-2 align-items-center flex-wrap">
     <button class="btn btn-secondary" @onclick="Cancel">Cancel</button>
     <button class="btn btn-primary" @onclick="Save">Save</button>
@@ -203,6 +249,11 @@
     
     private string _saveMessage = string.Empty;
     private bool _saveSuccess = false;
+    
+    private string _uploadMessage = string.Empty;
+    private bool _uploadSuccess = false;
+    private List<IBrowserFile> selectedFiles = new();
+    private const long MaxFileSize = 5 * 1024 * 1024; // 5MB
     
     private IEnumerable<BuyerStyleModel> filteredStylesDropdown => 
         header.BuyerId == null 
@@ -364,6 +415,8 @@ private async Task Save()
     try
     {
         Console.WriteLine($"Saving Memo - BuyerId: {header.BuyerId}, SupplierId: {header.SupplierId}, StyleId: {header.StyleId}");
+        
+        await UploadFilesAsync();
         
         Db.Memos.Add(header);
         await Db.SaveChangesAsync();
@@ -598,5 +651,86 @@ private async Task Approve()
     {
         Console.Error.WriteLine($"Error approving memo: {ex.Message}");
     }
+}
+
+private void OnFilesSelected(InputFileChangeEventArgs e)
+{
+    _uploadMessage = string.Empty;
+    var invalidFiles = new List<string>();
+    
+    foreach (var file in e.GetMultipleFiles(100))
+    {
+        if (file.Size > MaxFileSize)
+        {
+            invalidFiles.Add($"{file.Name} ({FormatFileSize(file.Size)})");
+        }
+        else if (!selectedFiles.Any(f => f.Name == file.Name))
+        {
+            selectedFiles.Add(file);
+        }
+    }
+    
+    if (invalidFiles.Any())
+    {
+        _uploadMessage = $"Files exceeding 5MB limit: {string.Join(", ", invalidFiles)}";
+        _uploadSuccess = false;
+    }
+    
+    StateHasChanged();
+}
+
+private void RemoveSelectedFile(IBrowserFile file)
+{
+    selectedFiles.Remove(file);
+    StateHasChanged();
+}
+
+private void RemoveAttachment(MemoAttachmentModel attachment)
+{
+    header.Attachments.Remove(attachment);
+    StateHasChanged();
+}
+
+private static string FormatFileSize(long bytes)
+{
+    if (bytes < 1024) return $"{bytes} B";
+    if (bytes < 1024 * 1024) return $"{bytes / 1024.0:F1} KB";
+    return $"{bytes / (1024.0 * 1024.0):F2} MB";
+}
+
+private async Task UploadFilesAsync()
+{
+    if (!selectedFiles.Any()) return;
+    
+    var uploadPath = Path.Combine(Environment.WebRootPath, "uploads", "memos");
+    Directory.CreateDirectory(uploadPath);
+    
+    foreach (var file in selectedFiles)
+    {
+        try
+        {
+            var storedFileName = $"{Guid.NewGuid()}_{file.Name}";
+            var filePath = Path.Combine(uploadPath, storedFileName);
+            
+            await using var stream = file.OpenReadStream(MaxFileSize);
+            await using var fileStream = new FileStream(filePath, FileMode.Create);
+            await stream.CopyToAsync(fileStream);
+            
+            header.Attachments.Add(new MemoAttachmentModel
+            {
+                FileName = file.Name,
+                StoredFileName = storedFileName,
+                ContentType = file.ContentType,
+                FileSize = file.Size,
+                UploadedAt = DateTime.UtcNow
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error uploading file {file.Name}: {ex.Message}");
+        }
+    }
+    
+    selectedFiles.Clear();
 }
 }

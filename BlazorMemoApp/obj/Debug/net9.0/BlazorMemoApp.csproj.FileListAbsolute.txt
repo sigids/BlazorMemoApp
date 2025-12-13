@@ -393,10 +393,10 @@ C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\staticwebass
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\staticwebassets.build.json.cache
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\staticwebassets.development.json
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\staticwebassets.build.endpoints.json
-C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\staticwebassets.upToDateCheck.txt
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\BlazorMe.B0263C5A.Up2Date
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\BlazorMemoApp.dll
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\refint\BlazorMemoApp.dll
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\BlazorMemoApp.pdb
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\BlazorMemoApp.genruntimeconfig.cache
 C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\ref\BlazorMemoApp.dll
+C:\APPS-DEV\ASPNETCORE\BlazorMemoApp\BlazorMemoApp\obj\Debug\net9.0\staticwebassets.upToDateCheck.txt

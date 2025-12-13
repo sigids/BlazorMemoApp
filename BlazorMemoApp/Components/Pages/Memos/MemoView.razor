@@ -5,9 +5,11 @@
 @using BlazorMemoApp.Components.Memos
 @using System.Security.Claims
 @inject BlazorMemoApp.Data.ApplicationDbContext Db
+@inject BlazorMemoApp.Services.PoApiClient PoApi
 @inject NavigationManager Nav
 @inject IJSRuntime JS
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IWebHostEnvironment Environment
 
 <h1>Memo @header?.MemoNo</h1>
 
@@ -69,6 +71,22 @@ else
             <label class="form-label">PO Selected</label>
             <input class="form-control" value="@header.PONumber" disabled />
         </div>
+        <div class="col-sm-2 position-relative">
+            <label class="form-label">Add PO Items</label>
+            <div class="input-group">
+                <input class="form-control" @bind-value="SearchText" placeholder="Type part of PO No..."/>
+                <button type="button" class="btn btn-outline-primary" title="Search PO" @onclick="SearchPosAsync">Search</button>
+            </div>
+            @if (suggestions.Count > 0 && showSuggestions)
+            {
+                <div class="list-group position-absolute z-3" style="max-height:200px; overflow:auto; width:100%;">
+                    @foreach (var s in suggestions)
+                    {
+                        <button type="button" class="list-group-item list-group-item-action" @onclick="() => SelectPo(s)">@s</button>
+                    }
+                </div>
+            }
+        </div>
     </div>
 
     @* <div class="card mb-3">
@@ -83,6 +101,52 @@ else
     </div> *@
 
     <BlazorMemoApp.Components.Memos.MemoDetailGrid Items="header.Details" BuyerId="header.BuyerId" StyleId="header.StyleId" Orders="orders" />
+
+    <div class="card mt-3">
+        <div class="card-header">
+            <h5 class="mb-0">Attachments</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label">Upload Files (max 5MB per file)</label>
+                <InputFile class="form-control" OnChange="OnFilesSelected" multiple accept="*/*" />
+            </div>
+            @if (!string.IsNullOrEmpty(_uploadMessage))
+            {
+                <div class="alert @(_uploadSuccess ? "alert-success" : "alert-danger") alert-dismissible py-2 mb-2">
+                    @_uploadMessage
+                    <button type="button" class="btn-close btn-sm" @onclick="() => _uploadMessage = string.Empty"></button>
+                </div>
+            }
+            @if (selectedFiles.Any())
+            {
+                <div class="mb-2"><strong>Selected Files:</strong></div>
+                <ul class="list-group mb-3">
+                    @foreach (var file in selectedFiles)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>@file.Name (@FormatFileSize(file.Size))</span>
+                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => RemoveSelectedFile(file)">Remove</button>
+                        </li>
+                    }
+                </ul>
+            }
+            @if (header.Attachments.Any())
+            {
+                <div class="mb-2"><strong>Uploaded Files:</strong></div>
+                <ul class="list-group">
+                    @foreach (var attachment in header.Attachments)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <a href="/uploads/memos/@attachment.StoredFileName" target="_blank">@attachment.FileName</a>
+                            <span>(@FormatFileSize(attachment.FileSize))</span>
+                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => RemoveAttachment(attachment)">Remove</button>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
 
     <div class="mt-3 d-flex gap-2 align-items-center flex-wrap">
         <button class="btn btn-secondary" @onclick="Back">Back</button>
@@ -124,6 +188,21 @@ else
     private string _saveMessage = string.Empty;
     private bool _saveSuccess = false;
     
+    private string _uploadMessage = string.Empty;
+    private bool _uploadSuccess = false;
+    private List<IBrowserFile> selectedFiles = new();
+    private const long MaxFileSize = 5 * 1024 * 1024; // 5MB
+    
+    private string searchText = string.Empty;
+    private bool showSuggestions = false;
+    private List<string> suggestions = new();
+    
+    private string SearchText
+    {
+        get => searchText;
+        set => searchText = value ?? string.Empty;
+    }
+    
     private IEnumerable<BuyerStyleModel> filteredStyles => 
         header?.BuyerId == null 
             ? Enumerable.Empty<BuyerStyleModel>() 
@@ -131,7 +210,10 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        header = await Db.Memos.Include(m => m.Details).ThenInclude(d => d.SpiBomDetails).FirstOrDefaultAsync(m => m.Id == Id);
+        header = await Db.Memos
+            .Include(m => m.Details).ThenInclude(d => d.SpiBomDetails)
+            .Include(m => m.Attachments)
+            .FirstOrDefaultAsync(m => m.Id == Id);
         
         buyers = await Db.MemoAddresses.Where(a => a.Type.Contains("B")).ToListAsync();
         suppliers = await Db.MemoAddresses.Where(a => a.Type.Contains("V") || a.Type.Contains("F")).ToListAsync();
@@ -148,6 +230,7 @@ else
         
         try
         {
+            await UploadFilesAsync();
             await Db.SaveChangesAsync();
             _saveMessage = $"Memo {header?.MemoNo} saved successfully.";
             _saveSuccess = true;
@@ -208,5 +291,129 @@ else
         {
             Console.Error.WriteLine($"Error approving memo: {ex.Message}");
         }
+    }
+
+    private async Task SearchPosAsync()
+    {
+        if (string.IsNullOrWhiteSpace(searchText))
+        {
+            suggestions.Clear();
+            showSuggestions = false;
+            StateHasChanged();
+            return;
+        }
+        suggestions = await PoApi.SearchPosAsync(searchText);
+        showSuggestions = suggestions.Count > 0;
+        StateHasChanged();
+    }
+
+    private async Task SelectPo(string po)
+    {
+        if (header == null) return;
+        
+        header.PONumber = po;
+        showSuggestions = false;
+        suggestions.Clear();
+        searchText = po;
+
+        var details = await PoApi.GetPoDetailsAsync(po);
+        var newItems = details.Select(d => new MemoDetailModel
+        {
+            Article = d.Article,
+            Color = d.Color,
+            Size = d.Spec_Value,
+            Price = d.Rate,
+            Currency = d.Currency,
+            Unit = d.Uom_Po,
+            PONumber = po,
+            ItemCode = d.Custom1
+        }).ToList();
+        
+        header.Details ??= new List<MemoDetailModel>();
+        header.Details.AddRange(newItems);
+
+        StateHasChanged();
+    }
+
+    private void OnFilesSelected(InputFileChangeEventArgs e)
+    {
+        _uploadMessage = string.Empty;
+        var invalidFiles = new List<string>();
+        
+        foreach (var file in e.GetMultipleFiles(100))
+        {
+            if (file.Size > MaxFileSize)
+            {
+                invalidFiles.Add($"{file.Name} ({FormatFileSize(file.Size)})");
+            }
+            else if (!selectedFiles.Any(f => f.Name == file.Name))
+            {
+                selectedFiles.Add(file);
+            }
+        }
+        
+        if (invalidFiles.Any())
+        {
+            _uploadMessage = $"Files exceeding 5MB limit: {string.Join(", ", invalidFiles)}";
+            _uploadSuccess = false;
+        }
+        
+        StateHasChanged();
+    }
+
+    private void RemoveSelectedFile(IBrowserFile file)
+    {
+        selectedFiles.Remove(file);
+        StateHasChanged();
+    }
+
+    private void RemoveAttachment(MemoAttachmentModel attachment)
+    {
+        if (header == null) return;
+        header.Attachments.Remove(attachment);
+        StateHasChanged();
+    }
+
+    private static string FormatFileSize(long bytes)
+    {
+        if (bytes < 1024) return $"{bytes} B";
+        if (bytes < 1024 * 1024) return $"{bytes / 1024.0:F1} KB";
+        return $"{bytes / (1024.0 * 1024.0):F2} MB";
+    }
+
+    private async Task UploadFilesAsync()
+    {
+        if (header == null || !selectedFiles.Any()) return;
+        
+        var uploadPath = Path.Combine(Environment.WebRootPath, "uploads", "memos");
+        Directory.CreateDirectory(uploadPath);
+        
+        foreach (var file in selectedFiles)
+        {
+            try
+            {
+                var storedFileName = $"{Guid.NewGuid()}_{file.Name}";
+                var filePath = Path.Combine(uploadPath, storedFileName);
+                
+                await using var stream = file.OpenReadStream(MaxFileSize);
+                await using var fileStream = new FileStream(filePath, FileMode.Create);
+                await stream.CopyToAsync(fileStream);
+                
+                header.Attachments.Add(new MemoAttachmentModel
+                {
+                    FileName = file.Name,
+                    StoredFileName = storedFileName,
+                    ContentType = file.ContentType,
+                    FileSize = file.Size,
+                    UploadedAt = DateTime.UtcNow
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error uploading file {file.Name}: {ex.Message}");
+            }
+        }
+        
+        selectedFiles.Clear();
     }
 }

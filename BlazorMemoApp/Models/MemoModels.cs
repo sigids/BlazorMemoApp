@@ -35,6 +35,7 @@ public class MemoHeaderModel
     public DateTime? ApproveDate { get; set; }
 
     public List<MemoDetailModel> Details { get; set; } = new();
+    public List<MemoAttachmentModel> Attachments { get; set; } = new();
 }
 
 public class MemoDetailModel
@@ -134,4 +135,16 @@ public class SynchronizingModel
     public int BuyerId { get; set; }
     public int? StyleId { get; set; }
     public DateTime SynchDate { get; set; } = DateTime.Parse("2025-01-01");
+}
+
+public class MemoAttachmentModel
+{
+    public int Id { get; set; }
+    public int MemoHeaderId { get; set; }
+    public MemoHeaderModel? MemoHeader { get; set; }
+    public string FileName { get; set; } = string.Empty;
+    public string StoredFileName { get; set; } = string.Empty;
+    public string ContentType { get; set; } = string.Empty;
+    public long FileSize { get; set; }
+    public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
 }

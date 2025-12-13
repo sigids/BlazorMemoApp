@@ -22,6 +22,7 @@ public class MemoHeaderModel
 
     public int? GmtQty { get; set; }
     public decimal? GmtFobValue { get; set; }
+    public decimal? GmtFobRate { get; set; }
 
     // Approval fields
     [Display(Name = "Approval Status")]
@@ -44,6 +45,9 @@ public class MemoDetailModel
 
     // From PO Detail API
     public string? PONumber { get; set; }
+
+    // NEW: List to hold multiple SPI and BOMQty details
+    public List<SpiBomDetailModel> SpiBomDetails { get; set; } = new List<SpiBomDetailModel>();
     public string? SpiNo { get; set; }
     public string Article { get; set; } = string.Empty;
     public string Color { get; set; } = string.Empty;
@@ -53,7 +57,10 @@ public class MemoDetailModel
     public string Unit { get; set; } = string.Empty;
 
     // Editable inputs
-    public int BOMQty { get; set; }
+    //public int BOMQty { get; set; }
+
+    // MODIFIED: BOMQty is now a computed property
+    public int BOMQty => SpiBomDetails.Sum(d => d.BomQty);
     public int AvailStockQty { get; set; }
     public int MCQQty { get; set; }
     public decimal SurchargePaid { get; set; }
@@ -77,8 +84,19 @@ public class MemoDetailModel
     public int StockNonUsableQty => MCQQty - PurchaseQty - StockUsableQty;
     public decimal StockNonUsableAmount => Price * StockNonUsableQty;
     public decimal TotalExtraPaid => Diff + SurchargePaid;
+    //public decimal SummaryExtraPaid => SurchargePaid + StockUsableAmount + StockNonUsableAmount;
 
 }
+
+public class SpiBomDetailModel
+{
+    public int Id { get; set; }
+    public int MemoDetailId { get; set; }
+    public string SpiNo { get; set; } = string.Empty;
+    public int BomQty { get; set; }
+    public MemoDetailModel? MemoDetail { get; set; }
+}
+
 
 public class MemoAdressModel
 {
@@ -97,4 +115,23 @@ public class BuyerStyleModel
     public MemoAdressModel? Buyer { get; set; }
     public string StyleName { get; set; } = string.Empty;
     public string? Description { get; set; }
+}
+
+public class BuyerStyleOrderModel
+{
+    public int Id { get; set; }
+    public int BuyerId { get; set; }
+    public MemoAdressModel? Buyer { get; set; }
+    public int StyleId { get; set; }
+    public BuyerStyleModel? Style { get; set; }
+    public string OrderNo { get; set; } = string.Empty;
+}
+
+public class SynchronizingModel
+{
+    public int Id { get; set; }
+    public string ModelName { get; set; } = string.Empty;
+    public int BuyerId { get; set; }
+    public int? StyleId { get; set; }
+    public DateTime SynchDate { get; set; } = DateTime.Parse("2025-01-01");
 }

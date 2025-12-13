@@ -15,6 +15,7 @@ builder.Services.AddRazorComponents()
 
 //builder.Services.AddSyncfusionBlazor();
 
+
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();
@@ -49,6 +50,12 @@ var resolvedPoBaseUrl = !string.IsNullOrWhiteSpace(poBaseUrl)
 builder.Services.AddHttpClient<PoApiClient>(client =>
 {
     client.BaseAddress = new Uri(resolvedPoBaseUrl);
+});
+
+// HttpClient for Exchange Rate API
+builder.Services.AddHttpClient("ExchangeRateApi", client =>
+{
+    client.BaseAddress = new Uri("https://openexchangerates.org/");
 });
 
 var app = builder.Build();

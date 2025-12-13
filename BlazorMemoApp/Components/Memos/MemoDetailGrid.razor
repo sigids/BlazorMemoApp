@@ -65,9 +65,25 @@ else
             @foreach (var it in PagedItems)
             {
                 <tr>
-                    <td class="text-center">
-                        <input type="checkbox" class="form-check-input" checked="@(_selected.Contains(it))" @onchange="(e) => OnRowSelectedChanged(it, e)" />
-                    </td>
+                        <td class="text-center">
+                            <div class="d-flex justify-content-center gap-1">
+                                <span style="cursor: pointer;" @onclick="() => ToggleExpansion(it)">
+                                    @if (_expandedRows.Contains(it))
+                                    {
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-down" viewBox="0 0 16 16">
+                                            <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z" />
+                                        </svg>
+                                    }
+                                    else
+                                    {
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-right" viewBox="0 0 16 16">
+                                            <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z" />
+                                        </svg>
+                                    }
+                                </span>
+                                <input type="checkbox" class="form-check-input" checked="@(_selected.Contains(it))" @onchange="(e) => OnRowSelectedChanged(it, e)" />
+                            </div>
+                        </td>
                     <td>@it.PONumber</td>
                     <td>@it.Article</td>
                     <td>@it.Color</td>
@@ -75,9 +91,11 @@ else
                     <td>@it.Price.ToString("F2")</td>
                         <td>@it.Currency</td>
                     <td>@it.Unit</td>
-                    <td>
+                    @* <td>
                             <input type="number" class="form-control form-control-sm" style="width:75px" step="0.01" @bind-value="it.BOMQty" @bind-value:event="oninput" />
-                    </td>
+                    </td> *@
+                        @* MODIFIED: BOM Qty is now a display field, not an input *@
+                        <td class="text-end">@it.BOMQty</td>
                         <td>@it.BOMAmount.ToString("F2")</td>
                     <td>
                             <input type="number" class="form-control form-control-sm" style="width:75px" @bind-value="it.AvailStockQty" @bind-value:event="oninput" />
@@ -113,6 +131,64 @@ else
                         </select>
                     </td>
                 </tr>
+
+                    @* NEW: Inline sub-grid for SPI and BOM Details *@
+                    @if (_expandedRows.Contains(it))
+                    {
+                        <tr>
+                            <td colspan="28" class="p-0">
+                                <div class="p-3 bg-light">
+                                    <h6>SPI & BOM Details for @it.Article - @it.Color - @it.Size</h6>
+                                    <table class="table table-sm table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>SPI Number</th>
+                                                <th>BOM Qty</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var detail in it.SpiBomDetails)
+                                            {
+                                                <tr>
+                                                    <td class="position-relative" style="min-width: 200px;">
+                                                        <input class="form-control form-control-sm" 
+                                                               value="@GetSpiSearchText(detail)"
+                                                               @oninput="(e) => SetSpiSearchText(detail, e.Value?.ToString() ?? string.Empty)"
+                                                               @onfocus="() => ShowSpiDropdown(detail)"
+                                                               placeholder="Type to filter..." />
+                                                        @if (IsSpiDropdownVisible(detail) && GetFilteredOrdersForSpi(detail).Any())
+                                                        {
+                                                            <div class="list-group position-absolute z-3" style="max-height:150px; overflow:auto; width:100%;">
+                                                                @foreach (var order in GetFilteredOrdersForSpi(detail))
+                                                                {
+                                                                    <button type="button" class="list-group-item list-group-item-action py-1" @onclick="() => SelectSpiOrder(detail, order)">
+                                                                        @order.OrderNo
+                                                                    </button>
+                                                                }
+                                                            </div>
+                                                        }
+                                                    </td>
+                                                    <td style="width: 100px;">
+                                                        <input type="number" class="form-control form-control-sm" @bind-value="detail.BomQty" @bind-value:event="oninput" />
+                                                    </td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteSpiBom(it, detail)">Delete</button>
+                                                    </td>
+                                                </tr>
+                                            }
+                                            <tr>
+                                                <td colspan="3">
+                                                    <button class="btn btn-sm btn-primary" @onclick="() => AddSpiBom(it)">+ Add New SPI/BOM</button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+
             }
             </tbody>
         </table>
@@ -122,12 +198,13 @@ else
         <div>Showing @((_currentPage-1)*_pageSize+1)-@(((_currentPage-1)*_pageSize)+PagedItems.Count) of @FilteredItems.Count()</div>
         <nav>
             <ul class="pagination pagination-sm mb-0">
-                <li class="page-item @( _currentPage==1?"disabled":"" )"><a class="page-link" href="#" @onclick="PrevPage">Prev</a></li>
+                <li class="page-item @( _currentPage==1?"disabled":"" )"><button type="button" class="page-link" @onclick="PrevPage" disabled="@(_currentPage==1)">Prev</button></li>
                 @for (var p = 1; p <= TotalPages; p++)
                 {
-                    <li class="page-item @(p==_currentPage?"active":"")"><a class="page-link" href="#" @onclick="(()=>GotoPage(p))">@p</a></li>
+                    var page = p;
+                    <li class="page-item @(p==_currentPage?"active":"")"><button type="button" class="page-link" @onclick="(()=>GotoPage(page))">@p</button></li>
                 }
-                <li class="page-item @(_currentPage==TotalPages?"disabled":"")"><a class="page-link" href="#" @onclick="NextPage">Next</a></li>
+                <li class="page-item @(_currentPage==TotalPages?"disabled":"")"><button type="button" class="page-link" @onclick="NextPage" disabled="@(_currentPage==TotalPages)">Next</button></li>
             </ul>
         </nav>
     </div>
@@ -136,11 +213,61 @@ else
 @code {
     [Parameter] public List<MemoDetailModel> Items { get; set; } = new();
     [Parameter] public EventCallback<List<MemoDetailModel>> ItemsChanged { get; set; }
+    [Parameter] public int? BuyerId { get; set; }
+    [Parameter] public int? StyleId { get; set; }
+    [Parameter] public List<BuyerStyleOrderModel> Orders { get; set; } = new();
 
     private HashSet<MemoDetailModel> _selected = new();
     private string _filter = string.Empty;
     private int _pageSize = 10;
     private int _currentPage = 1;
+
+    // NEW: State to track which rows are expanded (using object reference instead of Id)
+    private HashSet<MemoDetailModel> _expandedRows = new();
+    
+    // SPI dropdown state - keyed by SpiBomDetailModel reference
+    private Dictionary<SpiBomDetailModel, string> _spiSearchTexts = new();
+    private Dictionary<SpiBomDetailModel, bool> _spiDropdownVisible = new();
+    
+    private IEnumerable<BuyerStyleOrderModel> FilteredOrders => 
+        (BuyerId == null || StyleId == null)
+            ? Enumerable.Empty<BuyerStyleOrderModel>()
+            : Orders.Where(o => o.BuyerId == BuyerId && o.StyleId == StyleId);
+    
+    private IEnumerable<BuyerStyleOrderModel> GetFilteredOrdersForSpi(SpiBomDetailModel detail)
+    {
+        var searchText = _spiSearchTexts.GetValueOrDefault(detail, string.Empty);
+        return string.IsNullOrWhiteSpace(searchText)
+            ? FilteredOrders
+            : FilteredOrders.Where(o => o.OrderNo.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+    }
+    
+    private string GetSpiSearchText(SpiBomDetailModel detail)
+    {
+        return _spiSearchTexts.GetValueOrDefault(detail, detail.SpiNo ?? string.Empty);
+    }
+    
+    private void SetSpiSearchText(SpiBomDetailModel detail, string value)
+    {
+        _spiSearchTexts[detail] = value;
+    }
+    
+    private bool IsSpiDropdownVisible(SpiBomDetailModel detail)
+    {
+        return _spiDropdownVisible.GetValueOrDefault(detail, false);
+    }
+    
+    private void ShowSpiDropdown(SpiBomDetailModel detail)
+    {
+        _spiDropdownVisible[detail] = true;
+    }
+    
+    private void SelectSpiOrder(SpiBomDetailModel detail, BuyerStyleOrderModel order)
+    {
+        detail.SpiNo = order.OrderNo;
+        _spiSearchTexts[detail] = order.OrderNo;
+        _spiDropdownVisible[detail] = false;
+    }
 
     private IEnumerable<MemoDetailModel> FilteredItems => string.IsNullOrWhiteSpace(_filter)
         ? Items
@@ -211,4 +338,30 @@ else
     {
         _currentPage = Math.Min(Math.Max(1, p), TotalPages);
     }
+
+    // NEW: Methods for handling expansion and sub-grid actions
+    private void ToggleExpansion(MemoDetailModel item)
+    {
+        if (_expandedRows.Contains(item))
+        {
+            _expandedRows.Remove(item);
+        }
+        else
+        {
+            _expandedRows.Add(item);
+        }
+    }
+
+    private void AddSpiBom(MemoDetailModel parent)
+    {
+        // Don't set Id - let EF Core generate it on save
+        parent.SpiBomDetails.Add(new SpiBomDetailModel());
+    }
+
+    private void DeleteSpiBom(MemoDetailModel parent, SpiBomDetailModel itemToDelete)
+    {
+        parent.SpiBomDetails.Remove(itemToDelete);
+        // Blazor should re-render automatically.
+    }
+
 }

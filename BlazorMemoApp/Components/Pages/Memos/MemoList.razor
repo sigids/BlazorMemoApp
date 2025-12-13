@@ -123,12 +123,13 @@ else
         <div>Showing @((_currentPage-1)*_pageSize+1)-@(((_currentPage-1)*_pageSize)+PagedMemos.Count()) of @FilteredMemos.Count()</div>
         <nav>
             <ul class="pagination pagination-sm mb-0">
-                <li class="page-item @(_currentPage==1?"disabled":"")"><a class="page-link" href="#" @onclick="PrevPage">Prev</a></li>
+                <li class="page-item @(_currentPage==1?"disabled":"")"><button type="button" class="page-link" @onclick="PrevPage" disabled="@(_currentPage==1)">Prev</button></li>
                 @for (var p = 1; p <= TotalPages; p++)
                 {
-                    <li class="page-item @(p==_currentPage?"active":"")"><a class="page-link" href="#" @onclick="(()=>GotoPage(p))">@p</a></li>
+                    var page = p;
+                    <li class="page-item @(p==_currentPage?"active":"")"><button type="button" class="page-link" @onclick="(()=>GotoPage(page))">@p</button></li>
                 }
-                <li class="page-item @(_currentPage==TotalPages?"disabled":"")"><a class="page-link" href="#" @onclick="NextPage">Next</a></li>
+                <li class="page-item @(_currentPage==TotalPages?"disabled":"")"><button type="button" class="page-link" @onclick="NextPage" disabled="@(_currentPage==TotalPages)">Next</button></li>
             </ul>
         </nav>
     </div>
@@ -156,7 +157,7 @@ else
     {
         UpdateMode();
         // load memos including details for totals
-        _allMemos = await Db.Memos.Include(m => m.Details).OrderByDescending(m => m.MemoDate).ToListAsync();
+        _allMemos = await Db.Memos.Include(m => m.Details).Include(m => m.ApproveUser).OrderByDescending(m => m.MemoDate).ToListAsync();
         if (_currentPage > TotalPages) _currentPage = TotalPages;
 
         if (_approvalMode)

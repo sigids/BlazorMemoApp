@@ -12,3 +12,13 @@ public class PoDetailItem
     public string Currency { get; set; } = string.Empty;
     public string Custom1 { get; set; }
 }
+
+public class PoExchangeRateModel
+{
+    public int Id { get; set; }
+    public string PoCurrency { get; set;}
+    public string BaseCurrency { get; set;} = string.Empty;
+    public DateTime ExcDate { get; set; }
+    public decimal ExcRate { get; set; }
+
+}

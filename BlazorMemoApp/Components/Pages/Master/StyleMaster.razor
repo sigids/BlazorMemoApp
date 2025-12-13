@@ -3,14 +3,30 @@
 @rendermode InteractiveServer
 @using BlazorMemoApp.Models
 @using Microsoft.EntityFrameworkCore
+@using System.Data.Odbc
 @inject BlazorMemoApp.Data.ApplicationDbContext Db
+@inject ILogger<StyleMaster> Logger
 
 <h1>Style Master</h1>
 <hr />
 
 <div class="row mb-3">
-    <div class="col">
+    <div class="col-auto">
         <button class="btn btn-primary" @onclick="ShowAddForm">Add New Style</button>
+    </div>
+    <div class="col-auto">
+        <div class="input-group">
+            <span class="input-group-text">Search</span>
+            <input class="form-control" style="width:250px;" @bind="_searchText" @bind:event="oninput" placeholder="Buyer, Style Name..." />
+        </div>
+    </div>
+    <div class="col-auto">
+        <select class="form-select" style="width:100px;" @bind="_pageSize" @bind:after="OnPageSizeChanged">
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+        </select>
     </div>
 </div>
 
@@ -57,7 +73,17 @@
                 <div class="mt-3">
                     <button type="submit" class="btn btn-success">Save</button>
                     <button type="button" class="btn btn-secondary" @onclick="CancelEdit">Cancel</button>
+                    <button type="button" class="btn btn-info" @onclick="Synchronize" disabled="@(_syncing || editingStyle.BuyerId == 0)">
+                        @(_syncing ? "Synchronizing..." : "Synchronize")
+                    </button>
                 </div>
+                @if (!string.IsNullOrEmpty(_syncMessage))
+                {
+                    <div class="alert @(_syncSuccess ? "alert-success" : "alert-danger") alert-dismissible fade show mt-2" role="alert">
+                        @_syncMessage
+                        <button type="button" class="btn-close" @onclick="() => _syncMessage = string.Empty"></button>
+                    </div>
+                }
             </EditForm>
         </div>
     </div>
@@ -74,7 +100,7 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (var style in styles)
+        @foreach (var style in PagedData)
         {
             <tr>
                 <td>@style.Id</td>
@@ -90,6 +116,34 @@
     </tbody>
 </table>
 
+<div class="d-flex justify-content-between align-items-center">
+    <div>Showing @(FilteredData.Any() ? (_currentPage - 1) * _pageSize + 1 : 0) - @(Math.Min(_currentPage * _pageSize, FilteredData.Count())) of @FilteredData.Count()</div>
+    <nav>
+        <ul class="pagination pagination-sm mb-0">
+            <li class="page-item @(_currentPage == 1 ? "disabled" : "")">
+                <button type="button" class="page-link" @onclick="PrevPage" disabled="@(_currentPage == 1)">Prev</button>
+            </li>
+            @for (var p = 1; p <= Math.Min(TotalPages, 10); p++)
+            {
+                var page = p;
+                <li class="page-item @(p == _currentPage ? "active" : "")">
+                    <button type="button" class="page-link" @onclick="() => GotoPage(page)">@p</button>
+                </li>
+            }
+            @if (TotalPages > 10)
+            {
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+                <li class="page-item @(TotalPages == _currentPage ? "active" : "")">
+                    <button type="button" class="page-link" @onclick="() => GotoPage(TotalPages)">@TotalPages</button>
+                </li>
+            }
+            <li class="page-item @(_currentPage == TotalPages ? "disabled" : "")">
+                <button type="button" class="page-link" @onclick="NextPage" disabled="@(_currentPage == TotalPages)">Next</button>
+            </li>
+        </ul>
+    </nav>
+</div>
+
 @code {
     private List<BuyerStyleModel> styles = new();
     private List<MemoAdressModel> buyers = new();
@@ -98,6 +152,13 @@
     
     private string buyerSearchText = string.Empty;
     private bool showBuyerDropdown = false;
+    private string _searchText = string.Empty;
+    private int _pageSize = 10;
+    private int _currentPage = 1;
+    private bool _syncing = false;
+    private string _syncMessage = string.Empty;
+    private bool _syncSuccess = false;
+    private const string MODEL_NAME = "StyleMaster";
     
     private IEnumerable<MemoAdressModel> filteredBuyers => 
         string.IsNullOrWhiteSpace(buyerSearchText)
@@ -105,6 +166,22 @@
             : buyers.Where(b => 
                 (b.Name?.Contains(buyerSearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
                 (b.NameAbbr?.Contains(buyerSearchText, StringComparison.OrdinalIgnoreCase) ?? false));
+
+    private IEnumerable<BuyerStyleModel> FilteredData => string.IsNullOrWhiteSpace(_searchText)
+        ? styles
+        : styles.Where(s =>
+            (s.Buyer?.Name ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+            (s.Buyer?.NameAbbr ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+            (s.StyleName ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+            (s.Description ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase));
+
+    private List<BuyerStyleModel> PagedData => FilteredData.Skip((_currentPage - 1) * _pageSize).Take(_pageSize).ToList();
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(FilteredData.Count() / (double)_pageSize));
+
+    private void OnPageSizeChanged() => _currentPage = 1;
+    private void PrevPage() { if (_currentPage > 1) _currentPage--; }
+    private void NextPage() { if (_currentPage < TotalPages) _currentPage++; }
+    private void GotoPage(int p) => _currentPage = Math.Clamp(p, 1, TotalPages);
 
     protected override async Task OnInitializedAsync()
     {
@@ -185,5 +262,123 @@
         Db.BuyerStyles.Remove(style);
         await Db.SaveChangesAsync();
         await LoadData();
+    }
+
+    private async Task Synchronize()
+    {
+        if (editingStyle.BuyerId == 0)
+        {
+            _syncMessage = "Please select a buyer first.";
+            _syncSuccess = false;
+            return;
+        }
+
+        _syncing = true;
+        _syncMessage = string.Empty;
+        _syncSuccess = false;
+        StateHasChanged();
+
+        try
+        {
+            var selectedBuyer = buyers.FirstOrDefault(b => b.Id == editingStyle.BuyerId);
+            if (selectedBuyer == null || string.IsNullOrEmpty(selectedBuyer.Code))
+            {
+                _syncMessage = "Selected buyer not found or has no code.";
+                _syncSuccess = false;
+                return;
+            }
+
+            var buyerCode = selectedBuyer.Code;
+
+            var syncRecord = await Db.Synchronizings.FirstOrDefaultAsync(s => 
+                s.ModelName == MODEL_NAME && s.BuyerId == editingStyle.BuyerId);
+            if (syncRecord == null)
+            {
+                syncRecord = new SynchronizingModel
+                {
+                    ModelName = MODEL_NAME,
+                    BuyerId = editingStyle.BuyerId,
+                    SynchDate = DateTime.Parse("2025-01-01")
+                };
+                Db.Synchronizings.Add(syncRecord);
+                await Db.SaveChangesAsync();
+            }
+
+            var synchDate = syncRecord.SynchDate.ToString("yyyy-MM-dd");
+
+            var existingStyleNames = styles
+                .Where(s => s.BuyerId == editingStyle.BuyerId)
+                .Select(s => s.StyleName)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var newStyles = new List<BuyerStyleModel>();
+
+            var connectionString = "DSN=Stage64;UID=sql;PWD=sql;";
+
+            using var conn = new OdbcConnection(connectionString);
+            await conn.OpenAsync();
+
+            var query = @"SELECT buyer_code, ord_style_no, ord_garment_name 
+                          FROM dba.orders 
+                          WHERE order_date >= ?
+                            AND ord_type = 'g' 
+                            AND buyer_code = ?
+                          GROUP BY buyer_code, ord_style_no, ord_garment_name";
+
+            using var cmd = new OdbcCommand(query, conn);
+            cmd.Parameters.AddWithValue("@synchDate", synchDate);
+            cmd.Parameters.AddWithValue("@buyer_code", buyerCode);
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                var styleName = reader.IsDBNull(1) ? "" : reader.GetString(1).Trim();
+                
+                if (string.IsNullOrEmpty(styleName))
+                    continue;
+
+                if (existingStyleNames.Contains(styleName))
+                    continue;
+
+                var newStyle = new BuyerStyleModel
+                {
+                    BuyerId = editingStyle.BuyerId,
+                    StyleName = styleName,
+                    Description = reader.IsDBNull(2) ? "" : reader.GetString(2).Trim()
+                };
+
+                newStyles.Add(newStyle);
+                existingStyleNames.Add(styleName);
+            }
+
+            conn.Close();
+
+            if (newStyles.Count > 0)
+            {
+                Db.BuyerStyles.AddRange(newStyles);
+                syncRecord.SynchDate = DateTime.Today;
+                await Db.SaveChangesAsync();
+                await LoadData();
+
+                _syncSuccess = true;
+                _syncMessage = $"Synchronization completed. Added {newStyles.Count} new style(s) for buyer {selectedBuyer.Name}.";
+            }
+            else
+            {
+                _syncSuccess = true;
+                _syncMessage = $"Synchronization completed. No new styles to add for buyer {selectedBuyer.Name}.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to sync styles from Sybase");
+            _syncSuccess = false;
+            _syncMessage = $"Synchronization failed: {ex.Message}";
+        }
+        finally
+        {
+            _syncing = false;
+            StateHasChanged();
+        }
     }
 }

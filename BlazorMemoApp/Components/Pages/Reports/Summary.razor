@@ -69,6 +69,10 @@ else
                     <th class="text-end">Stock Usable Qty</th>
                     <th class="text-end">Stock Non-Usable Qty</th>
                     <th class="text-end">Total Extra Paid</th>
+                    <th class="text-end">Amount Costing</th>
+                    <th class="text-end">Amount DN</th>
+                    <th class="text-end">Saving</th>
+                    <th class="text-end">Amount Commitment</th>
                     <th class="text-end">Percent Of Fob Value</th>
                 </tr>
             </thead>
@@ -89,6 +93,10 @@ else
                         <td class="text-end">@row.StockUsableQty.ToString("N0")</td>
                         <td class="text-end">@row.StockNonUsableQty.ToString("N0")</td>
                         <td class="text-end">@row.TotalExtraPaid.ToString("N2")</td>
+                        <td class="text-end">@row.AmountCosting.ToString("N2")</td>
+                        <td class="text-end">@row.AmountDN.ToString("N2")</td>
+                        <td class="text-end">@row.Saving.ToString("N2")</td>
+                        <td class="text-end">@row.AmountCommitment.ToString("N2")</td>
                         <td class="text-end">@string.Format("{0:P2}",@row.PercentOfFobValue)</td>
                     </tr>
                 }
@@ -102,7 +110,11 @@ else
                     <td class="text-end">@_data.Sum(x => x.StockUsableQty).ToString("N0")</td>
                     <td class="text-end">@_data.Sum(x => x.StockNonUsableQty).ToString("N0")</td>
                     <td class="text-end">@_data.Sum(x => x.TotalExtraPaid).ToString("N2")</td>
-                    
+                    <td class="text-end">@_data.Sum(x => x.AmountCosting).ToString("N2")</td>
+                    <td class="text-end">@_data.Sum(x => x.AmountDN).ToString("N2")</td>
+                    <td class="text-end">@_data.Sum(x => x.Saving).ToString("N2")</td>
+                    <td class="text-end">@_data.Sum(x => x.AmountCommitment).ToString("N2")</td>
+                    <td></td>
                 </tr>
             </tfoot>
         </table>
@@ -174,13 +186,9 @@ else
         var buyers = await Db.MemoAddresses.Where(a => a.Type.Contains("B")).ToListAsync();
         var styles = await Db.BuyerStyles.ToListAsync();
 
-
-
-        //var gmtFobValue = m.GmtFobValue;
-
-        _data = memos.SelectMany(m => m.Details.Select(d => new ReportRow
+        // create flat detail items first, then group by the requested keys and aggregate the sums
+        var detailRows = memos.SelectMany(m => m.Details.Select(d => new
         {
-            MemoId = m.Id,
             MemoNo = m.MemoNo,
             MemoDate = m.MemoDate,
             BuyerId = m.BuyerId,
@@ -188,18 +196,44 @@ else
             StyleId = m.StyleId,
             StyleName = styles.FirstOrDefault(s => s.Id == m.StyleId)?.StyleName ?? "",
             GmtQty = m.GmtQty,
-            GmtFobValue = m.GmtFobValue,
+            GmtFobRate = m.GmtFobRate,
             SurchargePaid = d.SurchargePaid,
             StockUsableQty = d.StockUsableQty,
             StockNonUsableQty = d.MCQQty - (d.BOMQty - d.AvailStockQty) - d.StockUsableQty,
             TotalExtraPaid = (d.Price * d.MCQQty) - (d.Price * (d.BOMQty - d.AvailStockQty)) + d.SurchargePaid,
-            PercentOfFobValue = m.GmtFobValue != 0
-                    ? ((d.Price * d.MCQQty)
-                      - (d.Price * (d.BOMQty - d.AvailStockQty))
-                      + d.SurchargePaid) / m.GmtFobValue
-                    : 0
+            AmountCosting = d.ModeOfCollect == "C" ? d.TotalExtraCollected : 0m,
+            AmountDN = d.ModeOfCollect == "D" ? d.TotalExtraCollected : 0m,
+            Saving = (d.ModeOfCollect == "C" ? d.TotalExtraCollected : 0m) + (d.ModeOfCollect == "D" ? d.TotalExtraCollected : 0m) - ((d.Price * d.MCQQty) - (d.Price * (d.BOMQty - d.AvailStockQty)) + d.SurchargePaid),
+            AmountCommitment = d.ModeOfCollect == "F" ? d.TotalExtraCollected : 0m
+        }));
 
-        })).ToList();
+        //var gmtFobValue = m.GmtFobValue;
+
+        _data = detailRows
+             .GroupBy(x => new { x.MemoNo, x.MemoDate, x.BuyerId, x.BuyerName, x.StyleId, x.StyleName, x.GmtQty, x.GmtFobRate })
+             .Select(g => new ReportRow
+             {
+                 MemoNo = g.Key.MemoNo,
+                 MemoDate = g.Key.MemoDate,
+                 BuyerId = g.Key.BuyerId,
+                 BuyerName = g.Key.BuyerName,
+                 StyleId = g.Key.StyleId,
+                 StyleName = g.Key.StyleName,
+                 GmtQty = g.Key.GmtQty,
+                 GmtFobValue = (g.Key.GmtQty * g.Key.GmtFobRate),
+                 SurchargePaid = g.Sum(i => i.SurchargePaid),
+                 StockUsableQty = g.Sum(i => i.StockUsableQty),
+                 StockNonUsableQty = g.Sum(i => i.StockNonUsableQty),
+                 TotalExtraPaid = g.Sum(i => i.TotalExtraPaid),
+                 AmountCosting = g.Sum(i => i.AmountCosting),
+                 AmountDN = g.Sum(i => i.AmountDN),
+                 Saving = g.Sum(i => i.Saving),
+                 AmountCommitment = g.Sum(i => i.AmountCommitment),
+                 PercentOfFobValue = (g.Key.GmtQty.HasValue && g.Key.GmtFobRate.HasValue && g.Key.GmtFobRate.Value != 0m && g.Key.GmtQty.Value != 0m)
+                     ? g.Sum(i => i.TotalExtraPaid) / (g.Key.GmtQty * g.Key.GmtFobRate)
+                     : 0m
+             })
+             .ToList();
         
         _loading = false;
     }
@@ -248,13 +282,13 @@ else
     private string GenerateCsv()
     {
         var sb = new System.Text.StringBuilder();
-        sb.AppendLine("Serial No,Buyer,Memo #,Memo Date,Style,Gmt Qty,Gmt FOB Value,Surcharge Paid,Stock Usable Qty,Stock Non-Usable Qty,Total Extra Paid");
+        sb.AppendLine("Serial No,Buyer,Memo #,Memo Date,Style,Gmt Qty,Gmt FOB Value,Surcharge Paid,Stock Usable Qty,Stock Non-Usable Qty,Total Extra Paid,Amount Costing,Amount DN,Amount Commitment,Percent Of Fob Value");
         
         var serial = 0;
         foreach (var row in FilteredData)
         {
             serial++;
-            sb.AppendLine($"{serial},\"{row.BuyerName}\",\"{row.MemoNo}\",{row.MemoDate:yyyy-MM-dd},\"{row.StyleName}\",{row.GmtQty},{row.GmtFobValue},{row.SurchargePaid},{row.StockUsableQty},{row.StockNonUsableQty},{row.TotalExtraPaid}");
+            sb.AppendLine($"{serial},\"{row.BuyerName}\",\"{row.MemoNo}\",{row.MemoDate:yyyy-MM-dd},\"{row.StyleName}\",{row.GmtQty},{row.GmtFobValue},{row.SurchargePaid},{row.StockUsableQty},{row.StockNonUsableQty},{row.TotalExtraPaid},{row.AmountCosting},{row.AmountDN},{row.AmountCommitment},{row.PercentOfFobValue:P2}");
         }
         
         return sb.ToString();
@@ -275,6 +309,10 @@ else
         public int StockUsableQty { get; set; }
         public int StockNonUsableQty { get; set; }
         public decimal TotalExtraPaid { get; set; }
+        public decimal AmountCosting { get; set; }
+        public decimal AmountDN { get; set; }
+        public decimal Saving { get; set; }
+        public decimal AmountCommitment { get; set; }
         public decimal? PercentOfFobValue { get; set; }
     }
 }

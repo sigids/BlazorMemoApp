@@ -1,0 +1,339 @@
+@page "/reports/detail"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@rendermode InteractiveServer
+@using BlazorMemoApp.Models
+@using BlazorMemoApp.Data
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext Db
+@inject IJSRuntime JS
+
+<h1>Report Detail</h1>
+<p class="text-muted">Memo details report with all columns</p>
+
+<div class="mb-3 d-flex flex-wrap gap-2 align-items-center">
+    <div class="input-group" style="max-width:300px;">
+        <span class="input-group-text">Search</span>
+        <input class="form-control" @bind="_searchText" @bind:event="oninput" placeholder="Buyer, Memo#, Style, PO..." />
+    </div>
+    
+    <div class="input-group" style="max-width:200px;">
+        <span class="input-group-text">From</span>
+        <input type="date" class="form-control" @bind="_dateFrom" />
+    </div>
+    
+    <div class="input-group" style="max-width:200px;">
+        <span class="input-group-text">To</span>
+        <input type="date" class="form-control" @bind="_dateTo" />
+    </div>
+    
+    <button class="btn btn-primary" @onclick="LoadData">Apply Filter</button>
+    <button class="btn btn-outline-secondary" @onclick="ClearFilter">Clear</button>
+    
+    <div class="ms-auto d-flex gap-2">
+        <button class="btn btn-success" @onclick="ExportExcel">Export Excel</button>
+        <button class="btn btn-danger" @onclick="ExportPdf">Export PDF</button>
+    </div>
+</div>
+
+<div class="mb-2">
+    <select class="form-select form-select-sm" style="width:100px;" @bind="_pageSize" @bind:after="OnPageSizeChanged">
+        <option value="10">10</option>
+        <option value="25">25</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+    </select>
+</div>
+
+@if (_loading)
+{
+    <p><em>Loading...</em></p>
+}
+else if (_data.Count == 0)
+{
+    <div class="alert alert-info">No data found.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped table-sm" style="font-size: 0.85rem;">
+            <thead class="table-light">
+                <tr>
+                    <th>#</th>
+                    <th>Buyer</th>
+                    <th>Memo #</th>
+                    <th>Memo Date</th>
+                    <th>Style</th>
+                    <th class="text-end">Gmt Qty</th>
+                    <th class="text-end">Gmt FOB Value</th>
+                    <th>PO</th>
+                    <th>Article</th>
+                    <th>Color</th>
+                    <th>Size</th>
+                    <th class="text-end">Price</th>
+                    <th>Currency</th>
+                    <th>Unit</th>
+                    <th class="text-end">BOM Qty</th>
+                    <th>SPI No</th>
+                    <th class="text-end">BOM Amount</th>
+                    <th class="text-end">Avail Stock Qty</th>
+                    <th class="text-end">Stock Amount</th>
+                    <th class="text-end">Purchase Qty</th>
+                    <th class="text-end">Purchase Amount</th>
+                    <th class="text-end">MCQ Qty</th>
+                    <th class="text-end">MCQ Amount</th>
+                    <th class="text-end">Diff</th>
+                    <th class="text-end">Surcharge Paid</th>
+                    <th class="text-end">Total Extra Paid</th>
+                    <th class="text-end">Stock From MCQ</th>
+                    <th class="text-end">Stock Usable Qty</th>
+                    <th class="text-end">Stock Usable Amount</th>
+                    <th class="text-end">Stock Non-Usable Qty</th>
+                    <th class="text-end">Stock Non-Usable Amount</th>
+                    <th class="text-end">Total Extra Collected</th>
+                    <th>Mode Of Collect</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{ var serialNo = (_currentPage - 1) * _pageSize; }
+                @foreach (var row in PagedData)
+                {
+                    serialNo++;
+                    <tr>
+                        <td>@serialNo</td>
+                        <td>@row.BuyerName</td>
+                        <td>@row.MemoNo</td>
+                        <td>@row.MemoDate.ToString("yyyy-MM-dd")</td>
+                        <td>@row.StyleName</td>
+                        <td class="text-end">@row.GmtQty?.ToString("N0")</td>
+                        <td class="text-end">@row.GmtFobValue?.ToString("N2")</td>
+                        <td>@row.PONumber</td>
+                        <td>@row.Article</td>
+                        <td>@row.Color</td>
+                        <td>@row.Size</td>
+                        <td class="text-end">@row.Price.ToString("N2")</td>
+                        <td>@row.Currency</td>
+                        <td>@row.Unit</td>
+                        <td class="text-end">@row.BOMQty.ToString("N0")</td>
+                        <td>@row.SpiNo</td>
+                        <td class="text-end">@row.BOMAmount.ToString("N2")</td>
+                        <td class="text-end">@row.AvailStockQty.ToString("N0")</td>
+                        <td class="text-end">@row.StockAmount.ToString("N2")</td>
+                        <td class="text-end">@row.PurchaseQty.ToString("N0")</td>
+                        <td class="text-end">@row.PurchaseAmount.ToString("N2")</td>
+                        <td class="text-end">@row.MCQQty.ToString("N0")</td>
+                        <td class="text-end">@row.MCQAmount.ToString("N2")</td>
+                        <td class="text-end">@row.Diff.ToString("N2")</td>
+                        <td class="text-end">@row.SurchargePaid.ToString("N2")</td>
+                        <td class="text-end">@row.TotalExtraPaid.ToString("N2")</td>
+                        <td class="text-end">@row.StockFromMCQ.ToString("N0")</td>
+                        <td class="text-end">@row.StockUsableQty.ToString("N0")</td>
+                        <td class="text-end">@row.StockUsableAmount.ToString("N2")</td>
+                        <td class="text-end">@row.StockNonUsableQty.ToString("N0")</td>
+                        <td class="text-end">@row.StockNonUsableAmount.ToString("N2")</td>
+                        <td class="text-end">@row.TotalExtraCollected.ToString("N2")</td>
+                        <td>@row.ModeOfCollect</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="d-flex justify-content-between align-items-center">
+        <div>Showing @((_currentPage - 1) * _pageSize + 1) - @(Math.Min(_currentPage * _pageSize, FilteredData.Count())) of @FilteredData.Count()</div>
+        <nav>
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item @(_currentPage == 1 ? "disabled" : "")">
+                    <button type="button" class="page-link" @onclick="PrevPage" disabled="@(_currentPage == 1)">Prev</button>
+                </li>
+                @for (var p = 1; p <= Math.Min(TotalPages, 10); p++)
+                {
+                    var page = p;
+                    <li class="page-item @(p == _currentPage ? "active" : "")">
+                        <button type="button" class="page-link" @onclick="() => GotoPage(page)">@p</button>
+                    </li>
+                }
+                @if (TotalPages > 10)
+                {
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                    <li class="page-item @(TotalPages == _currentPage ? "active" : "")">
+                        <button type="button" class="page-link" @onclick="() => GotoPage(TotalPages)">@TotalPages</button>
+                    </li>
+                }
+                <li class="page-item @(_currentPage == TotalPages ? "disabled" : "")">
+                    <button type="button" class="page-link" @onclick="NextPage" disabled="@(_currentPage == TotalPages)">Next</button>
+                </li>
+            </ul>
+        </nav>
+    </div>
+}
+
+@code {
+
+    private List<ReportDetailRow> _data = new();
+    private bool _loading = true;
+    private string _searchText = string.Empty;
+    private DateTime? _dateFrom;
+    private DateTime? _dateTo;
+    private int _pageSize = 25;
+    private int _currentPage = 1;
+
+    private IEnumerable<ReportDetailRow> FilteredData => string.IsNullOrWhiteSpace(_searchText)
+        ? _data
+        : _data.Where(r => 
+            (r.BuyerName ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+            (r.MemoNo ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+            (r.StyleName ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+            (r.PONumber ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+            (r.Article ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+            (r.Color ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase));
+
+    private List<ReportDetailRow> PagedData => FilteredData.Skip((_currentPage - 1) * _pageSize).Take(_pageSize).ToList();
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(FilteredData.Count() / (double)_pageSize));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _loading = true;
+        _currentPage = 1;
+
+        var query = Db.Memos
+            .Include(m => m.Details)
+                .ThenInclude(d => d.SpiBomDetails)
+            .AsQueryable();
+
+        if (_dateFrom.HasValue)
+            query = query.Where(m => m.MemoDate >= _dateFrom.Value);
+
+        if (_dateTo.HasValue)
+            query = query.Where(m => m.MemoDate <= _dateTo.Value);
+
+        var memos = await query.ToListAsync();
+        var buyers = await Db.MemoAddresses.Where(a => a.Type.Contains("B")).ToListAsync();
+        var styles = await Db.BuyerStyles.ToListAsync();
+
+        _data = memos.SelectMany(m => m.Details.Select(d => new ReportDetailRow
+        {
+            MemoNo = m.MemoNo,
+            MemoDate = m.MemoDate,
+            BuyerName = buyers.FirstOrDefault(b => b.Id == m.BuyerId)?.Name ?? "",
+            StyleName = styles.FirstOrDefault(s => s.Id == m.StyleId)?.StyleName ?? "",
+            GmtQty = m.GmtQty,
+            GmtFobValue = m.GmtFobValue,
+            PONumber = d.PONumber ?? m.PONumber ?? "",
+            Article = d.Article,
+            Color = d.Color,
+            Size = d.Size,
+            Price = d.Price,
+            Currency = d.Currency,
+            Unit = d.Unit,
+            BOMQty = d.BOMQty,
+            SpiNo = string.Join("; ", d.SpiBomDetails.Select(s => s.SpiNo)),
+            AvailStockQty = d.AvailStockQty,
+            MCQQty = d.MCQQty,
+            SurchargePaid = d.SurchargePaid,
+            StockUsableQty = d.StockUsableQty,
+            TotalExtraCollected = d.TotalExtraCollected,
+            ModeOfCollect = d.ModeOfCollect
+        })).ToList();
+        
+        _loading = false;
+    }
+
+    private void ClearFilter()
+    {
+        _searchText = string.Empty;
+        _dateFrom = null;
+        _dateTo = null;
+        _currentPage = 1;
+    }
+
+    private void OnPageSizeChanged()
+    {
+        _currentPage = 1;
+    }
+
+    private void PrevPage()
+    {
+        if (_currentPage > 1) _currentPage--;
+    }
+
+    private void NextPage()
+    {
+        if (_currentPage < TotalPages) _currentPage++;
+    }
+
+    private void GotoPage(int p)
+    {
+        _currentPage = Math.Clamp(p, 1, TotalPages);
+    }
+
+    private async Task ExportExcel()
+    {
+        var csv = GenerateCsv();
+        var bytes = System.Text.Encoding.UTF8.GetBytes(csv);
+        var base64 = Convert.ToBase64String(bytes);
+        await JS.InvokeVoidAsync("downloadFile", $"ReportDetail_{DateTime.Now:yyyyMMdd}.csv", "text/csv", base64);
+    }
+
+    private async Task ExportPdf()
+    {
+        await JS.InvokeVoidAsync("window.print");
+    }
+
+    private string GenerateCsv()
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("No,Buyer,Memo #,Memo Date,Style,Gmt Qty,Gmt FOB Value,PO,Article,Color,Size,Price,Currency,Unit,BOM Qty,SPI No,BOM Amount,Avail Stock Qty,Stock Amount,Purchase Qty,Purchase Amount,MCQ Qty,MCQ Amount,Diff,Surcharge Paid,Total Extra Paid,Stock From MCQ,Stock Usable Qty,Stock Usable Amount,Stock Non-Usable Qty,Stock Non-Usable Amount,Total Extra Collected,Mode Of Collect");
+        
+        var serial = 0;
+        foreach (var row in FilteredData)
+        {
+            serial++;
+            sb.AppendLine($"{serial},\"{row.BuyerName}\",\"{row.MemoNo}\",{row.MemoDate:yyyy-MM-dd},\"{row.StyleName}\",{row.GmtQty},{row.GmtFobValue},\"{row.PONumber}\",\"{row.Article}\",\"{row.Color}\",\"{row.Size}\",{row.Price},\"{row.Currency}\",\"{row.Unit}\",{row.BOMQty},\"{row.SpiNo}\",{row.BOMAmount},{row.AvailStockQty},{row.StockAmount},{row.PurchaseQty},{row.PurchaseAmount},{row.MCQQty},{row.MCQAmount},{row.Diff},{row.SurchargePaid},{row.TotalExtraPaid},{row.StockFromMCQ},{row.StockUsableQty},{row.StockUsableAmount},{row.StockNonUsableQty},{row.StockNonUsableAmount},{row.TotalExtraCollected},\"{row.ModeOfCollect}\"");
+        }
+        
+        return sb.ToString();
+    }
+
+    private class ReportDetailRow
+    {
+        public string MemoNo { get; set; } = string.Empty;
+        public DateTime MemoDate { get; set; }
+        public string BuyerName { get; set; } = string.Empty;
+        public string StyleName { get; set; } = string.Empty;
+        public int? GmtQty { get; set; }
+        public decimal? GmtFobValue { get; set; }
+        public string PONumber { get; set; } = string.Empty;
+        public string Article { get; set; } = string.Empty;
+        public string Color { get; set; } = string.Empty;
+        public string Size { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+        public string Currency { get; set; } = string.Empty;
+        public string Unit { get; set; } = string.Empty;
+        public int BOMQty { get; set; }
+        public string SpiNo { get; set; } = string.Empty;
+        public int AvailStockQty { get; set; }
+        public int MCQQty { get; set; }
+        public decimal SurchargePaid { get; set; }
+        public int StockUsableQty { get; set; }
+        public decimal TotalExtraCollected { get; set; }
+        public string ModeOfCollect { get; set; } = string.Empty;
+
+        // Computed properties
+        public decimal BOMAmount => Price * BOMQty;
+        public decimal StockAmount => Price * AvailStockQty;
+        public int PurchaseQty => BOMQty - AvailStockQty;
+        public decimal PurchaseAmount => Price * PurchaseQty;
+        public decimal MCQAmount => Price * MCQQty;
+        public decimal Diff => MCQAmount - PurchaseAmount;
+        public int StockFromMCQ => MCQQty - PurchaseQty;
+        public decimal StockUsableAmount => Price * StockUsableQty;
+        public int StockNonUsableQty => MCQQty - PurchaseQty - StockUsableQty;
+        public decimal StockNonUsableAmount => Price * StockNonUsableQty;
+        public decimal TotalExtraPaid => Diff + SurchargePaid;
+    }
+}

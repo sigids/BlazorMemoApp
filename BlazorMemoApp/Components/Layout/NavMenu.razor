@@ -4,7 +4,7 @@
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">BlazorMemoApp</a>
+        <a class="navbar-brand" href="">BRA Memo App v1.0</a>
     </div>
 </div>
 
@@ -25,18 +25,29 @@
             </NavLink>
         </div>
 
-        <div class="nav-item px-3">
+        @* <div class="nav-item px-3">
             <NavLink class="nav-link" href="auth">
                 <span class="bi bi-lock-nav-menu" aria-hidden="true"></span> Auth Required
             </NavLink>
-        </div>
+        </div> *@
 
         <div class="nav-item px-3">
             <span class="nav-link text-info"><strong>Master</strong></span>
         </div>
         <div class="nav-item px-3 ps-4">
+            <NavLink class="nav-link" href="master/address">
+                <span class="bi bi-geo-alt" aria-hidden="true"></span> Address
+            </NavLink>
+        </div>
+        <div class="nav-item px-3 ps-4">
             <NavLink class="nav-link" href="master/styles">
                 <span class="bi bi-palette" aria-hidden="true"></span> Styles
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3 ps-4">
+            <NavLink class="nav-link" href="master/Orders">
+                <span class="bi bi-list" aria-hidden="true"></span> Orders
             </NavLink>
         </div>
 
@@ -46,6 +57,11 @@
         <div class="nav-item px-3 ps-4">
             <NavLink class="nav-link" href="reports/summary">
                 <span class="bi bi-file-earmark-bar-graph" aria-hidden="true"></span> Summary
+            </NavLink>
+        </div>
+        <div class="nav-item px-3 ps-4">
+            <NavLink class="nav-link" href="reports/detail">
+                <span class="bi bi-table" aria-hidden="true"></span> Detail
             </NavLink>
         </div>
 
@@ -62,6 +78,11 @@
                 <div class="nav-item px-3 ps-4">
                     <NavLink class="nav-link" href="admin/roles">
                         <span class="bi bi-shield-lock" aria-hidden="true"></span> Roles
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3 ps-4">
+                    <NavLink class="nav-link" href="admin/test-db">
+                        <span class="bi bi-hdd-network" aria-hidden="true"></span> Test Db
                     </NavLink>
                 </div>
             </Authorized>

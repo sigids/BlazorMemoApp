@@ -1,0 +1,8 @@
+.memo-table-wrap[b-mwp0zvtf5i] {
+    overflow-x: auto;
+}
+
+/* Ensure the memo grid can extend wider than the viewport so a horizontal scrollbar appears */
+.memo-table[b-mwp0zvtf5i] {
+    min-width: 1200px; /* adjust as needed based on number of columns */
+}

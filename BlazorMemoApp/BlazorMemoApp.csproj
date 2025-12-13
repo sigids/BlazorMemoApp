@@ -31,6 +31,7 @@
     <PackageReference Include="Syncfusion.Blazor" Version="23.2.7" />
     <PackageReference Include="Syncfusion.Blazor.Core" Version="23.2.7" />
     <PackageReference Include="Syncfusion.Blazor.Navigations" Version="23.2.7" />
+    <PackageReference Include="System.Data.Odbc" Version="9.0.0" />
   </ItemGroup>
 
 </Project>

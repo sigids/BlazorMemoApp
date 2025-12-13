@@ -157,8 +157,7 @@
               "ViewState": "AgIAAAYAAAAAAAAAAAA1wAQAAAANAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-11-26T03:57:53.158Z",
-              "IsPinned": true,
-              "EditorCaption": ""
+              "IsPinned": true
             },
             {
               "$type": "Document",
@@ -184,8 +183,7 @@
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
               "WhenOpened": "2025-11-17T08:39:06.246Z",
-              "IsPinned": true,
-              "EditorCaption": ""
+              "IsPinned": true
             },
             {
               "$type": "Document",
@@ -224,8 +222,7 @@
               "ViewState": "AgIAAGYBAAAAAAAAAAAYwG8BAAAvAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
               "WhenOpened": "2025-12-04T16:24:44.811Z",
-              "IsPinned": true,
-              "EditorCaption": ""
+              "IsPinned": true
             },
             {
               "$type": "Bookmark",
@@ -245,8 +242,7 @@
               "RelativeToolTip": "BlazorMemoApp\\Components\\Pages\\Admin\\TestConnection.razor",
               "ViewState": "AgIAAAYAAAAAAAAAAAAYwA8AAABiAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-12-03T15:35:56.725Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-03T15:35:56.725Z"
             },
             {
               "$type": "Document",
@@ -258,8 +254,7 @@
               "RelativeToolTip": "BlazorMemoApp\\Components\\Pages\\Master\\AddressMaster.razor",
               "ViewState": "AgIAACgBAAAAAAAAAAAAAC4BAABCAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-12-03T11:14:22.772Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-03T11:14:22.772Z"
             },
             {
               "$type": "Document",
@@ -269,7 +264,7 @@
               "RelativeDocumentMoniker": "BlazorMemoApp\\Components\\Pages\\Master\\StyleMaster.razor",
               "ToolTip": "C:\\APPS-DEV\\ASPNETCORE\\BlazorMemoApp\\BlazorMemoApp\\Components\\Pages\\Master\\StyleMaster.razor",
               "RelativeToolTip": "BlazorMemoApp\\Components\\Pages\\Master\\StyleMaster.razor",
-              "ViewState": "AgIAADgBAAAAAAAAAAAAADwBAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAADIBAAAAAAAAAAAAADsBAAAqAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
               "WhenOpened": "2025-12-04T14:44:42.934Z",
               "EditorCaption": ""
@@ -284,8 +279,7 @@
               "RelativeToolTip": "BlazorMemoApp\\appsettings.json",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAqAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-12-11T02:50:10.671Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-11T02:50:10.671Z"
             },
             {
               "$type": "Document",
@@ -297,8 +291,7 @@
               "RelativeToolTip": "BlazorMemoApp\\Components\\Layout\\MainLayout.razor",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAACoAAAAEAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-11-14T01:20:27.212Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-14T01:20:27.212Z"
             },
             {
               "$type": "Document",
@@ -310,8 +303,7 @@
               "RelativeToolTip": "BlazorMemoApp\\Components\\Layout\\NavMenu.razor",
               "ViewState": "AgIAAEUAAAAAAAAAAADgv1YAAAAWAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-11-14T01:39:28.66Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-14T01:39:28.66Z"
             },
             {
               "$type": "Document",
@@ -324,10 +316,6 @@
               "ViewState": "AgIAAKUAAAAAAAAAAAAwwMkAAAAsAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
               "WhenOpened": "2025-12-04T14:21:00.053Z"
-            },
-            {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{56df62a4-05a3-4e5b-aa1a-99371ccfb997}"
             },
             {
               "$type": "Document",
@@ -472,6 +460,10 @@
               "ViewState": "AgIAAAAAAAAAAAAAAAAYwBcAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
               "WhenOpened": "2025-11-13T22:37:47.425Z"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{56df62a4-05a3-4e5b-aa1a-99371ccfb997}"
             }
           ]
         }

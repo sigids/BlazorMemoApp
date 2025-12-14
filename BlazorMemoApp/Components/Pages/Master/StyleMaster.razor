@@ -4,7 +4,10 @@
 @using BlazorMemoApp.Models
 @using Microsoft.EntityFrameworkCore
 @using System.Data.Odbc
+@using System.Security.Claims
 @inject BlazorMemoApp.Data.ApplicationDbContext Db
+@inject BlazorMemoApp.Services.BuyerPrivilegeService BuyerPrivilegeService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject ILogger<StyleMaster> Logger
 
 <h1>Style Master</h1>
@@ -190,8 +193,20 @@
 
     private async Task LoadData()
     {
-        styles = await Db.BuyerStyles.Include(s => s.Buyer).ToListAsync();
-        buyers = await Db.MemoAddresses.Where(a => a.Type.Contains("B")).ToListAsync();
+        // Get current user ID for buyer privilege filtering
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        
+        var allBuyers = await Db.MemoAddresses.Where(a => a.Type.Contains("B")).ToListAsync();
+        buyers = !string.IsNullOrEmpty(userId) 
+            ? await BuyerPrivilegeService.FilterBuyersAsync(userId, allBuyers) 
+            : allBuyers;
+        
+        // Filter styles to only show those for allowed buyers
+        var allowedBuyerIds = buyers.Select(b => b.Id).ToHashSet();
+        styles = await Db.BuyerStyles.Include(s => s.Buyer)
+            .Where(s => allowedBuyerIds.Contains(s.BuyerId))
+            .ToListAsync();
     }
 
     private void ShowAddForm()

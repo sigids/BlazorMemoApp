@@ -4,7 +4,10 @@
 @using BlazorMemoApp.Models
 @using BlazorMemoApp.Data
 @using Microsoft.EntityFrameworkCore
+@using System.Security.Claims
 @inject ApplicationDbContext Db
+@inject BlazorMemoApp.Services.BuyerPrivilegeService BuyerPrivilegeService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JS
 
 <h1>Report Detail</h1>
@@ -200,9 +203,21 @@ else
         _loading = true;
         _currentPage = 1;
 
+        // Get current user ID for buyer privilege filtering
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        
+        var allBuyers = await Db.MemoAddresses.Where(a => a.Type.Contains("B")).ToListAsync();
+        var buyers = !string.IsNullOrEmpty(userId) 
+            ? await BuyerPrivilegeService.FilterBuyersAsync(userId, allBuyers) 
+            : allBuyers;
+        
+        var allowedBuyerIds = buyers.Select(b => b.Id).ToHashSet();
+
         var query = Db.Memos
             .Include(m => m.Details)
                 .ThenInclude(d => d.SpiBomDetails)
+            .Where(m => m.BuyerId == null || allowedBuyerIds.Contains(m.BuyerId.Value))
             .AsQueryable();
 
         if (_dateFrom.HasValue)
@@ -212,7 +227,6 @@ else
             query = query.Where(m => m.MemoDate <= _dateTo.Value);
 
         var memos = await query.ToListAsync();
-        var buyers = await Db.MemoAddresses.Where(a => a.Type.Contains("B")).ToListAsync();
         var styles = await Db.BuyerStyles.ToListAsync();
 
         _data = memos.SelectMany(m => m.Details.Select(d => new ReportDetailRow

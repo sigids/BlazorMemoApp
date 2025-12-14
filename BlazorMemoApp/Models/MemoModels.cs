@@ -188,3 +188,17 @@ public class EmailSettingsModel
     
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }
+
+public class UserBuyerPrivilegeModel
+{
+    public int Id { get; set; }
+    
+    public string UserId { get; set; } = string.Empty;
+    public ApplicationUser? User { get; set; }
+    
+    public int? BuyerId { get; set; }
+    public MemoAdressModel? Buyer { get; set; }
+    
+    // If BuyerId is null, it means "All Buyers" access
+    public bool HasAllBuyersAccess => BuyerId == null;
+}

@@ -2,10 +2,15 @@
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin")]
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
 @using BlazorMemoApp.Data
+@using BlazorMemoApp.Models
+@using BlazorMemoApp.Services
 
 @inject UserManager<ApplicationUser> UserManager
 @inject RoleManager<IdentityRole> RoleManager
+@inject ApplicationDbContext Db
+@inject BuyerPrivilegeService BuyerPrivilegeService
 @inject IJSRuntime JS
 
 <h1>Role Management</h1>
@@ -39,23 +44,60 @@ else
 
     @if (_selectedUser is not null)
     {
-        <div class="card">
-            <div class="card-header">Roles for @DisplayUser(_selectedUser)</div>
-            <div class="card-body">
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="role-admin" @bind="_roleAdmin" />
-                    <label class="form-check-label" for="role-admin">Admin</label>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">Roles for @DisplayUser(_selectedUser)</div>
+                    <div class="card-body">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="role-admin" @bind="_roleAdmin" />
+                            <label class="form-check-label" for="role-admin">Admin</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="role-supervisor" @bind="_roleSupervisor" />
+                            <label class="form-check-label" for="role-supervisor">Supervisor</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="role-user" @bind="_roleUser" />
+                            <label class="form-check-label" for="role-user">User</label>
+                        </div>
+                        <div class="mt-3">
+                            <button class="btn btn-primary" @onclick="SaveRoles">Save Roles</button>
+                        </div>
+                    </div>
                 </div>
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="role-supervisor" @bind="_roleSupervisor" />
-                    <label class="form-check-label" for="role-supervisor">Supervisor</label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="role-user" @bind="_roleUser" />
-                    <label class="form-check-label" for="role-user">User</label>
-                </div>
-                <div class="mt-3">
-                    <button class="btn btn-primary" @onclick="SaveRoles">Save</button>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">Buyer Privileges for @DisplayUser(_selectedUser)</div>
+                    <div class="card-body">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="buyer-all" 
+                                   checked="@_hasAllBuyersAccess" 
+                                   @onchange="OnAllBuyersChanged" />
+                            <label class="form-check-label fw-bold" for="buyer-all">All Buyers (Full Access)</label>
+                        </div>
+                        <hr />
+                        <div style="max-height: 300px; overflow-y: auto;">
+                            @foreach (var buyer in _allBuyers)
+                            {
+                                var buyerId = buyer.Id;
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" 
+                                           id="buyer-@buyerId" 
+                                           checked="@_selectedBuyerIds.Contains(buyerId)"
+                                           disabled="@_hasAllBuyersAccess"
+                                           @onchange="(e) => OnBuyerChanged(buyerId, (bool)(e.Value ?? false))" />
+                                    <label class="form-check-label @(_hasAllBuyersAccess ? "text-muted" : "")" for="buyer-@buyerId">
+                                        @buyer.Name - @buyer.NameAbbr
+                                    </label>
+                                </div>
+                            }
+                        </div>
+                        <div class="mt-3">
+                            <button class="btn btn-primary" @onclick="SaveBuyerPrivileges">Save Buyer Privileges</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -73,15 +115,20 @@ else
     private bool _roleSupervisor;
     private bool _roleUser;
 
+    // Buyer privileges
+    private List<MemoAdressModel> _allBuyers = new();
+    private HashSet<int> _selectedBuyerIds = new();
+    private bool _hasAllBuyersAccess = false;
+
     protected override async Task OnInitializedAsync()
     {
+        _allBuyers = await Db.MemoAddresses.Where(a => a.Type.Contains("B")).OrderBy(b => b.Name).ToListAsync();
         await LoadUsersAsync();
         _loading = false;
     }
 
     private async Task LoadUsersAsync()
     {
-        // UserManager.Users may require ToListAsync if backed by EF
         _users = UserManager.Users.OrderBy(u => u.Email ?? u.UserName).ToList();
         if (_users.Count > 0)
         {
@@ -102,13 +149,21 @@ else
         if (_selectedUser is null)
         {
             _roleAdmin = _roleSupervisor = _roleUser = false;
+            _selectedBuyerIds.Clear();
+            _hasAllBuyersAccess = false;
             return;
         }
 
+        // Load roles
         var roles = await UserManager.GetRolesAsync(_selectedUser);
         _roleAdmin = roles.Contains("Admin", StringComparer.OrdinalIgnoreCase);
         _roleSupervisor = roles.Contains("Supervisor", StringComparer.OrdinalIgnoreCase);
         _roleUser = roles.Contains("User", StringComparer.OrdinalIgnoreCase);
+
+        // Load buyer privileges
+        var privileges = await BuyerPrivilegeService.GetUserPrivilegesAsync(_selectedUser.Id);
+        _hasAllBuyersAccess = privileges.Any(p => p.BuyerId == null);
+        _selectedBuyerIds = privileges.Where(p => p.BuyerId.HasValue).Select(p => p.BuyerId!.Value).ToHashSet();
     }
 
     private async Task SaveRoles()
@@ -142,6 +197,42 @@ else
             var errors = string.Join("; ", addResult.Errors.Select(e => e.Description).Concat(removeResult.Errors.Select(e => e.Description)));
             await JS.InvokeVoidAsync("alert", $"Failed to update roles: {errors}");
         }
+    }
+
+    private void OnAllBuyersChanged(ChangeEventArgs e)
+    {
+        _hasAllBuyersAccess = (bool)(e.Value ?? false);
+        if (_hasAllBuyersAccess)
+        {
+            _selectedBuyerIds.Clear();
+        }
+    }
+
+    private void OnBuyerChanged(int buyerId, bool isChecked)
+    {
+        if (isChecked)
+            _selectedBuyerIds.Add(buyerId);
+        else
+            _selectedBuyerIds.Remove(buyerId);
+    }
+
+    private async Task SaveBuyerPrivileges()
+    {
+        if (_selectedUser is null) return;
+
+        var buyerIds = new List<int?>();
+        
+        if (_hasAllBuyersAccess)
+        {
+            buyerIds.Add(null); // null means "All Buyers"
+        }
+        else
+        {
+            buyerIds.AddRange(_selectedBuyerIds.Select(id => (int?)id));
+        }
+
+        await BuyerPrivilegeService.SaveUserPrivilegesAsync(_selectedUser.Id, buyerIds);
+        await JS.InvokeVoidAsync("alert", "Buyer privileges updated successfully.");
     }
 
     private static string DisplayUser(ApplicationUser u)

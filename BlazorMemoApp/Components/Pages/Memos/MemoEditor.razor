@@ -11,6 +11,7 @@
 @inject IHttpClientFactory HttpClientFactory
 @inject IWebHostEnvironment Environment
 @inject BlazorMemoApp.Services.EmailService EmailService
+@inject BlazorMemoApp.Services.BuyerPrivilegeService BuyerPrivilegeService
 
 
 <h1>Create Memo</h1>
@@ -307,7 +308,15 @@
         debounceTimer.AutoReset = false;
         debounceTimer.Elapsed += async (_, _) => await InvokeAsync(SearchPosAsync);
         
-        buyers = await Db.MemoAddresses.Where(a => a.Type.Contains("B")).ToListAsync();
+        // Get current user ID for buyer privilege filtering
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        
+        var allBuyers = await Db.MemoAddresses.Where(a => a.Type.Contains("B")).ToListAsync();
+        buyers = !string.IsNullOrEmpty(userId) 
+            ? await BuyerPrivilegeService.FilterBuyersAsync(userId, allBuyers) 
+            : allBuyers;
+        
         suppliers = await Db.MemoAddresses.Where(a => a.Type.Contains("V") || a.Type.Contains("F")).ToListAsync();
         styles = await Db.BuyerStyles.ToListAsync();
         orders = await Db.BuyerStyleOrders.ToListAsync();

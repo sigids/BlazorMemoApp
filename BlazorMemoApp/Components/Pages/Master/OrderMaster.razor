@@ -4,7 +4,10 @@
 @using BlazorMemoApp.Models
 @using Microsoft.EntityFrameworkCore
 @using System.Data.Odbc
+@using System.Security.Claims
 @inject BlazorMemoApp.Data.ApplicationDbContext Db
+@inject BlazorMemoApp.Services.BuyerPrivilegeService BuyerPrivilegeService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject ILogger<OrderMaster> Logger
 
 <h1>Order Master</h1>
@@ -217,9 +220,23 @@
 
     private async Task LoadData()
     {
-        orders = await Db.BuyerStyleOrders.Include(o => o.Buyer).Include(o => o.Style).ToListAsync();
-        buyers = await Db.MemoAddresses.Where(a => a.Type.Contains("B")).ToListAsync();
-        styles = await Db.BuyerStyles.ToListAsync();
+        // Get current user ID for buyer privilege filtering
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        
+        var allBuyers = await Db.MemoAddresses.Where(a => a.Type.Contains("B")).ToListAsync();
+        buyers = !string.IsNullOrEmpty(userId) 
+            ? await BuyerPrivilegeService.FilterBuyersAsync(userId, allBuyers) 
+            : allBuyers;
+        
+        // Filter orders and styles to only show those for allowed buyers
+        var allowedBuyerIds = buyers.Select(b => b.Id).ToHashSet();
+        orders = await Db.BuyerStyleOrders.Include(o => o.Buyer).Include(o => o.Style)
+            .Where(o => allowedBuyerIds.Contains(o.BuyerId))
+            .ToListAsync();
+        styles = await Db.BuyerStyles
+            .Where(s => allowedBuyerIds.Contains(s.BuyerId))
+            .ToListAsync();
     }
 
     private void ShowAddForm()

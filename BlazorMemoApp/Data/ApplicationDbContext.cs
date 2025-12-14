@@ -16,6 +16,7 @@ namespace BlazorMemoApp.Data
         public DbSet<PoExchangeRateModel> PoExchangeRates { get; set; }
         public DbSet<MemoAttachmentModel> MemoAttachments { get; set; }
         public DbSet<EmailSettingsModel> EmailSettings { get; set; }
+        public DbSet<UserBuyerPrivilegeModel> UserBuyerPrivileges { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

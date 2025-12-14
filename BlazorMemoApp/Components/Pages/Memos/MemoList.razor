@@ -14,6 +14,7 @@
 @using System.Security.Claims
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject BlazorMemoApp.Services.EmailService EmailService
+@inject BlazorMemoApp.Services.BuyerPrivilegeService BuyerPrivilegeService
 
 <h1>Memo List</h1>
 
@@ -157,15 +158,37 @@ else
     protected override async Task OnInitializedAsync()
     {
         UpdateMode();
-        // load memos including details for totals
-        _allMemos = await Db.Memos.Include(m => m.Details).Include(m => m.ApproveUser).OrderByDescending(m => m.MemoDate).ToListAsync();
+        
+        // Get current user ID for buyer privilege filtering
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        var userId = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        
+        // Get allowed buyer IDs for current user
+        var hasAllAccess = !string.IsNullOrEmpty(userId) && await BuyerPrivilegeService.HasAllBuyersAccessAsync(userId);
+        var allowedBuyerIds = !string.IsNullOrEmpty(userId) 
+            ? await BuyerPrivilegeService.GetAllowedBuyerIdsAsync(userId) 
+            : new List<int>();
+        
+        // Load memos filtered by buyer privilege
+        var query = Db.Memos.Include(m => m.Details).Include(m => m.ApproveUser).AsQueryable();
+        
+        if (!hasAllAccess && allowedBuyerIds.Count > 0)
+        {
+            query = query.Where(m => m.BuyerId == null || allowedBuyerIds.Contains(m.BuyerId.Value));
+        }
+        else if (!hasAllAccess && allowedBuyerIds.Count == 0 && !string.IsNullOrEmpty(userId))
+        {
+            // User has no privileges - show no data
+            query = query.Where(m => false);
+        }
+        
+        _allMemos = await query.OrderByDescending(m => m.MemoDate).ToListAsync();
         if (_currentPage > TotalPages) _currentPage = TotalPages;
 
         if (_approvalMode)
         {
             // Non-authorized users should not access approval mode; redirect to regular list
-            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-            var user = authState.User;
             if (!(user?.IsInRole("Admin") == true || user?.IsInRole("Supervisor") == true))
             {
                 Nav.NavigateTo("/memos", forceLoad: false);

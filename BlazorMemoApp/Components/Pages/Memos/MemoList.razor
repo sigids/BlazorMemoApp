@@ -292,7 +292,7 @@ else
         sb.AppendLine($"GmtQty,{memo.GmtQty}");
         sb.AppendLine($"GmtFobValue,{memo.GmtFobValue?.ToString("F2", CultureInfo.InvariantCulture) ?? string.Empty}");
         sb.AppendLine($"ApproveStatus,{EscapeCsv(memo.ApproveStatus)}");
-        sb.AppendLine($"ApproveUserId,{EscapeCsv(memo.ApproveUserId)}");
+        sb.AppendLine($"ApproveUserId,{EscapeCsv(memo.ApproveUser.UserName)}");
         sb.AppendLine($"ApproveDate,{(memo.ApproveDate?.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) ?? string.Empty)}");
         sb.AppendLine();
 

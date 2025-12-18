@@ -329,23 +329,12 @@
         var currentYear = DateTime.Now.Year;
         var yearPrefix = $"MO{currentYear.ToString().Substring(2)}"; // e.g., "MO25"
         
-        // Get the last memo number for this year
-        var lastMemo = await Db.Memos
+        // Count memos for current year and add 1 for next serial
+        var memoCountThisYear = await Db.Memos
             .Where(m => m.MemoNo != null && m.MemoNo.StartsWith(yearPrefix))
-            .OrderByDescending(m => m.MemoNo)
-            .FirstOrDefaultAsync();
+            .CountAsync();
         
-        int nextSerial = 1;
-        if (lastMemo != null && lastMemo.MemoNo.Length >= 14)
-        {
-            // MemoNo format: MO + yyMMdd (6) + serial (6) = 14 chars total
-            // Extract serial number from position 8 (after "MOyyMMdd")
-            var serialPart = lastMemo.MemoNo.Substring(8);
-            if (int.TryParse(serialPart, out int lastSerial))
-            {
-                nextSerial = lastSerial + 1;
-            }
-        }
+        int nextSerial = memoCountThisYear + 1;
         
         var dateStr = DateTime.Now.ToString("yyMMdd");
         return $"MO{dateStr}{nextSerial:D6}";
@@ -453,6 +442,9 @@ private async Task Save()
             header.CreatedByUserId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             header.CreatedByEmail = user.FindFirst(ClaimTypes.Email)?.Value ?? user.Identity?.Name;
         }
+        
+        // Regenerate memo number before save to avoid duplicates from concurrent users
+        header.MemoNo = await GenerateMemoNoAsync();
         
         Console.WriteLine($"Saving Memo - BuyerId: {header.BuyerId}, SupplierId: {header.SupplierId}, StyleId: {header.StyleId}");
         
@@ -677,6 +669,9 @@ private async Task Approve()
             // Set creator info for new memo
             header.CreatedByUserId = userId;
             header.CreatedByEmail = user.FindFirst(ClaimTypes.Email)?.Value ?? user.Identity?.Name;
+            
+            // Regenerate memo number before save to avoid duplicates from concurrent users
+            header.MemoNo = await GenerateMemoNoAsync();
             
             Db.Memos.Add(header);
             await Db.SaveChangesAsync();

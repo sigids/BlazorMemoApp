@@ -35,6 +35,12 @@ public class MemoAllocationDetailModel
     public int MemoAllocationHeaderId { get; set; }
     public MemoAllocationHeaderModel? MemoAllocationHeader { get; set; }
 
+    [Display(Name = "PO No")]
+    public string? PONo { get; set; }
+
+    [Display(Name = "Mat Name")]
+    public string MatName { get; set; } = string.Empty;
+
     public string Article { get; set; } = string.Empty;
     public string Color { get; set; } = string.Empty;
     public string Size { get; set; } = string.Empty;
@@ -117,14 +123,16 @@ public class MemoAllocationSpiModel
 
 public static class UnitMaster
 {
-    public static readonly List<string> Units = new() { "UnitTgr", "Unit1", "Unit2", "Unit3" };
+    public static readonly List<string> Units = new() { "UnitTgr", "Unit1", "Unit2", "Unit3", "UnitJFC", "UnitFC" };
 
     public static readonly Dictionary<string, List<string>> UnitWarehouses = new()
     {
         { "UnitTgr", new List<string> { "War-J1" } },
         { "Unit1", new List<string> { "War-Y1" } },
-        { "Unit2", new List<string> { "War-Y2", "War-Y3" } },
-        { "Unit3", new List<string> { "War-K1" } }
+        { "Unit2", new List<string> { "War-Y2", "War-Y3"} },
+        { "Unit3", new List<string> { "War-K1" } },
+        { "UnitFC", new List<string> { "War-FC" } },
+        { "UnitJFC", new List<string> { "War-JFC" } }
     };
 
     public static List<string> GetWarehouses(string unitName)

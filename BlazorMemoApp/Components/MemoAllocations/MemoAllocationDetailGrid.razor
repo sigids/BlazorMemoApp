@@ -47,6 +47,8 @@ else
             <thead class="table-light">
                 <tr class="align-middle">
                     <th style="width:36px;"></th>
+                    <th>PO No</th>
+                    <th>Mat Name</th>
                     <th>Article</th>
                     <th>Color</th>
                     <th>Size</th>
@@ -61,7 +63,7 @@ else
                     <th style="width:100px;">Qty Pass</th>
                     <th>Date Conf Qc</th>
                     <th>Amount Pass</th>
-                    <th style="width:150px;">Buyer</th>
+                    <th style="width:150px;">Original Buyer</th>
                     <th>Qty Allocate</th>
                     <th>Amount Allocate</th>
                     <th>Qty Balance</th>
@@ -92,6 +94,8 @@ else
                                 <input type="checkbox" class="form-check-input" checked="@(_selected.Contains(it))" @onchange="(e) => OnRowSelectedChanged(it, e)" />
                             </div>
                         </td>
+                        <td>@it.PONo</td>
+                        <td>@it.MatName</td>
                         <td>@it.Article</td>
                         <td>@it.Color</td>
                         <td>@it.Size</td>
@@ -151,7 +155,7 @@ else
                     @if (_expandedRows.Contains(it))
                     {
                         <tr>
-                            <td colspan="21" class="p-0">
+                            <td colspan="23" class="p-0">
                                 <div class="p-3 bg-light">
                                     <h6>SPI Allocations for @it.Article - @it.Color - @it.Size</h6>
                                     <table class="table table-sm table-bordered mb-0">

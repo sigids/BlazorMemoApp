@@ -161,7 +161,8 @@ public class PoApiClient
                 Uom_Po = GetStr("Uom_Po"),
                 Custom1 = GetStr("custom1"),
                 Currency = GetStr("Currency"),
-                Supplier = GetStr("Supplier")
+                Supplier = GetStr("Supplier"),
+                Mat_Name = GetStr("Mat_Name")
             };
             items.Add(item);
         }

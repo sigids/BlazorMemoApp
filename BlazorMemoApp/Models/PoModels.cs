@@ -12,6 +12,7 @@ public class PoDetailItem
     public string Currency { get; set; } = string.Empty;
     public string Custom1 { get; set; } = string.Empty;
     public string Supplier { get; set; } = string.Empty;
+    public string Mat_Name { get; set; } = string.Empty;
 }
 
 public class PoExchangeRateModel

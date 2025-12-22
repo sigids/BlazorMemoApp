@@ -1,0 +1,353 @@
+@page "/reports/detail-allocation"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@rendermode InteractiveServer
+@using BlazorMemoApp.Models
+@using BlazorMemoApp.Data
+@using Microsoft.EntityFrameworkCore
+@using System.Security.Claims
+@inject ApplicationDbContext Db
+@inject BlazorMemoApp.Services.BuyerPrivilegeService BuyerPrivilegeService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JS
+
+<h1>Detail Allocation Report</h1>
+<p class="text-muted">Memo Allocation details report with all columns</p>
+
+<div class="mb-3 d-flex flex-wrap gap-2 align-items-center">
+    <div class="input-group" style="max-width:300px;">
+        <span class="input-group-text">Search</span>
+        <input class="form-control" @bind="_searchText" @bind:event="oninput" placeholder="Memo#, PO, Article, Supplier..." />
+    </div>
+    
+    <div class="input-group" style="max-width:200px;">
+        <span class="input-group-text">From</span>
+        <input type="date" class="form-control" @bind="_dateFrom" />
+    </div>
+    
+    <div class="input-group" style="max-width:200px;">
+        <span class="input-group-text">To</span>
+        <input type="date" class="form-control" @bind="_dateTo" />
+    </div>
+
+    <div class="input-group" style="max-width:150px;">
+        <span class="input-group-text">Unit</span>
+        <select class="form-select" @bind="_unitFilter">
+            <option value="">All</option>
+            @foreach (var unit in UnitMaster.Units)
+            {
+                <option value="@unit">@unit</option>
+            }
+        </select>
+    </div>
+    
+    <button class="btn btn-primary" @onclick="LoadData">Apply Filter</button>
+    <button class="btn btn-outline-secondary" @onclick="ClearFilter">Clear</button>
+    
+    <div class="ms-auto d-flex gap-2">
+        <button class="btn btn-success" @onclick="ExportExcel">Export Excel</button>
+        <button class="btn btn-outline-primary" @onclick="Print">Print</button>
+    </div>
+</div>
+
+<div class="mb-2">
+    <select class="form-select form-select-sm" style="width:100px;" @bind="_pageSize" @bind:after="OnPageSizeChanged">
+        <option value="10">10</option>
+        <option value="25">25</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+    </select>
+</div>
+
+@if (_loading)
+{
+    <p><em>Loading...</em></p>
+}
+else if (_data.Count == 0)
+{
+    <div class="alert alert-info">No data found.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped table-sm" style="font-size: 0.8rem;">
+            <thead class="table-light">
+                <tr>
+                    <th>#</th>
+                    <th>Memo #</th>
+                    <th>Date</th>
+                    <th>Unit</th>
+                    <th>PO No</th>
+                    <th>Mat Name</th>
+                    <th>Article</th>
+                    <th>Color</th>
+                    <th>Size</th>
+                    <th>Item Code</th>
+                    <th>Supplier</th>
+                    <th>Unit PO</th>
+                    <th class="text-end">Rate PO</th>
+                    <th>Currency</th>
+                    <th class="text-end">Qty Stage</th>
+                    <th class="text-end">Qty Actual</th>
+                    <th>Date Conf Wh</th>
+                    <th class="text-end">Qty Pass</th>
+                    <th>Date Conf Qc</th>
+                    <th class="text-end">Amount Pass</th>
+                    <th>Buyer</th>
+                    <th class="text-end">Qty Allocate</th>
+                    <th class="text-end">Amount Allocate</th>
+                    <th class="text-end">Qty Balance</th>
+                    <th class="text-end">Amount Balance</th>
+                    <th>SPI Allocated</th>
+                    <th>Buyer Allocated</th>
+                    <th>Remark</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{ var serialNo = (_currentPage - 1) * _pageSize; }
+                @foreach (var row in PagedData)
+                {
+                    serialNo++;
+                    <tr>
+                        <td>@serialNo</td>
+                        <td>@row.MemoNo</td>
+                        <td>@row.MemoDate.ToString("yyyy-MM-dd")</td>
+                        <td>@row.UnitName</td>
+                        <td>@row.PONo</td>
+                        <td>@row.MatName</td>
+                        <td>@row.Article</td>
+                        <td>@row.Color</td>
+                        <td>@row.Size</td>
+                        <td>@row.ItemCode</td>
+                        <td>@row.Supplier</td>
+                        <td>@row.UnitPO</td>
+                        <td class="text-end">@row.RatePO.ToString("N4")</td>
+                        <td>@row.CurrencyPO</td>
+                        <td class="text-end">@row.QtyStage.ToString("N2")</td>
+                        <td class="text-end">@row.QtyActual.ToString("N2")</td>
+                        <td style="font-size:0.7rem;">@(row.DateConfWh?.ToString("MM/dd HH:mm") ?? "")</td>
+                        <td class="text-end">@row.QtyPass.ToString("N2")</td>
+                        <td style="font-size:0.7rem;">@(row.DateConfQc?.ToString("MM/dd HH:mm") ?? "")</td>
+                        <td class="text-end">@row.AmountPass.ToString("N2")</td>
+                        <td>@row.BuyerName</td>
+                        <td class="text-end">@row.QtyAllocate.ToString("N2")</td>
+                        <td class="text-end">@row.AmountAllocate.ToString("N2")</td>
+                        <td class="text-end">@row.QtyBalance.ToString("N2")</td>
+                        <td class="text-end">@row.AmountBalance.ToString("N2")</td>
+                        <td style="max-width:150px; white-space:normal; font-size:0.7rem;">@row.SpiAllocatedList</td>
+                        <td style="max-width:150px; white-space:normal; font-size:0.7rem;">@row.BuyerAllocatedList</td>
+                        <td>@row.Remark</td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot class="table-secondary">
+                <tr>
+                    <th colspan="14">Total</th>
+                    <th class="text-end">@FilteredData.Sum(r => r.QtyStage).ToString("N2")</th>
+                    <th class="text-end">@FilteredData.Sum(r => r.QtyActual).ToString("N2")</th>
+                    <th></th>
+                    <th class="text-end">@FilteredData.Sum(r => r.QtyPass).ToString("N2")</th>
+                    <th></th>
+                    <th class="text-end">@FilteredData.Sum(r => r.AmountPass).ToString("N2")</th>
+                    <th></th>
+                    <th class="text-end">@FilteredData.Sum(r => r.QtyAllocate).ToString("N2")</th>
+                    <th class="text-end">@FilteredData.Sum(r => r.AmountAllocate).ToString("N2")</th>
+                    <th class="text-end">@FilteredData.Sum(r => r.QtyBalance).ToString("N2")</th>
+                    <th class="text-end">@FilteredData.Sum(r => r.AmountBalance).ToString("N2")</th>
+                    <th colspan="3"></th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    
+    <div class="d-flex justify-content-between align-items-center">
+        <div>Showing @(FilteredData.Any() ? (_currentPage - 1) * _pageSize + 1 : 0) - @(Math.Min(_currentPage * _pageSize, FilteredData.Count())) of @FilteredData.Count()</div>
+        <nav>
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item @(_currentPage == 1 ? "disabled" : "")">
+                    <button type="button" class="page-link" @onclick="PrevPage" disabled="@(_currentPage == 1)">Prev</button>
+                </li>
+                @for (var p = 1; p <= Math.Min(TotalPages, 10); p++)
+                {
+                    var page = p;
+                    <li class="page-item @(p == _currentPage ? "active" : "")">
+                        <button type="button" class="page-link" @onclick="() => GotoPage(page)">@p</button>
+                    </li>
+                }
+                @if (TotalPages > 10)
+                {
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                    <li class="page-item @(TotalPages == _currentPage ? "active" : "")">
+                        <button type="button" class="page-link" @onclick="() => GotoPage(TotalPages)">@TotalPages</button>
+                    </li>
+                }
+                <li class="page-item @(_currentPage == TotalPages ? "disabled" : "")">
+                    <button type="button" class="page-link" @onclick="NextPage" disabled="@(_currentPage == TotalPages)">Next</button>
+                </li>
+            </ul>
+        </nav>
+    </div>
+}
+
+@code {
+    private List<AllocationDetailRow> _data = new();
+    private bool _loading = true;
+    private string _searchText = string.Empty;
+    private string _unitFilter = string.Empty;
+    private DateTime? _dateFrom;
+    private DateTime? _dateTo;
+    private int _pageSize = 25;
+    private int _currentPage = 1;
+
+    private IEnumerable<AllocationDetailRow> FilteredData => _data
+        .Where(r => string.IsNullOrWhiteSpace(_searchText) ||
+            (r.MemoNo ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+            (r.PONo ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+            (r.Article ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+            (r.Supplier ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+            (r.ItemCode ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+            (r.Color ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase));
+
+    private List<AllocationDetailRow> PagedData => FilteredData.Skip((_currentPage - 1) * _pageSize).Take(_pageSize).ToList();
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(FilteredData.Count() / (double)_pageSize));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _loading = true;
+        _currentPage = 1;
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        var allBuyers = await Db.MemoAddresses.Where(a => a.Type.Contains("B")).ToListAsync();
+        var buyers = !string.IsNullOrEmpty(userId)
+            ? await BuyerPrivilegeService.FilterBuyersAsync(userId, allBuyers)
+            : allBuyers;
+
+        var query = Db.MemoAllocations
+            .Include(m => m.Details).ThenInclude(d => d.SpiAllocations).ThenInclude(s => s.BuyerAllocated)
+            .Include(m => m.Details).ThenInclude(d => d.Buyer)
+            .AsQueryable();
+
+        if (_dateFrom.HasValue)
+            query = query.Where(m => m.MemoDate >= _dateFrom.Value);
+
+        if (_dateTo.HasValue)
+            query = query.Where(m => m.MemoDate <= _dateTo.Value);
+
+        if (!string.IsNullOrEmpty(_unitFilter))
+            query = query.Where(m => m.UnitName == _unitFilter);
+
+        var allocations = await query.OrderByDescending(m => m.MemoDate).ToListAsync();
+
+        _data = allocations.SelectMany(h => h.Details.Select(d => new AllocationDetailRow
+        {
+            MemoNo = h.MemoNo,
+            MemoDate = h.MemoDate,
+            UnitName = h.UnitName,
+            PONo = d.PONo ?? h.PONo ?? "",
+            MatName = d.MatName,
+            Article = d.Article,
+            Color = d.Color,
+            Size = d.Size,
+            ItemCode = d.ItemCode,
+            Supplier = d.Supplier,
+            UnitPO = d.UnitPO,
+            RatePO = d.RatePO,
+            CurrencyPO = d.CurrencyPO,
+            QtyStage = d.QtyStage,
+            QtyActual = d.QtyActual,
+            DateConfWh = d.DateConfWh,
+            QtyPass = d.QtyPass,
+            DateConfQc = d.DateConfQc,
+            BuyerName = d.Buyer?.Name ?? "",
+            QtyAllocate = d.QtyAllocate,
+            QtyBalance = d.QtyBalance,
+            Remark = d.Remark ?? "",
+            RatePOForCalc = d.RatePO,
+            SpiAllocatedList = string.Join("; ", d.SpiAllocations.Select(s => $"{s.SpiNo}({s.QtyAllocate:N0})")),
+            BuyerAllocatedList = string.Join("; ", d.SpiAllocations.Where(s => s.BuyerAllocated != null).Select(s => s.BuyerAllocated!.NameAbbr).Distinct())
+        })).ToList();
+
+        _loading = false;
+    }
+
+    private void ClearFilter()
+    {
+        _searchText = string.Empty;
+        _unitFilter = string.Empty;
+        _dateFrom = null;
+        _dateTo = null;
+        _currentPage = 1;
+    }
+
+    private void OnPageSizeChanged() => _currentPage = 1;
+    private void PrevPage() { if (_currentPage > 1) _currentPage--; }
+    private void NextPage() { if (_currentPage < TotalPages) _currentPage++; }
+    private void GotoPage(int p) => _currentPage = Math.Clamp(p, 1, TotalPages);
+
+    private async Task ExportExcel()
+    {
+        var csv = GenerateCsv();
+        var bytes = System.Text.Encoding.UTF8.GetBytes(csv);
+        var base64 = Convert.ToBase64String(bytes);
+        await JS.InvokeVoidAsync("downloadFile", $"DetailAllocation_{DateTime.Now:yyyyMMdd}.csv", "text/csv", base64);
+    }
+
+    private async Task Print()
+    {
+        await JS.InvokeVoidAsync("window.print");
+    }
+
+    private string GenerateCsv()
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("No,Memo #,Date,Unit,PO No,Mat Name,Article,Color,Size,Item Code,Supplier,Unit PO,Rate PO,Currency,Qty Stage,Qty Actual,Date Conf Wh,Qty Pass,Date Conf Qc,Amount Pass,Buyer,Qty Allocate,Amount Allocate,Qty Balance,Amount Balance,SPI Allocated,Buyer Allocated,Remark");
+
+        var serial = 0;
+        foreach (var row in FilteredData)
+        {
+            serial++;
+            sb.AppendLine($"{serial},\"{row.MemoNo}\",{row.MemoDate:yyyy-MM-dd},\"{row.UnitName}\",\"{row.PONo}\",\"{row.MatName}\",\"{row.Article}\",\"{row.Color}\",\"{row.Size}\",\"{row.ItemCode}\",\"{row.Supplier}\",\"{row.UnitPO}\",{row.RatePO},\"{row.CurrencyPO}\",{row.QtyStage},{row.QtyActual},{row.DateConfWh:yyyy-MM-dd HH:mm},{row.QtyPass},{row.DateConfQc:yyyy-MM-dd HH:mm},{row.AmountPass},{row.BuyerName},{row.QtyAllocate},{row.AmountAllocate},{row.QtyBalance},{row.AmountBalance},\"{row.SpiAllocatedList}\",\"{row.BuyerAllocatedList}\",\"{row.Remark}\"");
+        }
+
+        return sb.ToString();
+    }
+
+    private class AllocationDetailRow
+    {
+        public string MemoNo { get; set; } = string.Empty;
+        public DateTime MemoDate { get; set; }
+        public string UnitName { get; set; } = string.Empty;
+        public string PONo { get; set; } = string.Empty;
+        public string MatName { get; set; } = string.Empty;
+        public string Article { get; set; } = string.Empty;
+        public string Color { get; set; } = string.Empty;
+        public string Size { get; set; } = string.Empty;
+        public string ItemCode { get; set; } = string.Empty;
+        public string Supplier { get; set; } = string.Empty;
+        public string UnitPO { get; set; } = string.Empty;
+        public decimal RatePO { get; set; }
+        public string CurrencyPO { get; set; } = string.Empty;
+        public decimal QtyStage { get; set; }
+        public decimal QtyActual { get; set; }
+        public DateTime? DateConfWh { get; set; }
+        public decimal QtyPass { get; set; }
+        public DateTime? DateConfQc { get; set; }
+        public string BuyerName { get; set; } = string.Empty;
+        public decimal QtyAllocate { get; set; }
+        public decimal QtyBalance { get; set; }
+        public string Remark { get; set; } = string.Empty;
+        public string SpiAllocatedList { get; set; } = string.Empty;
+        public string BuyerAllocatedList { get; set; } = string.Empty;
+        public decimal RatePOForCalc { get; set; }
+
+        public decimal AmountPass => QtyPass * RatePOForCalc;
+        public decimal AmountAllocate => QtyAllocate * RatePOForCalc;
+        public decimal AmountBalance => QtyBalance * RatePOForCalc;
+    }
+}

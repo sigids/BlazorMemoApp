@@ -17,6 +17,9 @@ namespace BlazorMemoApp.Data
         public DbSet<MemoAttachmentModel> MemoAttachments { get; set; }
         public DbSet<EmailSettingsModel> EmailSettings { get; set; }
         public DbSet<UserBuyerPrivilegeModel> UserBuyerPrivileges { get; set; }
+        public DbSet<MemoAllocationHeaderModel> MemoAllocations { get; set; }
+        public DbSet<MemoAllocationDetailModel> MemoAllocationDetails { get; set; }
+        public DbSet<MemoAllocationSpiModel> MemoAllocationSpis { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -45,6 +48,32 @@ namespace BlazorMemoApp.Data
                 .WithMany(h => h.Attachments)
                 .HasForeignKey(a => a.MemoHeaderId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // MemoAllocation Header -> Detail relationship
+            modelBuilder.Entity<MemoAllocationDetailModel>()
+                .HasOne(d => d.MemoAllocationHeader)
+                .WithMany(h => h.Details)
+                .HasForeignKey(d => d.MemoAllocationHeaderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<MemoAllocationDetailModel>()
+                .HasOne(d => d.Buyer)
+                .WithMany()
+                .HasForeignKey(d => d.BuyerId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // MemoAllocation Detail -> SPI SubDetail relationship
+            modelBuilder.Entity<MemoAllocationSpiModel>()
+                .HasOne(s => s.MemoAllocationDetail)
+                .WithMany(d => d.SpiAllocations)
+                .HasForeignKey(s => s.MemoAllocationDetailId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<MemoAllocationSpiModel>()
+                .HasOne(s => s.BuyerAllocated)
+                .WithMany()
+                .HasForeignKey(s => s.BuyerAllocatedId)
+                .OnDelete(DeleteBehavior.NoAction);
         }
     }
 }

@@ -1,0 +1,158 @@
+@page "/memo-allocations"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,User")]
+@rendermode InteractiveServer
+@using BlazorMemoApp.Models
+@using Microsoft.EntityFrameworkCore
+@inject BlazorMemoApp.Data.ApplicationDbContext Db
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<h1>Memo Allocation List</h1>
+
+<div class="mb-3 d-flex gap-2 flex-wrap align-items-center">
+    <button class="btn btn-primary" @onclick="CreateNew">Create Memo Allocation</button>
+
+    <div class="input-group" style="max-width:340px;">
+        <span class="input-group-text">Search</span>
+        <input class="form-control form-control-sm" @bind="_filter" placeholder="Memo No, PO No, Unit" />
+    </div>
+
+    <div>
+        <select class="form-select form-select-sm" style="width:90px;" @bind="_pageSize">
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+        </select>
+    </div>
+</div>
+
+@if (_allItems is null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (!_allItems.Any())
+{
+    <p>No memo allocations found.</p>
+}
+else
+{
+    <div style="overflow-x:auto;">
+        <table class="table table-sm table-bordered align-middle" style="min-width: max-content;">
+            <thead class="table-light">
+                <tr>
+                    <th>Memo #</th>
+                    <th>Date</th>
+                    <th>Unit</th>
+                    <th>PO No</th>
+                    <th class="text-center">Details Count</th>
+                    <th class="text-end">Total Qty Pass</th>
+                    <th class="text-end">Total Amount Pass</th>
+                    <th class="text-end">Total Qty Allocate</th>
+                    <th class="text-end">Total Qty Balance</th>
+                    <th style="width:200px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in PagedItems)
+                {
+                    <tr>
+                        <td>@item.MemoNo</td>
+                        <td>@item.MemoDate.ToString("yyyy-MM-dd")</td>
+                        <td>@item.UnitName</td>
+                        <td>@item.PONo</td>
+                        <td class="text-center">@item.Details.Count</td>
+                        <td class="text-end">@item.Details.Sum(d => d.QtyPass).ToString("N2")</td>
+                        <td class="text-end">@item.Details.Sum(d => d.AmountPass).ToString("N2")</td>
+                        <td class="text-end">@item.Details.Sum(d => d.QtyAllocate).ToString("N2")</td>
+                        <td class="text-end">@item.Details.Sum(d => d.QtyBalance).ToString("N2")</td>
+                        <td>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-outline-primary" @onclick="() => EditItem(item.Id)">Edit</button>
+                                <button class="btn btn-sm btn-outline-secondary" @onclick="() => ViewItem(item.Id)">View</button>
+                                <button class="btn btn-sm btn-danger" @onclick="() => DeleteItem(item.Id)">Delete</button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center">
+        <div>Showing @(FilteredItems.Any() ? (_currentPage-1)*_pageSize+1 : 0)-@(((_currentPage-1)*_pageSize)+PagedItems.Count()) of @FilteredItems.Count()</div>
+        <nav>
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item @(_currentPage==1?"disabled":"")">
+                    <button type="button" class="page-link" @onclick="PrevPage" disabled="@(_currentPage==1)">Prev</button>
+                </li>
+                @for (var p = 1; p <= TotalPages; p++)
+                {
+                    var page = p;
+                    <li class="page-item @(p==_currentPage?"active":"")">
+                        <button type="button" class="page-link" @onclick="(()=>GotoPage(page))">@p</button>
+                    </li>
+                }
+                <li class="page-item @(_currentPage==TotalPages?"disabled":"")">
+                    <button type="button" class="page-link" @onclick="NextPage" disabled="@(_currentPage==TotalPages)">Next</button>
+                </li>
+            </ul>
+        </nav>
+    </div>
+}
+
+@code {
+    private List<MemoAllocationHeaderModel>? _allItems;
+    private string _filter = string.Empty;
+    private int _pageSize = 10;
+    private int _currentPage = 1;
+
+    private IEnumerable<MemoAllocationHeaderModel> FilteredItems
+        => (_allItems ?? Enumerable.Empty<MemoAllocationHeaderModel>())
+            .Where(m => string.IsNullOrWhiteSpace(_filter)
+                        || (m.MemoNo ?? string.Empty).Contains(_filter, StringComparison.OrdinalIgnoreCase)
+                        || (m.PONo ?? string.Empty).Contains(_filter, StringComparison.OrdinalIgnoreCase)
+                        || (m.UnitName ?? string.Empty).Contains(_filter, StringComparison.OrdinalIgnoreCase));
+
+    private IEnumerable<MemoAllocationHeaderModel> PagedItems => FilteredItems.Skip((_currentPage - 1) * _pageSize).Take(_pageSize);
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(FilteredItems.Count() / (double)_pageSize));
+
+    protected override async Task OnInitializedAsync()
+    {
+        _allItems = await Db.MemoAllocations
+            .Include(m => m.Details).ThenInclude(d => d.SpiAllocations)
+            .OrderByDescending(m => m.MemoDate)
+            .ToListAsync();
+
+        if (_currentPage > TotalPages) _currentPage = TotalPages;
+    }
+
+    private void CreateNew() => Nav.NavigateTo("/memo-allocations/new");
+    private void EditItem(int id) => Nav.NavigateTo($"/memo-allocations/{id}");
+    private void ViewItem(int id) => Nav.NavigateTo($"/memo-allocations/{id}/view");
+
+    private async Task DeleteItem(int id)
+    {
+        var item = _allItems?.FirstOrDefault(m => m.Id == id);
+        if (item == null) return;
+
+        var confirmed = await JS.InvokeAsync<bool>("confirm", $"Delete memo allocation {item.MemoNo}?");
+        if (!confirmed) return;
+
+        try
+        {
+            Db.MemoAllocations.Remove(item);
+            await Db.SaveChangesAsync();
+            _allItems?.Remove(item);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error deleting memo allocation: {ex.Message}");
+        }
+    }
+
+    private void PrevPage() { if (_currentPage > 1) _currentPage--; }
+    private void NextPage() { if (_currentPage < TotalPages) _currentPage++; }
+    private void GotoPage(int p) { _currentPage = Math.Min(Math.Max(1, p), TotalPages); }
+}

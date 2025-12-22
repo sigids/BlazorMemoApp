@@ -10,7 +10,8 @@ public class PoDetailItem
     public decimal Rate { get; set; }
     public string Uom_Po { get; set; } = string.Empty;
     public string Currency { get; set; } = string.Empty;
-    public string Custom1 { get; set; }
+    public string Custom1 { get; set; } = string.Empty;
+    public string Supplier { get; set; } = string.Empty;
 }
 
 public class PoExchangeRateModel

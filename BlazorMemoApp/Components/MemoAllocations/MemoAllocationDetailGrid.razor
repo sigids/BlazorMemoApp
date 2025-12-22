@@ -1,0 +1,532 @@
+@using BlazorMemoApp.Models
+@using System.Linq
+@using System.Data.Odbc
+@inject IJSRuntime JS
+@inject ILogger<MemoAllocationDetailGrid> Logger
+
+<br />
+
+<div class="mb-2 d-flex flex-wrap gap-2 align-items-center">
+    <div class="input-group" style="max-width:320px;">
+        <span class="input-group-text">Filter</span>
+        <input class="form-control form-control-sm" @bind="_filter" placeholder="Article, Color, Size" />
+    </div>
+
+    <div>
+        <select class="form-select form-select-sm" style="width:90px;" @bind="_pageSize">
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+        </select>
+    </div>
+
+    <button class="btn btn-sm btn-outline-primary" @onclick="SelectAllFiltered">Select All</button>
+    <button class="btn btn-sm btn-danger" @onclick="DeleteSelected">Delete Selected (@_selected.Count)</button>
+    <button class="btn btn-sm btn-info" @onclick="FetchAllQtyStage" disabled="@_fetchingStage">
+        @(_fetchingStage ? "Fetching..." : "Fetch All Qty Stage")
+    </button>
+</div>
+
+@if (!string.IsNullOrEmpty(_stageMessage))
+{
+    <div class="alert @(_stageSuccess ? "alert-success" : "alert-danger") alert-dismissible py-2 mb-2">
+        @_stageMessage
+        <button type="button" class="btn-close btn-sm" @onclick="() => _stageMessage = string.Empty"></button>
+    </div>
+}
+
+@if (Items is null || Items.Count == 0)
+{
+    <p>No details loaded. Select a PO to populate items.</p>
+}
+else
+{
+    <div style="overflow-x: auto;">
+        <table class="table table-bordered table-sm align-middle">
+            <thead class="table-light">
+                <tr class="align-middle">
+                    <th style="width:36px;"></th>
+                    <th>Article</th>
+                    <th>Color</th>
+                    <th>Size</th>
+                    <th>Item Code</th>
+                    <th>Supplier</th>
+                    <th>Unit PO</th>
+                    <th>Rate PO</th>
+                    <th>Currency</th>
+                    <th style="width:120px;">Qty Stage</th>
+                    <th style="width:100px;">Qty Actual</th>
+                    <th>Date Conf Wh</th>
+                    <th style="width:100px;">Qty Pass</th>
+                    <th>Date Conf Qc</th>
+                    <th>Amount Pass</th>
+                    <th style="width:150px;">Buyer</th>
+                    <th>Qty Allocate</th>
+                    <th>Amount Allocate</th>
+                    <th>Qty Balance</th>
+                    <th>Amount Balance</th>
+                    <th style="width:150px;">Remark</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var it in PagedItems)
+                {
+                    <tr>
+                        <td class="text-center">
+                            <div class="d-flex justify-content-center gap-1">
+                                <span style="cursor: pointer;" @onclick="() => ToggleExpansion(it)">
+                                    @if (_expandedRows.Contains(it))
+                                    {
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-down" viewBox="0 0 16 16">
+                                            <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z" />
+                                        </svg>
+                                    }
+                                    else
+                                    {
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-right" viewBox="0 0 16 16">
+                                            <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z" />
+                                        </svg>
+                                    }
+                                </span>
+                                <input type="checkbox" class="form-check-input" checked="@(_selected.Contains(it))" @onchange="(e) => OnRowSelectedChanged(it, e)" />
+                            </div>
+                        </td>
+                        <td>@it.Article</td>
+                        <td>@it.Color</td>
+                        <td>@it.Size</td>
+                        <td>@it.ItemCode</td>
+                        <td>@it.Supplier</td>
+                        <td>@it.UnitPO</td>
+                        <td class="text-end">@it.RatePO.ToString("N4")</td>
+                        <td>@it.CurrencyPO</td>
+                        <td>
+                            <div class="input-group input-group-sm">
+                                <input type="number" class="form-control form-control-sm text-end" style="width:70px" @bind-value="it.QtyStage" @bind-value:event="oninput" />
+                                <button type="button" class="btn btn-outline-info btn-sm" @onclick="() => FetchSingleQtyStage(it)" title="Fetch Qty Stage">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                                        <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                                        <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                        <td>
+                            <input type="number" class="form-control form-control-sm text-end" style="width:80px" step="0.01" @bind-value="it.QtyActual" @bind-value:event="oninput" @onchange="() => OnQtyActualChanged(it)" />
+                        </td>
+                        <td style="font-size:0.75rem;">@(it.DateConfWh?.ToString("MM/dd HH:mm") ?? "")</td>
+                        <td>
+                            <input type="number" class="form-control form-control-sm text-end" style="width:80px" step="0.01" @bind-value="it.QtyPass" @bind-value:event="oninput" @onchange="() => OnQtyPassChanged(it)" />
+                        </td>
+                        <td style="font-size:0.75rem;">@(it.DateConfQc?.ToString("MM/dd HH:mm") ?? "")</td>
+                        <td class="text-end">@it.AmountPass.ToString("N2")</td>
+                        <td class="position-relative">
+                            <input class="form-control form-control-sm"
+                                   value="@GetBuyerSearchText(it)"
+                                   @oninput="(e) => SetBuyerSearchText(it, e.Value?.ToString() ?? string.Empty)"
+                                   @onfocus="() => ShowBuyerDropdown(it)"
+                                   placeholder="Select Buyer..." />
+                            @if (IsBuyerDropdownVisible(it) && GetFilteredBuyersFor(it).Any())
+                            {
+                                <div class="list-group position-absolute z-3" style="max-height:150px; overflow:auto; width:100%;">
+                                    @foreach (var buyer in GetFilteredBuyersFor(it))
+                                    {
+                                        <button type="button" class="list-group-item list-group-item-action py-1" @onclick="() => SelectBuyer(it, buyer)">
+                                            @buyer.Name - @buyer.NameAbbr
+                                        </button>
+                                    }
+                                </div>
+                            }
+                        </td>
+                        <td class="text-end">@it.QtyAllocate.ToString("N2")</td>
+                        <td class="text-end">@it.AmountAllocate.ToString("N2")</td>
+                        <td class="text-end">@it.QtyBalance.ToString("N2")</td>
+                        <td class="text-end">@it.AmountBalance.ToString("N2")</td>
+                        <td>
+                            <input type="text" class="form-control form-control-sm" style="width:120px" @bind="it.Remark" />
+                        </td>
+                    </tr>
+
+                    @* Inline sub-grid for SPI Allocations *@
+                    @if (_expandedRows.Contains(it))
+                    {
+                        <tr>
+                            <td colspan="21" class="p-0">
+                                <div class="p-3 bg-light">
+                                    <h6>SPI Allocations for @it.Article - @it.Color - @it.Size</h6>
+                                    <table class="table table-sm table-bordered mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th style="width:200px;">SPI Number</th>
+                                                <th style="width:120px;">Qty Allocate</th>
+                                                <th style="width:200px;">Buyer Allocated</th>
+                                                <th style="width:80px;">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var spi in it.SpiAllocations)
+                                            {
+                                                <tr>
+                                                    <td class="position-relative">
+                                                        <input class="form-control form-control-sm"
+                                                               value="@GetSpiSearchText(spi)"
+                                                               @oninput="(e) => SetSpiSearchText(spi, e.Value?.ToString() ?? string.Empty)"
+                                                               @onfocus="() => ShowSpiDropdown(spi)"
+                                                               placeholder="Type to filter..." />
+                                                        @if (IsSpiDropdownVisible(spi) && GetFilteredOrdersForSpi(spi).Any())
+                                                        {
+                                                            <div class="list-group position-absolute z-3" style="max-height:150px; overflow:auto; width:100%;">
+                                                                @foreach (var order in GetFilteredOrdersForSpi(spi))
+                                                                {
+                                                                    <button type="button" class="list-group-item list-group-item-action py-1" @onclick="() => SelectSpiOrder(spi, order)">
+                                                                        @order.OrderNo
+                                                                    </button>
+                                                                }
+                                                            </div>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        <input type="number" class="form-control form-control-sm text-end" step="0.01" @bind-value="spi.QtyAllocate" @bind-value:event="oninput" />
+                                                    </td>
+                                                    <td class="position-relative">
+                                                        <input class="form-control form-control-sm"
+                                                               value="@GetSpiBuyerSearchText(spi)"
+                                                               @oninput="(e) => SetSpiBuyerSearchText(spi, e.Value?.ToString() ?? string.Empty)"
+                                                               @onfocus="() => ShowSpiBuyerDropdown(spi)"
+                                                               placeholder="Select Buyer..." />
+                                                        @if (IsSpiBuyerDropdownVisible(spi) && GetFilteredBuyersForSpi(spi).Any())
+                                                        {
+                                                            <div class="list-group position-absolute z-3" style="max-height:150px; overflow:auto; width:100%;">
+                                                                @foreach (var buyer in GetFilteredBuyersForSpi(spi))
+                                                                {
+                                                                    <button type="button" class="list-group-item list-group-item-action py-1" @onclick="() => SelectSpiBuyer(spi, buyer)">
+                                                                        @buyer.Name - @buyer.NameAbbr
+                                                                    </button>
+                                                                }
+                                                            </div>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteSpi(it, spi)">Delete</button>
+                                                    </td>
+                                                </tr>
+                                            }
+                                            <tr>
+                                                <td colspan="4">
+                                                    <button class="btn btn-sm btn-primary" @onclick="() => AddSpi(it)">+ Add SPI</button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center">
+        <div>Showing @((_currentPage-1)*_pageSize+1)-@(((_currentPage-1)*_pageSize)+PagedItems.Count) of @FilteredItems.Count()</div>
+        <nav>
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item @(_currentPage==1?"disabled":"")">
+                    <button type="button" class="page-link" @onclick="PrevPage" disabled="@(_currentPage==1)">Prev</button>
+                </li>
+                @for (var p = 1; p <= TotalPages; p++)
+                {
+                    var page = p;
+                    <li class="page-item @(p==_currentPage?"active":"")">
+                        <button type="button" class="page-link" @onclick="(()=>GotoPage(page))">@p</button>
+                    </li>
+                }
+                <li class="page-item @(_currentPage==TotalPages?"disabled":"")">
+                    <button type="button" class="page-link" @onclick="NextPage" disabled="@(_currentPage==TotalPages)">Next</button>
+                </li>
+            </ul>
+        </nav>
+    </div>
+}
+
+@code {
+    [Parameter] public List<MemoAllocationDetailModel> Items { get; set; } = new();
+    [Parameter] public EventCallback<List<MemoAllocationDetailModel>> ItemsChanged { get; set; }
+    [Parameter] public string UnitName { get; set; } = string.Empty;
+    [Parameter] public string? PONo { get; set; }
+    [Parameter] public List<MemoAdressModel> Buyers { get; set; } = new();
+    [Parameter] public List<BuyerStyleOrderModel> Orders { get; set; } = new();
+
+    private HashSet<MemoAllocationDetailModel> _selected = new();
+    private HashSet<MemoAllocationDetailModel> _expandedRows = new();
+    private string _filter = string.Empty;
+    private int _pageSize = 10;
+    private int _currentPage = 1;
+
+    private bool _fetchingStage = false;
+    private string _stageMessage = string.Empty;
+    private bool _stageSuccess = false;
+
+    // Buyer dropdown state
+    private Dictionary<MemoAllocationDetailModel, string> _buyerSearchTexts = new();
+    private Dictionary<MemoAllocationDetailModel, bool> _buyerDropdownVisible = new();
+
+    // SPI dropdown state
+    private Dictionary<MemoAllocationSpiModel, string> _spiSearchTexts = new();
+    private Dictionary<MemoAllocationSpiModel, bool> _spiDropdownVisible = new();
+    private Dictionary<MemoAllocationSpiModel, string> _spiBuyerSearchTexts = new();
+    private Dictionary<MemoAllocationSpiModel, bool> _spiBuyerDropdownVisible = new();
+
+    private IEnumerable<MemoAllocationDetailModel> FilteredItems => string.IsNullOrWhiteSpace(_filter)
+        ? Items
+        : Items.Where(i => (i.Article ?? string.Empty).Contains(_filter, StringComparison.OrdinalIgnoreCase)
+                       || (i.Color ?? string.Empty).Contains(_filter, StringComparison.OrdinalIgnoreCase)
+                       || (i.Size ?? string.Empty).Contains(_filter, StringComparison.OrdinalIgnoreCase)
+                       || (i.ItemCode ?? string.Empty).Contains(_filter, StringComparison.OrdinalIgnoreCase));
+
+    private List<MemoAllocationDetailModel> PagedItems => FilteredItems.Skip((_currentPage - 1) * _pageSize).Take(_pageSize).ToList();
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(FilteredItems.Count() / (double)_pageSize));
+
+    protected override void OnParametersSet()
+    {
+        if (_currentPage > TotalPages) _currentPage = TotalPages;
+        base.OnParametersSet();
+    }
+
+    private void OnRowSelectedChanged(MemoAllocationDetailModel item, ChangeEventArgs e)
+    {
+        var isChecked = Convert.ToBoolean(e.Value);
+        if (isChecked) _selected.Add(item);
+        else _selected.Remove(item);
+    }
+
+    private void SelectAllFiltered()
+    {
+        _selected.Clear();
+        foreach (var it in FilteredItems) _selected.Add(it);
+    }
+
+    private async Task DeleteSelected()
+    {
+        if (_selected.Count == 0) return;
+        var ok = await JS.InvokeAsync<bool>("confirm", $"Delete {_selected.Count} selected rows?");
+        if (!ok) return;
+
+        foreach (var s in _selected.ToList()) Items.Remove(s);
+        _selected.Clear();
+        if (_currentPage > TotalPages) _currentPage = TotalPages;
+        if (ItemsChanged.HasDelegate) await ItemsChanged.InvokeAsync(Items);
+    }
+
+    private void ToggleExpansion(MemoAllocationDetailModel item)
+    {
+        if (_expandedRows.Contains(item)) _expandedRows.Remove(item);
+        else _expandedRows.Add(item);
+    }
+
+    private void OnQtyActualChanged(MemoAllocationDetailModel item)
+    {
+        if (item.DateConfWh == null && item.QtyActual > 0)
+            item.DateConfWh = DateTime.Now;
+    }
+
+    private void OnQtyPassChanged(MemoAllocationDetailModel item)
+    {
+        if (item.DateConfQc == null && item.QtyPass > 0)
+            item.DateConfQc = DateTime.Now;
+    }
+
+    // Buyer selection for Detail
+    private string GetBuyerSearchText(MemoAllocationDetailModel item)
+    {
+        if (_buyerSearchTexts.TryGetValue(item, out var text)) return text;
+        var buyer = item.Buyer ?? Buyers.FirstOrDefault(b => b.Id == item.BuyerId);
+        return buyer != null ? $"{buyer.Name} - {buyer.NameAbbr}" : string.Empty;
+    }
+
+    private void SetBuyerSearchText(MemoAllocationDetailModel item, string value) => _buyerSearchTexts[item] = value;
+    private bool IsBuyerDropdownVisible(MemoAllocationDetailModel item) => _buyerDropdownVisible.GetValueOrDefault(item, false);
+    private void ShowBuyerDropdown(MemoAllocationDetailModel item) => _buyerDropdownVisible[item] = true;
+
+    private IEnumerable<MemoAdressModel> GetFilteredBuyersFor(MemoAllocationDetailModel item)
+    {
+        var searchText = _buyerSearchTexts.GetValueOrDefault(item, string.Empty);
+        return string.IsNullOrWhiteSpace(searchText)
+            ? Buyers
+            : Buyers.Where(b =>
+                (b.Name?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (b.NameAbbr?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false));
+    }
+
+    private void SelectBuyer(MemoAllocationDetailModel item, MemoAdressModel buyer)
+    {
+        item.BuyerId = buyer.Id;
+        item.Buyer = buyer;
+        _buyerSearchTexts[item] = $"{buyer.Name} - {buyer.NameAbbr}";
+        _buyerDropdownVisible[item] = false;
+    }
+
+    // SPI methods
+    private void AddSpi(MemoAllocationDetailModel parent) => parent.SpiAllocations.Add(new MemoAllocationSpiModel());
+    private void DeleteSpi(MemoAllocationDetailModel parent, MemoAllocationSpiModel spi) => parent.SpiAllocations.Remove(spi);
+
+    private string GetSpiSearchText(MemoAllocationSpiModel spi) => _spiSearchTexts.GetValueOrDefault(spi, spi.SpiNo ?? string.Empty);
+    private void SetSpiSearchText(MemoAllocationSpiModel spi, string value) => _spiSearchTexts[spi] = value;
+    private bool IsSpiDropdownVisible(MemoAllocationSpiModel spi) => _spiDropdownVisible.GetValueOrDefault(spi, false);
+    private void ShowSpiDropdown(MemoAllocationSpiModel spi) => _spiDropdownVisible[spi] = true;
+
+    private IEnumerable<BuyerStyleOrderModel> GetFilteredOrdersForSpi(MemoAllocationSpiModel spi)
+    {
+        var searchText = _spiSearchTexts.GetValueOrDefault(spi, string.Empty);
+        return string.IsNullOrWhiteSpace(searchText)
+            ? Orders
+            : Orders.Where(o => o.OrderNo.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private void SelectSpiOrder(MemoAllocationSpiModel spi, BuyerStyleOrderModel order)
+    {
+        spi.SpiNo = order.OrderNo;
+        _spiSearchTexts[spi] = order.OrderNo;
+        _spiDropdownVisible[spi] = false;
+    }
+
+    // SPI Buyer selection
+    private string GetSpiBuyerSearchText(MemoAllocationSpiModel spi)
+    {
+        if (_spiBuyerSearchTexts.TryGetValue(spi, out var text)) return text;
+        var buyer = spi.BuyerAllocated ?? Buyers.FirstOrDefault(b => b.Id == spi.BuyerAllocatedId);
+        return buyer != null ? $"{buyer.Name} - {buyer.NameAbbr}" : string.Empty;
+    }
+
+    private void SetSpiBuyerSearchText(MemoAllocationSpiModel spi, string value) => _spiBuyerSearchTexts[spi] = value;
+    private bool IsSpiBuyerDropdownVisible(MemoAllocationSpiModel spi) => _spiBuyerDropdownVisible.GetValueOrDefault(spi, false);
+    private void ShowSpiBuyerDropdown(MemoAllocationSpiModel spi) => _spiBuyerDropdownVisible[spi] = true;
+
+    private IEnumerable<MemoAdressModel> GetFilteredBuyersForSpi(MemoAllocationSpiModel spi)
+    {
+        var searchText = _spiBuyerSearchTexts.GetValueOrDefault(spi, string.Empty);
+        return string.IsNullOrWhiteSpace(searchText)
+            ? Buyers
+            : Buyers.Where(b =>
+                (b.Name?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (b.NameAbbr?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false));
+    }
+
+    private void SelectSpiBuyer(MemoAllocationSpiModel spi, MemoAdressModel buyer)
+    {
+        spi.BuyerAllocatedId = buyer.Id;
+        spi.BuyerAllocated = buyer;
+        _spiBuyerSearchTexts[spi] = $"{buyer.Name} - {buyer.NameAbbr}";
+        _spiBuyerDropdownVisible[spi] = false;
+    }
+
+    // Qty Stage fetching
+    private async Task FetchAllQtyStage()
+    {
+        if (string.IsNullOrEmpty(UnitName))
+        {
+            _stageMessage = "Please select Unit Name first.";
+            _stageSuccess = false;
+            return;
+        }
+
+        _fetchingStage = true;
+        _stageMessage = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            foreach (var item in Items)
+            {
+                await FetchQtyStageForItem(item);
+            }
+            _stageSuccess = true;
+            _stageMessage = $"Qty Stage fetched for {Items.Count} items.";
+        }
+        catch (Exception ex)
+        {
+            _stageSuccess = false;
+            _stageMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            _fetchingStage = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task FetchSingleQtyStage(MemoAllocationDetailModel item)
+    {
+        if (string.IsNullOrEmpty(UnitName))
+        {
+            _stageMessage = "Please select Unit Name first.";
+            _stageSuccess = false;
+            return;
+        }
+
+        try
+        {
+            await FetchQtyStageForItem(item);
+            _stageSuccess = true;
+            _stageMessage = $"Qty Stage fetched: {item.QtyStage:N2}";
+        }
+        catch (Exception ex)
+        {
+            _stageSuccess = false;
+            _stageMessage = $"Error: {ex.Message}";
+        }
+        StateHasChanged();
+    }
+
+    private async Task FetchQtyStageForItem(MemoAllocationDetailModel item)
+    {
+        var warehouses = UnitMaster.GetWarehouses(UnitName);
+        if (!warehouses.Any()) return;
+
+        var connectionString = "DSN=Stage64;UID=sql;PWD=sql;";
+        decimal totalQtyPo = 0;
+
+        using var conn = new OdbcConnection(connectionString);
+        await conn.OpenAsync();
+
+        var query = @"
+            SELECT 
+                warehouse = (SELECT godown_name FROM dba.godown_maintenance WHERE godown_code = gm_godown_code AND godown_add_code = gm_comp_code),
+                pono = gm_po_no, 
+                item_code = gm_item_code,
+                qtyprimary = gm_qc_p_crpgd_qty,
+                qtysecondary = gm_qc_p_mts_kgs_qty,
+                uomprim = (SELECT im_mts_kgs_h FROM dba.item_master WHERE im_item_code = gm_item_code),
+                process = gm_process_history
+            FROM dba.godown_master
+            WHERE gm_po_no = ? AND gm_item_code = ?";
+
+        using var cmd = new OdbcCommand(query, conn);
+        cmd.Parameters.AddWithValue("@pono", PONo ?? "");
+        cmd.Parameters.AddWithValue("@item_code", item.ItemCode ?? "");
+
+        using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            var warehouse = reader.IsDBNull(0) ? "" : reader.GetString(0).Trim();
+            if (!warehouses.Contains(warehouse, StringComparer.OrdinalIgnoreCase))
+                continue;
+
+            var qtyPrimary = reader.IsDBNull(3) ? 0m : reader.GetDecimal(3);
+            var qtySecondary = reader.IsDBNull(4) ? 0m : reader.GetDecimal(4);
+            var uomPrim = reader.IsDBNull(5) ? "" : reader.GetString(5).Trim();
+
+            var qtyPo = string.Equals(uomPrim, item.UnitPO, StringComparison.OrdinalIgnoreCase)
+                ? qtyPrimary
+                : qtySecondary;
+
+            totalQtyPo += qtyPo;
+        }
+
+        item.QtyStage = totalQtyPo;
+    }
+
+    private void PrevPage() { if (_currentPage > 1) _currentPage--; }
+    private void NextPage() { if (_currentPage < TotalPages) _currentPage++; }
+    private void GotoPage(int p) { _currentPage = Math.Min(Math.Max(1, p), TotalPages); }
+}

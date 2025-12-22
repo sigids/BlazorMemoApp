@@ -141,8 +141,7 @@ public class PoApiClient
                         && e.Elements().Any(c => c.Name.LocalName == "Spec_Value")
                         && e.Elements().Any(c => c.Name.LocalName == "Rate")
                         && e.Elements().Any(c => c.Name.LocalName == "Uom_Po")
-                        && e.Elements().Any(c => c.Name.LocalName == "custom1"))
-                        ;
+                        && e.Elements().Any(c => c.Name.LocalName == "custom1"));
 
         foreach (var el in candidates)
         {
@@ -160,7 +159,9 @@ public class PoApiClient
                 Spec_Value = GetStr("Spec_Value"),
                 Rate = GetDec("Rate"),
                 Uom_Po = GetStr("Uom_Po"),
-                Custom1 = GetStr("custom1")
+                Custom1 = GetStr("custom1"),
+                Currency = GetStr("Currency"),
+                Supplier = GetStr("Supplier")
             };
             items.Add(item);
         }

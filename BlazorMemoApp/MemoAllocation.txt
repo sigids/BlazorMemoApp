@@ -1,0 +1,53 @@
+﻿Buat module baru, yaitu MemoAllocation. Dari modul sebelumnya Memos, bisa digunakan sebagai referensi untuk pembuatan modul baru ini.
+MemoAllocation Table;
+Header MemoAllocation Table :
+UnitName : String, selection dari pilihan yang ada di UnitMaster yaitu  ‘UnitTgr’,  ‘Unit1’, ‘Unit2’, ‘Unit3’. Tiap unit akan mempunyai data warehouse yang dimilikinya. Data warehouse ini akan diambil dari Warehouse master. Warehouse master memiliki data UnitName dan nama warehouse, sebagai berikut :
+UnitTgr: War-J1
+Unit1: War-Y1
+Unit2: War-Y2, War-Y3
+Unit3: War-K1
+Memo # : Auto, seperti cara generate nomor memo di module Memo, namunn menggunakan prefix MG.
+Date : Datetime => Auto
+PONo : String => Selection, seperti yang digunakan di page MemoEditor.
+	Detail MemoAllocation Table :
+	Article : string => Auto from selection of PO Item kolom Article
+	Color : string =>Auto from selection of PO Item kolom Color
+	Size : string =>Auto from selection of PO Item kolom Spec_Value.
+	Item Code : string => Auto from selection of PO Item kolom Custom1
+	Supplier : Auto from selection of PO Item, kolom Supplier.
+	Unit PO : Auto from selection of PO Item kolom Uom_Po
+	Rate PO : Auto from selection of PO Item kolom rate
+	Currency PO : Auto from selection of PO Item kolom Currency
+	Qty Stage : 
+	user perlu menekan satu button disebelah qty stage untuk mengambil nilai dari qty stage.
+	Qty Stage akan diambilkan dari data stage dengan melakukan external koneksi ke "DSN=Stage64;UID=sql;PWD=sql;"; seperti yang sudah dilakukan di addressmaster.razor.
+	Dengan Sql :
+	select warehouse = (select godown_name from dba.godown_maintenance where godown_code = gm_godown_code and godown_add_code = gm_comp_code), 
+	pono = gm_po_no, item_code = gm_item_code, 
+	qtyprimary = gm_qc_p_crpgd_qty, 
+	qtysecondary = gm_qc_p_mts_kgs_qty, 
+	qtypo = case when uomprim = uompo then qtyprimary else qtysecondary end,
+	process = gm_process_history, 
+	uomprim = (select im_mts_kgs_h from dba.item_master where im_item_code = gm_item_code),
+	uompo = (select jo_det_units from dba.job_order_detail where jo_det_mas_no = pono and jo_det_item_code = item_code and jo_det_comp_code = gm_comp_code and gm_process_history = jo_det_raw_proc_code )
+	from dba.godown_master
+	Quantity yang dihitung untuk QtyStage adalah sum qtypo Dimana warehouse = warehouse dari UnitName  yang dipilih.
+	Qty Actual : decimal => User Entry
+	Date Conf Wh : datetime => Auto When user entry
+	Qty Pass : decimal => User Entry
+	Date Conf Qc : datetime => Auto when user entry
+	Amount Pass = Formula Qty Pass x Rate PO
+	Buyer : Memilih dari master data, seperti di MemoEditor.razor.
+		Subdetail MemoAllocation Table :
+			Qty Allocate : decimal =>  berasal dari entry user yang dilakukan saat mengisi SPI Allocated, merupakan total Qty Allocate SPI
+			Amount Allocate : Formula Qty Allocate * Rate PO
+			SPI Allocated : Adalah child table dari MemoAllocation, cara memasukan data user bisa memasukan lebih dari satu SPI ke tiap record MemoAllocation secara inline (cara sengisi SPI seperti di MemoEditor.razor), dan user akan mengisi Qty Allocate SPI untuk titap spi yang ditambahkan. Qty Allocate total akan  ditampilkan di kolom Qty Allocate.
+	Buyer Allocated : Selected by User
+	Qty Balance = Formula Qty Pass – Qty Allocate
+	Amount Balance = Formula Qty Balance * rate PO
+	Remark : longchar => User Entry
+
+Seperti Module memos, perlu digenerate page razor didalam folder MemoAllocations, untuk :
+MemoAllocatiionEditor.razor, MemoAllocationList.razor dan MemoAllocationView.razor.
+Master data masih bisa mengunakan AddressMaster dan OrderMaster.
+PoDetailItem perlu ditembahkan property Supplier. Api point GetPoH2HDetail sudah ada field Supplier.

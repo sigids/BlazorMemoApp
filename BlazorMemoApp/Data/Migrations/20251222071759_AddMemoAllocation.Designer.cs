@@ -4,6 +4,7 @@ using BlazorMemoApp.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BlazorMemoApp.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251222071759_AddMemoAllocation")]
+    partial class AddMemoAllocation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -214,7 +217,7 @@ namespace BlazorMemoApp.Migrations
                     b.ToTable("MemoAddresses");
                 });
 
-            modelBuilder.Entity("BlazorMemoApp.Models.MemoAllocationDetailModel", b =>
+            modelBuilder.Entity("BlazorMemoApp.Models.MemoAllocationHeaderModel", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -247,8 +250,15 @@ namespace BlazorMemoApp.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("MemoAllocationHeaderId")
-                        .HasColumnType("int");
+                    b.Property<DateTime>("MemoDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("MemoNo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PONo")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("QtyActual")
                         .HasColumnType("decimal(18,2)");
@@ -273,6 +283,10 @@ namespace BlazorMemoApp.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("UnitName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("UnitPO")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -280,35 +294,6 @@ namespace BlazorMemoApp.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("BuyerId");
-
-                    b.HasIndex("MemoAllocationHeaderId");
-
-                    b.ToTable("MemoAllocationDetails");
-                });
-
-            modelBuilder.Entity("BlazorMemoApp.Models.MemoAllocationHeaderModel", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("MemoDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("MemoNo")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PONo")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("UnitName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
 
                     b.ToTable("MemoAllocations");
                 });
@@ -324,7 +309,7 @@ namespace BlazorMemoApp.Migrations
                     b.Property<int?>("BuyerAllocatedId")
                         .HasColumnType("int");
 
-                    b.Property<int>("MemoAllocationDetailId")
+                    b.Property<int>("MemoAllocationHeaderId")
                         .HasColumnType("int");
 
                     b.Property<decimal>("QtyAllocate")
@@ -338,7 +323,7 @@ namespace BlazorMemoApp.Migrations
 
                     b.HasIndex("BuyerAllocatedId");
 
-                    b.HasIndex("MemoAllocationDetailId");
+                    b.HasIndex("MemoAllocationHeaderId");
 
                     b.ToTable("MemoAllocationSpis");
                 });
@@ -778,22 +763,14 @@ namespace BlazorMemoApp.Migrations
                     b.Navigation("Style");
                 });
 
-            modelBuilder.Entity("BlazorMemoApp.Models.MemoAllocationDetailModel", b =>
+            modelBuilder.Entity("BlazorMemoApp.Models.MemoAllocationHeaderModel", b =>
                 {
                     b.HasOne("BlazorMemoApp.Models.MemoAdressModel", "Buyer")
                         .WithMany()
                         .HasForeignKey("BuyerId")
                         .OnDelete(DeleteBehavior.NoAction);
 
-                    b.HasOne("BlazorMemoApp.Models.MemoAllocationHeaderModel", "MemoAllocationHeader")
-                        .WithMany("Details")
-                        .HasForeignKey("MemoAllocationHeaderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Buyer");
-
-                    b.Navigation("MemoAllocationHeader");
                 });
 
             modelBuilder.Entity("BlazorMemoApp.Models.MemoAllocationSpiModel", b =>
@@ -803,15 +780,15 @@ namespace BlazorMemoApp.Migrations
                         .HasForeignKey("BuyerAllocatedId")
                         .OnDelete(DeleteBehavior.NoAction);
 
-                    b.HasOne("BlazorMemoApp.Models.MemoAllocationDetailModel", "MemoAllocationDetail")
+                    b.HasOne("BlazorMemoApp.Models.MemoAllocationHeaderModel", "MemoAllocationHeader")
                         .WithMany("SpiAllocations")
-                        .HasForeignKey("MemoAllocationDetailId")
+                        .HasForeignKey("MemoAllocationHeaderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("BuyerAllocated");
 
-                    b.Navigation("MemoAllocationDetail");
+                    b.Navigation("MemoAllocationHeader");
                 });
 
             modelBuilder.Entity("BlazorMemoApp.Models.MemoAttachmentModel", b =>
@@ -930,14 +907,9 @@ namespace BlazorMemoApp.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("BlazorMemoApp.Models.MemoAllocationDetailModel", b =>
-                {
-                    b.Navigation("SpiAllocations");
-                });
-
             modelBuilder.Entity("BlazorMemoApp.Models.MemoAllocationHeaderModel", b =>
                 {
-                    b.Navigation("Details");
+                    b.Navigation("SpiAllocations");
                 });
 
             modelBuilder.Entity("BlazorMemoApp.Models.MemoDetailModel", b =>

@@ -9,6 +9,7 @@
 @inject NavigationManager Nav
 @inject IJSRuntime JS
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IHttpClientFactory HttpClientFactory
 @inject IWebHostEnvironment Environment
 @inject BlazorMemoApp.Services.EmailService EmailService
 @inject BlazorMemoApp.Services.BuyerPrivilegeService BuyerPrivilegeService
@@ -21,6 +22,12 @@
 }
 else
 {
+    @if (_isApproved)
+    {
+        <div class="alert alert-info py-2 mb-3">
+            <strong>Read-Only Mode:</strong> This memo has been approved and cannot be edited.
+        </div>
+    }
     <div class="row g-3">
         <div class="col-sm-2">
             <label class="form-label">Memo No</label>
@@ -28,11 +35,11 @@ else
         </div>
         <div class="col-sm-2">
             <label class="form-label">Memo Date</label>
-            <InputDate class="form-control" @bind-Value="header.MemoDate" />
+            <InputDate class="form-control" @bind-Value="header.MemoDate" disabled="@_isApproved" />
         </div>
         <div class="col-sm-2">
             <label class="form-label">Buyer</label>
-            <InputSelect class="form-select" @bind-Value="header.BuyerId">
+            <InputSelect class="form-select" @bind-Value="header.BuyerId" disabled="@_isApproved">
                 <option value="">-- Select --</option>
                 @foreach (var buyer in buyers)
                 {
@@ -42,7 +49,7 @@ else
         </div>
         <div class="col-sm-2">
             <label class="form-label">Style</label>
-            <InputSelect class="form-select" @bind-Value="header.StyleId" disabled="@(header.BuyerId == null)">
+            <InputSelect class="form-select" @bind-Value="header.StyleId" disabled="@(_isApproved || header.BuyerId == null)">
                 <option value="">-- Select --</option>
                 @foreach (var style in filteredStyles)
                 {
@@ -52,15 +59,15 @@ else
         </div>
         <div class="col-sm-2">
             <label class="form-label">Garment Qty</label>
-            <InputNumber class="form-control" @bind-Value="header.GmtQty" />
+            <InputNumber class="form-control" @bind-Value="header.GmtQty" disabled="@_isApproved" />
         </div>
         <div class="col-sm-2">
             <label class="form-label">FOB Rate</label>
-            <InputNumber class="form-control" @bind-Value="header.GmtFobRate" />
+            <InputNumber class="form-control" @bind-Value="header.GmtFobRate" disabled="@_isApproved" />
         </div>
         <div class="col-sm-2">
             <label class="form-label">Supplier</label>
-            <InputSelect class="form-select" @bind-Value="header.SupplierId">
+            <InputSelect class="form-select" @bind-Value="header.SupplierId" disabled="@_isApproved">
                 <option value="">-- Select --</option>
                 @foreach (var supplier in suppliers)
                 {
@@ -73,22 +80,41 @@ else
             <label class="form-label">PO Selected</label>
             <input class="form-control" value="@header.PONumber" disabled />
         </div>
-        <div class="col-sm-2 position-relative">
-            <label class="form-label">Add PO Items</label>
-            <div class="input-group">
-                <input class="form-control" @bind-value="SearchText" placeholder="Type part of PO No..."/>
-                <button type="button" class="btn btn-outline-primary" title="Search PO" @onclick="SearchPosAsync">Search</button>
+
+        <div class="col-sm-4 d-flex align-items-end flex-column">
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-outline-info" @onclick="CalculateUsd" disabled="@_calculating">
+                    @(_calculating ? "Calculating..." : "Calculate USD")
+                </button>
             </div>
-            @if (suggestions.Count > 0 && showSuggestions)
+            @if (!string.IsNullOrEmpty(_calcMessage))
             {
-                <div class="list-group position-absolute z-3" style="max-height:200px; overflow:auto; width:100%;">
-                    @foreach (var s in suggestions)
-                    {
-                        <button type="button" class="list-group-item list-group-item-action" @onclick="() => SelectPo(s)">@s</button>
-                    }
+                <div class="alert @(_calcSuccess ? "alert-success" : "alert-danger") alert-dismissible py-1 px-2 mt-1 mb-0" style="font-size:0.85rem;">
+                    @_calcMessage
+                    <button type="button" class="btn-close btn-sm" @onclick="() => _calcMessage = string.Empty"></button>
                 </div>
             }
         </div>
+
+        @if (!_isApproved)
+        {
+            <div class="col-sm-2 position-relative">
+                <label class="form-label">Add PO Items</label>
+                <div class="input-group">
+                    <input class="form-control" @bind-value="SearchText" placeholder="Type part of PO No..."/>
+                    <button type="button" class="btn btn-outline-primary" title="Search PO" @onclick="SearchPosAsync">Search</button>
+                </div>
+                @if (suggestions.Count > 0 && showSuggestions)
+                {
+                    <div class="list-group position-absolute z-3" style="max-height:200px; overflow:auto; width:100%;">
+                        @foreach (var s in suggestions)
+                        {
+                            <button type="button" class="list-group-item list-group-item-action" @onclick="() => SelectPo(s)">@s</button>
+                        }
+                    </div>
+                }
+            </div>
+        }
     </div>
 
     @* <div class="card mb-3">
@@ -109,29 +135,32 @@ else
             <h5 class="mb-0">Attachments</h5>
         </div>
         <div class="card-body">
-            <div class="mb-3">
-                <label class="form-label">Upload Files (max 5MB per file)</label>
-                <InputFile class="form-control" OnChange="OnFilesSelected" multiple accept="*/*" />
-            </div>
-            @if (!string.IsNullOrEmpty(_uploadMessage))
+            @if (!_isApproved)
             {
-                <div class="alert @(_uploadSuccess ? "alert-success" : "alert-danger") alert-dismissible py-2 mb-2">
-                    @_uploadMessage
-                    <button type="button" class="btn-close btn-sm" @onclick="() => _uploadMessage = string.Empty"></button>
+                <div class="mb-3">
+                    <label class="form-label">Upload Files (max 5MB per file)</label>
+                    <InputFile class="form-control" OnChange="OnFilesSelected" multiple accept="*/*" />
                 </div>
-            }
-            @if (selectedFiles.Any())
-            {
-                <div class="mb-2"><strong>Selected Files:</strong></div>
-                <ul class="list-group mb-3">
-                    @foreach (var file in selectedFiles)
-                    {
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <span>@file.Name (@FormatFileSize(file.Size))</span>
-                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => RemoveSelectedFile(file)">Remove</button>
-                        </li>
-                    }
-                </ul>
+                @if (!string.IsNullOrEmpty(_uploadMessage))
+                {
+                    <div class="alert @(_uploadSuccess ? "alert-success" : "alert-danger") alert-dismissible py-2 mb-2">
+                        @_uploadMessage
+                        <button type="button" class="btn-close btn-sm" @onclick="() => _uploadMessage = string.Empty"></button>
+                    </div>
+                }
+                @if (selectedFiles.Any())
+                {
+                    <div class="mb-2"><strong>Selected Files:</strong></div>
+                    <ul class="list-group mb-3">
+                        @foreach (var file in selectedFiles)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>@file.Name (@FormatFileSize(file.Size))</span>
+                                <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => RemoveSelectedFile(file)">Remove</button>
+                            </li>
+                        }
+                    </ul>
+                }
             }
             @if (header.Attachments.Any())
             {
@@ -142,7 +171,10 @@ else
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             <a href="/uploads/memos/@attachment.StoredFileName" target="_blank">@attachment.FileName</a>
                             <span>(@FormatFileSize(attachment.FileSize))</span>
-                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => RemoveAttachment(attachment)">Remove</button>
+                            @if (!_isApproved)
+                            {
+                                <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => RemoveAttachment(attachment)">Remove</button>
+                            }
                         </li>
                     }
                 </ul>
@@ -152,9 +184,12 @@ else
 
     <div class="mt-3 d-flex gap-2 align-items-center flex-wrap">
         <button class="btn btn-secondary" @onclick="Back">Back</button>
-        <button class="btn btn-primary" @onclick="Save">Save</button>
+        @if ((header.ApproveStatus ?? "") != "Approved")
+        {
+            <button class="btn btn-primary" @onclick="Save">Save</button>
+        }
         <button class="btn btn-outline-primary" @onclick="Print">Print / Save PDF</button>
-        <AuthorizeView Roles="Admin,Supervisor">
+        <AuthorizeView Roles="Admin,Approval">
             <Authorized>
                 @if ((header.ApproveStatus ?? "") != "Approved")
                 {
@@ -166,7 +201,10 @@ else
                 }
             </Authorized>
         </AuthorizeView>
-        <button class="btn btn-danger" @onclick="Delete">Delete</button>
+        @if ((header.ApproveStatus ?? "") != "Approved")
+        {
+            <button class="btn btn-danger" @onclick="Delete">Delete</button>
+        }
     </div>
     
     @if (!string.IsNullOrEmpty(_saveMessage))
@@ -187,6 +225,10 @@ else
     private List<BuyerStyleModel> styles = new();
     private List<BuyerStyleOrderModel> orders = new();
     
+    private bool _calculating = false;
+    private string _calcMessage = string.Empty;
+    private bool _calcSuccess = false;
+
     private string _saveMessage = string.Empty;
     private bool _saveSuccess = false;
     
@@ -198,6 +240,8 @@ else
     private string searchText = string.Empty;
     private bool showSuggestions = false;
     private List<string> suggestions = new();
+    
+    private bool _isApproved => (header?.ApproveStatus ?? "") == "Approved";
     
     private string SearchText
     {
@@ -277,6 +321,176 @@ else
         {
             Console.Error.WriteLine($"Error deleting memo: {ex.Message}");
         }
+    }
+
+
+    private async Task CalculateUsd()
+    {
+        _calculating = true;
+        _calcMessage = string.Empty;
+        _calcSuccess = false;
+        StateHasChanged();
+
+        try
+        {
+            if (header.MemoDate == default)
+            {
+                _calcMessage = "Please set Memo Date first.";
+                _calcSuccess = false;
+                return;
+            }
+
+            if (header.Details == null || !header.Details.Any())
+            {
+                _calcMessage = "No details to convert.";
+                _calcSuccess = false;
+                return;
+            }
+
+            var memoDateOnly = header.MemoDate.Date;
+            var currencies = header.Details
+                .Select(d => d.Currency?.Trim().ToUpper())
+                .Where(c => !string.IsNullOrWhiteSpace(c) && !c.Equals("USD", StringComparison.OrdinalIgnoreCase))
+                .Distinct()
+                .ToList();
+
+            if (!currencies.Any())
+            {
+                _calcMessage = "All currencies are already USD.";
+                _calcSuccess = true;
+                return;
+            }
+
+            var existingRates = await Db.PoExchangeRates
+                .Where(r => currencies.Contains(r.PoCurrency)
+                    && r.BaseCurrency == "USD"
+                    && r.ExcDate.Date == memoDateOnly)
+                .ToListAsync();
+
+            var currenciesFromDb = existingRates.Select(r => r.PoCurrency).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var currenciesToFetch = currencies.Where(c => !currenciesFromDb.Contains(c)).ToList();
+
+            ExchangeRateResponse? response = null;
+            if (currenciesToFetch.Any())
+            {
+                // var dateStr = header.MemoDate.ToString("yyyy-MM-dd");
+
+                DateTime memoDate = header.MemoDate.Date;
+                DateTime now = DateTime.Now;
+                DateTime combined = memoDate.AddHours(now.Hour)
+                            .AddMinutes(now.Minute)
+                            .AddSeconds(now.Second);
+                DateTime utcDate = combined.ToUniversalTime();
+                var dateStr = utcDate.ToString("yyyy-MM-dd");
+
+                var appId = "e483ad469b1142d6aaccb2f472658efd";
+                var apiUrl = $"api/historical/{dateStr}.json?app_id={appId}";
+
+                try
+                {
+                    var httpClient = HttpClientFactory.CreateClient("ExchangeRateApi");
+                    response = await httpClient.GetFromJsonAsync<ExchangeRateResponse>(apiUrl);
+                }
+                catch (Exception apiEx)
+                {
+                    _calcMessage = $"Failed to fetch exchange rates from API: {apiEx.Message} Url {apiUrl}";
+                    _calcSuccess = false;
+                    return;
+                }
+
+                if (response == null || response.rates == null || !response.rates.Any())
+                {
+                    _calcMessage = "No exchange rates returned from API.";
+                    _calcSuccess = false;
+                    return;
+                }
+            }
+
+            var exchangeRatesToSave = new List<PoExchangeRateModel>();
+            var convertedCount = 0;
+            var notFoundCurrencies = new List<string>();
+
+            foreach (var currency in currencies)
+            {
+                decimal rate;
+                var existingRate = existingRates.FirstOrDefault(r => r.PoCurrency.Equals(currency, StringComparison.OrdinalIgnoreCase));
+
+                if (existingRate != null)
+                {
+                    rate = existingRate.ExcRate;
+                }
+                else if (response?.rates != null && response.rates.TryGetValue(currency, out var apiRate) && apiRate > 0)
+                {
+                    rate = apiRate;
+                    exchangeRatesToSave.Add(new PoExchangeRateModel
+                    {
+                        PoCurrency = currency,
+                        BaseCurrency = "USD",
+                        ExcDate = header.MemoDate,
+                        ExcRate = rate
+                    });
+                }
+                else
+                {
+                    notFoundCurrencies.Add(currency);
+                    continue;
+                }
+
+                var usdRate = 1m / rate;
+                foreach (var detail in header.Details.Where(d =>
+                    !string.IsNullOrWhiteSpace(d.Currency) &&
+                    d.Currency.Trim().Equals(currency, StringComparison.OrdinalIgnoreCase)))
+                {
+                    detail.Price = Math.Round(detail.Price * usdRate, 6);
+                    detail.Currency = "USD";
+                    convertedCount++;
+                }
+            }
+
+            if (exchangeRatesToSave.Any())
+            {
+                Db.PoExchangeRates.AddRange(exchangeRatesToSave);
+                await Db.SaveChangesAsync();
+            }
+
+            if (notFoundCurrencies.Any())
+            {
+                _calcMessage = $"Converted {convertedCount} items. Rate not found for: {string.Join(", ", notFoundCurrencies)}";
+                _calcSuccess = convertedCount > 0;
+            }
+            else if (convertedCount > 0)
+            {
+                _calcMessage = $"Successfully converted {convertedCount} item(s) to USD.";
+                _calcSuccess = true;
+            }
+            else
+            {
+                _calcMessage = "No items were converted.";
+                _calcSuccess = false;
+            }
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _calcMessage = $"Error: {ex.Message}";
+            _calcSuccess = false;
+            Console.Error.WriteLine($"Error calculating USD: {ex.Message}");
+        }
+        finally
+        {
+            _calculating = false;
+            StateHasChanged();
+        }
+    }
+
+    public class ExchangeRateResponse
+    {
+        public string? disclaimer { get; set; }
+        public string? license { get; set; }
+        public long timestamp { get; set; }
+        public string? @base { get; set; }
+        public Dictionary<string, decimal> rates { get; set; } = new();
     }
 
     private async Task Approve()

@@ -197,7 +197,7 @@
     <button class="btn btn-secondary" @onclick="Cancel">Cancel</button>
     <button class="btn btn-primary" @onclick="Save">Save</button>
 
-    <AuthorizeView Roles="Admin,Supervisor">
+    <AuthorizeView Roles="Admin,Approval">
         <Authorized>
             @if ((header.ApproveStatus ?? "") != "Approved")
             {

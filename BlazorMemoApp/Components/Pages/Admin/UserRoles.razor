@@ -54,6 +54,10 @@ else
                             <label class="form-check-label" for="role-admin">Admin</label>
                         </div>
                         <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="role-approval" @bind="_roleApproval" />
+                            <label class="form-check-label" for="role-approval">Approval</label>
+                        </div>
+                        <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="role-supervisor" @bind="_roleSupervisor" />
                             <label class="form-check-label" for="role-supervisor">Supervisor</label>
                         </div>
@@ -112,6 +116,7 @@ else
 
     // Role checkboxes
     private bool _roleAdmin;
+    private bool _roleApproval;
     private bool _roleSupervisor;
     private bool _roleUser;
 
@@ -148,7 +153,7 @@ else
         _selectedUser = _users.FirstOrDefault(u => u.Id == _selectedUserId);
         if (_selectedUser is null)
         {
-            _roleAdmin = _roleSupervisor = _roleUser = false;
+            _roleAdmin = _roleApproval = _roleSupervisor = _roleUser = false;
             _selectedBuyerIds.Clear();
             _hasAllBuyersAccess = false;
             return;
@@ -157,6 +162,7 @@ else
         // Load roles
         var roles = await UserManager.GetRolesAsync(_selectedUser);
         _roleAdmin = roles.Contains("Admin", StringComparer.OrdinalIgnoreCase);
+        _roleApproval = roles.Contains("Approval", StringComparer.OrdinalIgnoreCase);
         _roleSupervisor = roles.Contains("Supervisor", StringComparer.OrdinalIgnoreCase);
         _roleUser = roles.Contains("User", StringComparer.OrdinalIgnoreCase);
 
@@ -172,6 +178,7 @@ else
 
         var desired = new List<string>();
         if (_roleAdmin) desired.Add("Admin");
+        if (_roleApproval) desired.Add("Approval");
         if (_roleSupervisor) desired.Add("Supervisor");
         if (_roleUser) desired.Add("User");
 

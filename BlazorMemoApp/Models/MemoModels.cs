@@ -53,7 +53,7 @@ public class MemoDetailModel
     public int MemoHeaderId { get; set; }
     public MemoHeaderModel MemoHeader { get; set; } = null!;
 
-    // From PO Detail API
+    // From PO Detail API    
     public string? PONumber { get; set; }
 
     // NEW: List to hold multiple SPI and BOMQty details
@@ -78,6 +78,8 @@ public class MemoDetailModel
     public decimal TotalExtraCollected { get; set; }
 
     public string ItemCode { get; set; } = string.Empty;
+    
+    public string? Supplier { get; set; } = string.Empty;
     
     // Mode of Collect: C = Costing, D = DN, F = Future Commitment
     public string ModeOfCollect { get; set; } = string.Empty;

@@ -44,6 +44,7 @@ else
                     <th>Price</th>
                     <th>Curency</th>
                     <th>Unit</th>
+                    <th>Supplier</th>
                     <th>BOM Qty</th>
                     <th>BOM Amount</th>
                     <th>Avail Stock Qty</th>
@@ -95,6 +96,7 @@ else
                     <td>@it.Price.ToString("F2")</td>
                         <td>@it.Currency</td>
                     <td>@it.Unit</td>
+                    <td>@it.Supplier</td>
                     @* <td>
                             <input type="number" class="form-control form-control-sm" style="width:75px" step="0.01" @bind-value="it.BOMQty" @bind-value:event="oninput" />
                     </td> *@
@@ -143,7 +145,7 @@ else
                     @if (_expandedRows.Contains(it))
                     {
                         <tr>
-                            <td colspan="28" class="p-0">
+                            <td colspan="29" class="p-0">
                                 <div class="p-3 bg-light">
                                     <h6>SPI & BOM Details for @it.Article - @it.Color - @it.Size</h6>
                                     <table class="table table-sm table-bordered">

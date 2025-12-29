@@ -549,6 +549,10 @@ else
         searchText = po;
 
         var details = await PoApi.GetPoDetailsAsync(po);
+        var supplierName = header.SupplierId > 0 
+            ? suppliers.FirstOrDefault(s => s.Id == header.SupplierId)?.Name ?? string.Empty
+            : string.Empty;
+            
         var newItems = details.Select(d => new MemoDetailModel
         {
             Article = d.Article,
@@ -558,7 +562,8 @@ else
             Currency = d.Currency,
             Unit = d.Uom_Po,
             PONumber = po,
-            ItemCode = d.Custom1
+            ItemCode = d.Custom1,
+            Supplier = supplierName
         }).ToList();
         
         header.Details ??= new List<MemoDetailModel>();

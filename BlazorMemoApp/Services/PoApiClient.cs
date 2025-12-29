@@ -141,6 +141,7 @@ public class PoApiClient
                         && e.Elements().Any(c => c.Name.LocalName == "Spec_Value")
                         && e.Elements().Any(c => c.Name.LocalName == "Rate")
                         && e.Elements().Any(c => c.Name.LocalName == "Uom_Po")
+                        && e.Elements().Any(c => c.Name.LocalName == "Supplier")
                         && e.Elements().Any(c => c.Name.LocalName == "custom1"));
 
         foreach (var el in candidates)

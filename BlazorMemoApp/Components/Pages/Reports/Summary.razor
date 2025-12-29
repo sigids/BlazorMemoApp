@@ -9,6 +9,7 @@
 @inject BlazorMemoApp.Services.BuyerPrivilegeService BuyerPrivilegeService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JS
+@inject NavigationManager Nav
 
 <h1>Report Summary</h1>
 <p class="text-muted">Memo details summary report</p>
@@ -154,6 +155,7 @@ else
     private DateTime? _dateTo;
     private int _pageSize = 25;
     private int _currentPage = 1;
+    private bool _isAcct = false;
 
     private IEnumerable<ReportRow> FilteredData => string.IsNullOrWhiteSpace(_searchText)
         ? _data
@@ -167,6 +169,13 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        _isAcct = authState.User.IsInRole("Acct");
+        if (_isAcct)
+        {
+            Nav.NavigateTo("/reports/detail", forceLoad: false);
+            return;
+        }
         await LoadData();
     }
 
@@ -177,7 +186,8 @@ else
 
         // Get current user ID for buyer privilege filtering
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var user = authState.User;
+        var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         
         var allBuyers = await Db.MemoAddresses.Where(a => a.Type.Contains("B")).ToListAsync();
         var buyers = !string.IsNullOrEmpty(userId) 
@@ -190,6 +200,11 @@ else
             .Include(m => m.Details)
             .Where(m => m.BuyerId == null || allowedBuyerIds.Contains(m.BuyerId.Value))
             .AsQueryable();
+
+        if (_isAcct)
+        {
+            query = query.Where(m => (m.ApproveStatus ?? string.Empty) == "Approved");
+        }
 
         if (_dateFrom.HasValue)
             query = query.Where(m => m.MemoDate >= _dateFrom.Value);

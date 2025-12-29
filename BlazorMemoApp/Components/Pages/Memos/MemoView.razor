@@ -1,10 +1,12 @@
 @page "/memos/{Id:int}"
-@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,User")]
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,User,Acct")]
 @rendermode InteractiveServer
 @using BlazorMemoApp.Models
 @using Microsoft.EntityFrameworkCore
 @using BlazorMemoApp.Components.Memos
 @using System.Security.Claims
+@using System.Globalization
+@using System.Text
 @inject BlazorMemoApp.Data.ApplicationDbContext Db
 @inject BlazorMemoApp.Services.PoApiClient PoApi
 @inject NavigationManager Nav
@@ -23,10 +25,10 @@
 }
 else
 {
-    @if (_isApproved)
+    @if (_isReadOnly)
     {
         <div class="alert alert-info py-2 mb-3">
-            <strong>Read-Only Mode:</strong> This memo has been approved and cannot be edited.
+            <strong>Read-Only Mode:</strong> This memo is approved or you have view-only access. You can view, print, or export CSV.
         </div>
     }
     <div class="row g-3">
@@ -36,11 +38,11 @@ else
         </div>
         <div class="col-sm-2">
             <label class="form-label">Memo Date</label>
-            <InputDate class="form-control" @bind-Value="header.MemoDate" disabled="@_isApproved" />
+            <InputDate class="form-control" @bind-Value="header.MemoDate" disabled="@_isReadOnly" />
         </div>
         <div class="col-sm-2">
             <label class="form-label">Buyer</label>
-            <InputSelect class="form-select" @bind-Value="header.BuyerId" disabled="@_isApproved">
+            <InputSelect class="form-select" @bind-Value="header.BuyerId" disabled="@_isReadOnly">
                 <option value="">-- Select --</option>
                 @foreach (var buyer in buyers)
                 {
@@ -50,7 +52,7 @@ else
         </div>
         <div class="col-sm-2">
             <label class="form-label">Style</label>
-            <InputSelect class="form-select" @bind-Value="header.StyleId" disabled="@(_isApproved || header.BuyerId == null)">
+            <InputSelect class="form-select" @bind-Value="header.StyleId" disabled="@(_isReadOnly || header.BuyerId == null)">
                 <option value="">-- Select --</option>
                 @foreach (var style in filteredStyles)
                 {
@@ -60,15 +62,15 @@ else
         </div>
         <div class="col-sm-2">
             <label class="form-label">Garment Qty</label>
-            <InputNumber class="form-control" @bind-Value="header.GmtQty" disabled="@_isApproved" />
+            <InputNumber class="form-control" @bind-Value="header.GmtQty" disabled="@_isReadOnly" />
         </div>
         <div class="col-sm-2">
             <label class="form-label">FOB Rate</label>
-            <InputNumber class="form-control" @bind-Value="header.GmtFobRate" disabled="@_isApproved" />
+            <InputNumber class="form-control" @bind-Value="header.GmtFobRate" disabled="@_isReadOnly" />
         </div>
         <div class="col-sm-2">
             <label class="form-label">Supplier</label>
-            <InputSelect class="form-select" @bind-Value="header.SupplierId" disabled="@_isApproved">
+            <InputSelect class="form-select" @bind-Value="header.SupplierId" disabled="@_isReadOnly">
                 <option value="">-- Select --</option>
                 @foreach (var supplier in suppliers)
                 {
@@ -97,7 +99,7 @@ else
             }
         </div>
 
-        @if (!_isApproved)
+        @if (!_isReadOnly)
         {
             <div class="col-sm-2 position-relative">
                 <label class="form-label">Add PO Items</label>
@@ -136,7 +138,7 @@ else
             <h5 class="mb-0">Attachments</h5>
         </div>
         <div class="card-body">
-            @if (!_isApproved)
+            @if (!_isReadOnly)
             {
                 <div class="mb-3">
                     <label class="form-label">Upload Files (max 5MB per file)</label>
@@ -172,7 +174,7 @@ else
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             <a href="/uploads/memos/@attachment.StoredFileName" target="_blank">@attachment.FileName</a>
                             <span>(@FormatFileSize(attachment.FileSize))</span>
-                            @if (!_isApproved)
+                            @if (!_isReadOnly)
                             {
                                 <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => RemoveAttachment(attachment)">Remove</button>
                             }
@@ -185,11 +187,12 @@ else
 
     <div class="mt-3 d-flex gap-2 align-items-center flex-wrap">
         <button class="btn btn-secondary" @onclick="Back">Back</button>
-        @if ((header.ApproveStatus ?? "") != "Approved")
+        @if (!_isReadOnly && (header.ApproveStatus ?? "") != "Approved")
         {
             <button class="btn btn-primary" @onclick="Save">Save</button>
         }
         <button class="btn btn-outline-primary" @onclick="Print">Print / Save PDF</button>
+        <button class="btn btn-outline-success" @onclick="ExportCsv">Export CSV</button>
         <AuthorizeView Roles="Admin,Approval">
             <Authorized>
                 @if ((header.ApproveStatus ?? "") != "Approved")
@@ -226,6 +229,7 @@ else
     private List<BuyerStyleModel> styles = new();
     private List<BuyerStyleOrderModel> orders = new();
     
+    private bool _isAcct = false;
     private bool _calculating = false;
     private string _calcMessage = string.Empty;
     private bool _calcSuccess = false;
@@ -243,6 +247,7 @@ else
     private List<string> suggestions = new();
     
     private bool _isApproved => (header?.ApproveStatus ?? "") == "Approved";
+    private bool _isReadOnly => _isApproved || _isAcct;
     
     private string SearchText
     {
@@ -264,7 +269,15 @@ else
         
         // Get current user ID for buyer privilege filtering
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var user = authState.User;
+        _isAcct = user.IsInRole("Acct");
+        var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (_isAcct && (header?.ApproveStatus ?? string.Empty).Equals("Approved", StringComparison.OrdinalIgnoreCase) == false)
+        {
+            Nav.NavigateTo("/memos");
+            return;
+        }
         
         var allBuyers = await Db.MemoAddresses.Where(a => a.Type.Contains("B")).ToListAsync();
         buyers = !string.IsNullOrEmpty(userId) 
@@ -280,6 +293,8 @@ else
 
     private async Task Save()
     {
+        if (_isReadOnly) return;
+
         _saveMessage = string.Empty;
         _saveSuccess = false;
         
@@ -306,8 +321,70 @@ else
         await JS.InvokeVoidAsync("window.print");
     }
 
+    private async Task ExportCsv()
+    {
+        if (header == null) return;
+
+        var sb = new StringBuilder();
+        sb.AppendLine("Field,Value");
+        sb.AppendLine($"Buyer,{EscapeCsv(header.Buyer?.Name ?? string.Empty)}");
+        sb.AppendLine($"MemoNo,{EscapeCsv(header.MemoNo)}");
+        sb.AppendLine($"MemoDate,{header.MemoDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}");
+        sb.AppendLine($"GmtQty,{header.GmtQty}");
+        sb.AppendLine($"GmtFobValue,{header.GmtFobValue?.ToString("F2", CultureInfo.InvariantCulture) ?? string.Empty}");
+        sb.AppendLine($"ApproveStatus,{EscapeCsv(header.ApproveStatus)}");
+        sb.AppendLine($"ApproveUserId,{EscapeCsv(header.ApproveUser?.UserName)}");
+        sb.AppendLine($"ApproveDate,{(header.ApproveDate?.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) ?? string.Empty)}");
+        sb.AppendLine();
+
+        sb.AppendLine("PONo, Article,Color,Size,Price,Unit,Supplier,BOMQty,AvailStockQty,MCQQty,SurchargePaid,StockUsableQty,TotalExtraCollected,BOMAmount,StockAmount,PurchaseQty,PurchaseAmount,MCQAmount,Diff,StockFromMCQ,StockUsableAmount,StockNonUsableQty,StockNonUsableAmount,TotalExtraPaid");
+
+        foreach (var d in header.Details ?? Enumerable.Empty<MemoDetailModel>())
+        {
+            var line = string.Join(",",
+                EscapeCsv(d.PONumber),
+                EscapeCsv(d.Article),
+                EscapeCsv(d.Color),
+                EscapeCsv(d.Size),
+                d.Price.ToString("F2", CultureInfo.InvariantCulture),
+                EscapeCsv(d.Unit),
+                EscapeCsv(d.Supplier),
+                d.BOMQty.ToString(CultureInfo.InvariantCulture),
+                d.AvailStockQty.ToString(CultureInfo.InvariantCulture),
+                d.MCQQty.ToString(CultureInfo.InvariantCulture),
+                d.SurchargePaid.ToString("F2", CultureInfo.InvariantCulture),
+                d.StockUsableQty.ToString(CultureInfo.InvariantCulture),
+                d.TotalExtraCollected.ToString("F2", CultureInfo.InvariantCulture),
+                d.BOMAmount.ToString("F2", CultureInfo.InvariantCulture),
+                d.StockAmount.ToString("F2", CultureInfo.InvariantCulture),
+                d.PurchaseQty.ToString(CultureInfo.InvariantCulture),
+                d.PurchaseAmount.ToString("F2", CultureInfo.InvariantCulture),
+                d.MCQAmount.ToString("F2", CultureInfo.InvariantCulture),
+                d.Diff.ToString("F2", CultureInfo.InvariantCulture),
+                d.StockFromMCQ.ToString(CultureInfo.InvariantCulture),
+                d.StockUsableAmount.ToString("F2", CultureInfo.InvariantCulture),
+                d.StockNonUsableQty.ToString(CultureInfo.InvariantCulture),
+                d.StockNonUsableAmount.ToString("F2", CultureInfo.InvariantCulture),
+                d.TotalExtraPaid.ToString("F2", CultureInfo.InvariantCulture)
+            );
+            sb.AppendLine(line);
+        }
+
+        var csv = sb.ToString();
+        var bytes = Encoding.UTF8.GetBytes(csv);
+        var base64 = Convert.ToBase64String(bytes);
+        var filename = $"{(string.IsNullOrWhiteSpace(header.MemoNo) ? "memo" : header.MemoNo)}_{header.Id}.csv".Replace("\"", "");
+
+        var safeBase64 = base64.Replace("'", "\\'");
+        var safeFilename = filename.Replace("'", "\\'");
+        var js = $"(function(b64, filename){{var link=document.createElement('a');link.href='data:text/csv;base64,'+b64;link.download=filename;document.body.appendChild(link);link.click();document.body.removeChild(link);}})('{safeBase64}','{safeFilename}');";
+        await JS.InvokeVoidAsync("eval", js);
+    }
+
     private async Task Delete()
     {
+        if (_isReadOnly) return;
+
         if (header == null) return;
         var ok = await JS.InvokeAsync<bool>("confirm", $"Delete memo {header.MemoNo} and all details?");
         if (!ok) return;
@@ -327,6 +404,8 @@ else
 
     private async Task CalculateUsd()
     {
+        if (_isReadOnly) return;
+
         _calculating = true;
         _calcMessage = string.Empty;
         _calcSuccess = false;
@@ -527,6 +606,8 @@ else
 
     private async Task SearchPosAsync()
     {
+        if (_isReadOnly) return;
+
         if (string.IsNullOrWhiteSpace(searchText))
         {
             suggestions.Clear();
@@ -541,6 +622,8 @@ else
 
     private async Task SelectPo(string po)
     {
+        if (_isReadOnly) return;
+
         if (header == null) return;
         
         header.PONumber = po;
@@ -574,6 +657,8 @@ else
 
     private void OnFilesSelected(InputFileChangeEventArgs e)
     {
+        if (_isReadOnly) return;
+
         _uploadMessage = string.Empty;
         var invalidFiles = new List<string>();
         
@@ -600,13 +685,14 @@ else
 
     private void RemoveSelectedFile(IBrowserFile file)
     {
+        if (_isReadOnly) return;
         selectedFiles.Remove(file);
         StateHasChanged();
     }
 
     private void RemoveAttachment(MemoAttachmentModel attachment)
     {
-        if (header == null) return;
+        if (_isReadOnly || header == null) return;
         header.Attachments.Remove(attachment);
         StateHasChanged();
     }
@@ -618,9 +704,17 @@ else
         return $"{bytes / (1024.0 * 1024.0):F2} MB";
     }
 
+    private static string EscapeCsv(string? input)
+    {
+        if (string.IsNullOrEmpty(input)) return string.Empty;
+        var needQuotes = input.Contains(',') || input.Contains('"') || input.Contains('\r') || input.Contains('\n');
+        var outVal = input.Replace("\"", "\"\"");
+        return needQuotes ? '"' + outVal + '"' : outVal;
+    }
+
     private async Task UploadFilesAsync()
     {
-        if (header == null || !selectedFiles.Any()) return;
+        if (_isReadOnly || header == null || !selectedFiles.Any()) return;
         
         var uploadPath = Path.Combine(Environment.WebRootPath, "uploads", "memos");
         Directory.CreateDirectory(uploadPath);

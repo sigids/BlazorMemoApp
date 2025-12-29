@@ -9,6 +9,7 @@
 @inject BlazorMemoApp.Services.BuyerPrivilegeService BuyerPrivilegeService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JS
+@inject NavigationManager Nav
 
 <h1>Detail Allocation Report</h1>
 <p class="text-muted">Memo Allocation details report with all columns</p>
@@ -212,6 +213,12 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (authState.User.IsInRole("Acct"))
+        {
+            Nav.NavigateTo("/reports/detail", forceLoad: false);
+            return;
+        }
         await LoadData();
     }
 

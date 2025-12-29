@@ -111,18 +111,26 @@ else
                             }
                             else
                             {
-                                @if ((memo.ApproveStatus ?? "") != "Approved")
+                                @if (_isAcct)
                                 {
-                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => EditMemo(memo.Id)">Edit</button>
+                                    <button class="btn btn-sm btn-outline-secondary" @onclick="() => ViewMemo(memo.Id)">View/Print</button>
+                                    <button class="btn btn-sm btn-outline-success" @onclick="() => ExportCsv(memo.Id)">CSV</button>
                                 }
-                                <button class="btn btn-sm btn-outline-secondary" @onclick="() => ViewMemo(memo.Id)">View/Print</button>
-                                <button class="btn btn-sm btn-outline-success" @onclick="() => ExportCsv(memo.Id)">CSV</button>
-                                @if ((memo.ApproveStatus ?? "") != "Approved")
+                                else
                                 {
+                                    @if ((memo.ApproveStatus ?? "") != "Approved")
+                                    {
+                                        <button class="btn btn-sm btn-outline-primary" @onclick="() => EditMemo(memo.Id)">Edit</button>
+                                    }
+                                    <button class="btn btn-sm btn-outline-secondary" @onclick="() => ViewMemo(memo.Id)">View/Print</button>
+                                    <button class="btn btn-sm btn-outline-success" @onclick="() => ExportCsv(memo.Id)">CSV</button>
+                                    @if ((memo.ApproveStatus ?? "") != "Approved")
+                                    {
                                         @if (_isAdmin || _isSupervisor)
                                         {
-                                    <button class="btn btn-sm btn-danger" @onclick="() => DeleteMemo(memo.Id)">Delete</button>
+                                            <button class="btn btn-sm btn-danger" @onclick="() => DeleteMemo(memo.Id)">Delete</button>
                                         }
+                                    }
                                 }
                             }
                         </div>
@@ -157,13 +165,15 @@ else
     private bool _approvalMode = false;
     private bool _isAdmin = false;
     private bool _isSupervisor = false;
+    private bool _isAcct = false;
 
     private IEnumerable<MemoHeaderModel> FilteredMemos
         => (_allMemos ?? Enumerable.Empty<MemoHeaderModel>())
             .Where(m => string.IsNullOrWhiteSpace(_filter)
                         || (m.MemoNo ?? string.Empty).Contains(_filter, StringComparison.OrdinalIgnoreCase)
                         || (m.PONumber ?? string.Empty).Contains(_filter, StringComparison.OrdinalIgnoreCase))
-            .Where(m => !_approvalMode || string.Equals(m.ApproveStatus ?? "", "Pending", StringComparison.OrdinalIgnoreCase));
+            .Where(m => !_approvalMode || string.Equals(m.ApproveStatus ?? "", "Pending", StringComparison.OrdinalIgnoreCase))
+            .Where(m => !_isAcct || string.Equals(m.ApproveStatus ?? "", "Approved", StringComparison.OrdinalIgnoreCase));
 
     private IEnumerable<MemoHeaderModel> PagedMemos => FilteredMemos.Skip((_currentPage - 1) * _pageSize).Take(_pageSize);
 
@@ -180,6 +190,7 @@ else
         
         _isAdmin = authState.User.IsInRole("Admin");
         _isSupervisor = authState.User.IsInRole("Supervisor");
+        _isAcct = authState.User.IsInRole("Acct");
 
         // Get allowed buyer IDs for current user
         var hasAllAccess = !string.IsNullOrEmpty(userId) && await BuyerPrivilegeService.HasAllBuyersAccessAsync(userId);
@@ -198,6 +209,11 @@ else
         {
             // User has no privileges - show no data
             query = query.Where(m => false);
+        }
+
+        if (_isAcct)
+        {
+            query = query.Where(m => (m.ApproveStatus ?? string.Empty).ToUpper() == "APPROVED");
         }
         
         _allMemos = await query.OrderByDescending(m => m.MemoDate).ToListAsync();

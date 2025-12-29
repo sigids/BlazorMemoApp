@@ -17,6 +17,8 @@ namespace BlazorMemoApp.Data
         public DbSet<MemoAttachmentModel> MemoAttachments { get; set; }
         public DbSet<EmailSettingsModel> EmailSettings { get; set; }
         public DbSet<UserBuyerPrivilegeModel> UserBuyerPrivileges { get; set; }
+        public DbSet<UserFactoryRoleModel> UserFactoryRoles { get; set; }
+        public DbSet<UserFactoryUnitPrivilegeModel> UserFactoryUnitPrivileges { get; set; }
         public DbSet<MemoAllocationHeaderModel> MemoAllocations { get; set; }
         public DbSet<MemoAllocationDetailModel> MemoAllocationDetails { get; set; }
         public DbSet<MemoAllocationSpiModel> MemoAllocationSpis { get; set; }
@@ -48,6 +50,13 @@ namespace BlazorMemoApp.Data
                 .WithMany(h => h.Attachments)
                 .HasForeignKey(a => a.MemoHeaderId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // MemoAllocation Header -> Buyer relationship
+            modelBuilder.Entity<MemoAllocationHeaderModel>()
+                .HasOne(h => h.Buyer)
+                .WithMany()
+                .HasForeignKey(h => h.BuyerId)
+                .OnDelete(DeleteBehavior.NoAction);
 
             // MemoAllocation Header -> Detail relationship
             modelBuilder.Entity<MemoAllocationDetailModel>()

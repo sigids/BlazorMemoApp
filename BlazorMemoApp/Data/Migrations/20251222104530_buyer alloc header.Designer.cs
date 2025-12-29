@@ -4,6 +4,7 @@ using BlazorMemoApp.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BlazorMemoApp.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251222104530_buyer alloc header")]
+    partial class buyerallocheader
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -314,32 +317,8 @@ namespace BlazorMemoApp.Migrations
                     b.Property<string>("PONo")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("QcApprovalDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("QcApprovalStatus")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("QcApprovalUserId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("QcApprovalUserName")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("UnitName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("WhApprovalDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("WhApprovalStatus")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("WhApprovalUserId")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("WhApprovalUserName")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
@@ -651,50 +630,6 @@ namespace BlazorMemoApp.Migrations
                     b.ToTable("UserBuyerPrivileges");
                 });
 
-            modelBuilder.Entity("BlazorMemoApp.Models.UserFactoryRoleModel", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("RoleType")
-                        .HasColumnType("int");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserFactoryRoles");
-                });
-
-            modelBuilder.Entity("BlazorMemoApp.Models.UserFactoryUnitPrivilegeModel", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("UnitName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserFactoryUnitPrivileges");
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")
@@ -965,28 +900,6 @@ namespace BlazorMemoApp.Migrations
                         .IsRequired();
 
                     b.Navigation("Buyer");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("BlazorMemoApp.Models.UserFactoryRoleModel", b =>
-                {
-                    b.HasOne("BlazorMemoApp.Data.ApplicationUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("BlazorMemoApp.Models.UserFactoryUnitPrivilegeModel", b =>
-                {
-                    b.HasOne("BlazorMemoApp.Data.ApplicationUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
 
                     b.Navigation("User");
                 });

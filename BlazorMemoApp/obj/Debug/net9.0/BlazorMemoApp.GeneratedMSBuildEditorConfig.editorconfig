@@ -200,6 +200,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xBZG1pblxFbWFpbFNldHRpbmdzLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/APPS-DEV/ASPNETCORE/BlazorMemoApp/BlazorMemoApp/Components/Pages/Admin/FactoryPrivileges.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xBZG1pblxGYWN0b3J5UHJpdmlsZWdlcy5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/APPS-DEV/ASPNETCORE/BlazorMemoApp/BlazorMemoApp/Components/Pages/Admin/TestConnection.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xBZG1pblxUZXN0Q29ubmVjdGlvbi5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 

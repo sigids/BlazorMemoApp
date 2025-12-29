@@ -146,7 +146,7 @@
 
 <hr />
 
-<BlazorMemoApp.Components.Memos.MemoDetailGrid Items="header.Details" BuyerId="header.BuyerId" StyleId="header.StyleId" Orders="orders" />
+<BlazorMemoApp.Components.Memos.MemoDetailGrid Items="header.Details" BuyerId="header.BuyerId" StyleId="header.StyleId" Orders="orders" IsApproved="@(header.ApproveStatus == "Approved")" />
 
 <div class="card mt-3">
     <div class="card-header">

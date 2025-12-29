@@ -16,6 +16,7 @@
 @inject BlazorMemoApp.Services.EmailService EmailService
 @inject BlazorMemoApp.Services.BuyerPrivilegeService BuyerPrivilegeService
 
+
 <h1>Memo List</h1>
 
 @if (_approvalMode)
@@ -64,6 +65,7 @@ else
                 <tr>
                     <th class="align-middle">Memo No</th>
                     <th class="align-middle">Memo Date</th>
+                    <th class="align-middle">Buyer Name</th>
                     <th class="align-middle">PO Number</th>
                     <th class="align-middle text-md-center" style="width:100px;">Qty<br />(Gmt)</th>
                     <th class="align-middle">Fob Value</th>
@@ -83,9 +85,10 @@ else
                 <tr>
                     <td>@memo.MemoNo</td>
                     <td>@memo.MemoDate.ToString("yyyy-MM-dd")</td>
+                    <td>@(memo.Buyer != null ? $"{memo.Buyer.Name} - {memo.Buyer.NameAbbr}" : "")</td>
                     <td>@memo.PONumber</td>
                     <td>@memo.GmtQty</td>
-                    <td>@(memo.GmtFobValue?.ToString("N2") ?? "")</td>
+                    <td>@(memo.CalcFobValue.ToString("N2") ?? "")</td>
                     <td class="text-end">@memo.Details?.Sum(d => d.SurchargePaid).ToString("N2")</td>
                     <td class="text-end">@memo.Details?.Sum(d => d.TotalExtraCollected).ToString("N2")</td>
                     <td class="text-end">@memo.Details?.Sum(d => d.TotalExtraPaid).ToString("N2")</td>
@@ -116,7 +119,10 @@ else
                                 <button class="btn btn-sm btn-outline-success" @onclick="() => ExportCsv(memo.Id)">CSV</button>
                                 @if ((memo.ApproveStatus ?? "") != "Approved")
                                 {
+                                        @if (_isAdmin || _isSupervisor)
+                                        {
                                     <button class="btn btn-sm btn-danger" @onclick="() => DeleteMemo(memo.Id)">Delete</button>
+                                        }
                                 }
                             }
                         </div>
@@ -149,6 +155,8 @@ else
     private int _pageSize = 10;
     private int _currentPage = 1;
     private bool _approvalMode = false;
+    private bool _isAdmin = false;
+    private bool _isSupervisor = false;
 
     private IEnumerable<MemoHeaderModel> FilteredMemos
         => (_allMemos ?? Enumerable.Empty<MemoHeaderModel>())
@@ -170,6 +178,9 @@ else
         var user = authState.User;
         var userId = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         
+        _isAdmin = authState.User.IsInRole("Admin");
+        _isSupervisor = authState.User.IsInRole("Supervisor");
+
         // Get allowed buyer IDs for current user
         var hasAllAccess = !string.IsNullOrEmpty(userId) && await BuyerPrivilegeService.HasAllBuyersAccessAsync(userId);
         var allowedBuyerIds = !string.IsNullOrEmpty(userId) 

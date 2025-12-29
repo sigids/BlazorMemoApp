@@ -11,12 +11,20 @@
 @inject IJSRuntime JS
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject BlazorMemoApp.Services.BuyerPrivilegeService BuyerPrivilegeService
+@inject BlazorMemoApp.Services.FactoryPrivilegeService FactoryPrivilegeService
 @inject IHttpClientFactory HttpClientFactory
 
 <h1>Memo Allocation @header?.MemoNo</h1>
 <hr />
 
-@if (header is null)
+@if (_accessDenied)
+{
+    <div class="alert alert-danger">
+        <strong>Access Denied:</strong> You do not have permission to view this memo allocation.
+    </div>
+    <button class="btn btn-secondary" @onclick="Back">Back</button>
+}
+else if (header is null)
 {
     <p><em>Loading...</em></p>
 }
@@ -53,7 +61,26 @@ else
                 <label class="form-label">PO No</label>
                 <input class="form-control" value="@header.PONo" disabled />
             </div>
+            <div class="col-sm-2">
+                <label class="form-label">Buyer</label>
+                @if (_isViewMode)
+                {
+                    <input class="form-control" value="@(header.Buyer != null ? $"{header.Buyer.Name} - {header.Buyer.NameAbbr}" : "")" disabled />
+                }
+                else
+                {
+                    <InputSelect class="form-select" @bind-Value="header.BuyerId">
+                        <option value="">-- Select Buyer --</option>
+                        @foreach (var b in buyers)
+                        {
+                            <option value="@b.Id">@b.Name - @b.NameAbbr</option>
+                        }
+                    </InputSelect>
+                }
+            </div>
+        </div>
 
+        <div class="row g-3 mt-2">
             @if (!_isViewMode)
             {
                 <div class="col-sm-3 position-relative">
@@ -214,18 +241,52 @@ else
             UnitName="@header.UnitName"
             PONo="@header.PONo"
             Buyers="buyers"
-            Orders="orders" />
+            Orders="orders"
+            IsWarehouse="_isWarehouse"
+            IsQc="_isQc"
+            WhApproved="header.WhApprovalStatus"
+            QcApproved="header.QcApprovalStatus" />
     }
 
-    <div class="mt-3 d-flex gap-2">
+    <div class="mt-3 d-flex gap-2 flex-wrap">
         <button class="btn btn-secondary" @onclick="Back">Back</button>
         @if (!_isViewMode)
         {
             <button class="btn btn-primary" @onclick="Save">Save</button>
-            <button class="btn btn-danger" @onclick="Delete">Delete</button>
+            @if (_isAdmin)
+            {
+                <button class="btn btn-danger" @onclick="Delete">Delete</button>
+            }
         }
         <button class="btn btn-outline-primary" @onclick="Print">Print</button>
+        
+        @if (_isWarehouse && !header.WhApprovalStatus)
+        {
+            <button class="btn btn-success" @onclick="WhApproval">WH Approval</button>
+        }
+        @if (_isQc && !header.QcApprovalStatus)
+        {
+            <button class="btn btn-info" @onclick="QcApproval">QC Approval</button>
+        }
     </div>
+    
+    @if (header.WhApprovalStatus || header.QcApprovalStatus)
+    {
+        <div class="mt-2">
+            @if (header.WhApprovalStatus)
+            {
+                <span class="badge bg-success me-2">
+                    WH Approved: @header.WhApprovalUserName (@header.WhApprovalDate?.ToString("yyyy-MM-dd HH:mm"))
+                </span>
+            }
+            @if (header.QcApprovalStatus)
+            {
+                <span class="badge bg-info">
+                    QC Approved: @header.QcApprovalUserName (@header.QcApprovalDate?.ToString("yyyy-MM-dd HH:mm"))
+                </span>
+            }
+        </div>
+    }
 
     @if (!string.IsNullOrEmpty(_saveMessage))
     {
@@ -241,6 +302,15 @@ else
 
     private MemoAllocationHeaderModel? header;
     private bool _isViewMode = false;
+    private bool _isAdmin = false;
+    private bool _accessDenied = false;
+
+    // Factory role flags
+    private bool _isWarehouse = false;
+    private bool _isQc = false;
+    private bool _hasFactoryRole = false;
+    private string _currentUserId = string.Empty;
+    private string _currentUserName = string.Empty;
 
     private List<MemoAdressModel> buyers = new();
     private List<BuyerStyleOrderModel> orders = new();
@@ -268,18 +338,58 @@ else
     {
         _isViewMode = Nav.Uri.EndsWith("/view", StringComparison.OrdinalIgnoreCase);
 
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        _currentUserId = userId ?? string.Empty;
+        _currentUserName = authState.User.Identity?.Name ?? string.Empty;
+        _isAdmin = authState.User.IsInRole("Admin");
+
+        // Check factory role
+        if (!string.IsNullOrEmpty(userId))
+        {
+            _isWarehouse = await FactoryPrivilegeService.IsWarehouseUserAsync(userId);
+            _isQc = await FactoryPrivilegeService.IsQcUserAsync(userId);
+            _hasFactoryRole = _isWarehouse || _isQc;
+        }
+
         header = await Db.MemoAllocations
+            .Include(m => m.Buyer)
             .Include(m => m.Details).ThenInclude(d => d.SpiAllocations).ThenInclude(s => s.BuyerAllocated)
             .Include(m => m.Details).ThenInclude(d => d.Buyer)
             .FirstOrDefaultAsync(m => m.Id == Id);
-
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
         var allBuyers = await Db.MemoAddresses.Where(a => a.Type.Contains("B")).ToListAsync();
         buyers = !string.IsNullOrEmpty(userId)
             ? await BuyerPrivilegeService.FilterBuyersAsync(userId, allBuyers)
             : allBuyers;
+
+        // Check access based on role type
+        if (header != null && !_isAdmin && !string.IsNullOrEmpty(userId))
+        {
+            if (_hasFactoryRole)
+            {
+                // Factory roles: check unit access only
+                var hasUnitAccess = await FactoryPrivilegeService.HasUnitAccessAsync(userId, header.UnitName);
+                if (!hasUnitAccess)
+                {
+                    _accessDenied = true;
+                    header = null;
+                }
+            }
+            else
+            {
+                // Non-factory roles: check buyer access
+                if (header.BuyerId.HasValue)
+                {
+                    var allowedBuyerIds = buyers.Select(b => b.Id).ToHashSet();
+                    if (!allowedBuyerIds.Contains(header.BuyerId.Value))
+                    {
+                        _accessDenied = true;
+                        header = null;
+                    }
+                }
+            }
+        }
 
         orders = await Db.BuyerStyleOrders.ToListAsync();
     }
@@ -541,6 +651,60 @@ else
     private async Task Print()
     {
         await JS.InvokeVoidAsync("window.print");
+    }
+
+    private async Task WhApproval()
+    {
+        if (header == null || !_isWarehouse) return;
+
+        var confirmed = await JS.InvokeAsync<bool>("confirm", "Approve as Warehouse?");
+        if (!confirmed) return;
+
+        try
+        {
+            header.WhApprovalStatus = true;
+            header.WhApprovalDate = DateTime.Now;
+            header.WhApprovalUserId = _currentUserId;
+            header.WhApprovalUserName = _currentUserName;
+
+            await Db.SaveChangesAsync();
+            _saveMessage = "Warehouse approval saved successfully.";
+            _saveSuccess = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error saving WH approval: {ex.Message}");
+            _saveMessage = $"Error saving WH approval: {ex.Message}";
+            _saveSuccess = false;
+        }
+    }
+
+    private async Task QcApproval()
+    {
+        if (header == null || !_isQc) return;
+
+        var confirmed = await JS.InvokeAsync<bool>("confirm", "Approve as QC?");
+        if (!confirmed) return;
+
+        try
+        {
+            header.QcApprovalStatus = true;
+            header.QcApprovalDate = DateTime.Now;
+            header.QcApprovalUserId = _currentUserId;
+            header.QcApprovalUserName = _currentUserName;
+
+            await Db.SaveChangesAsync();
+            _saveMessage = "QC approval saved successfully.";
+            _saveSuccess = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error saving QC approval: {ex.Message}");
+            _saveMessage = $"Error saving QC approval: {ex.Message}";
+            _saveSuccess = false;
+        }
     }
 
     public class ExchangeRateResponse

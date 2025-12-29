@@ -22,6 +22,34 @@ public class MemoAllocationHeaderModel
     [Display(Name = "PO No")]
     public string? PONo { get; set; }
 
+    [Display(Name = "Buyer")]
+    public int? BuyerId { get; set; }
+    public MemoAdressModel? Buyer { get; set; }
+
+    // Warehouse Approval
+    [Display(Name = "WH Approval")]
+    public bool WhApprovalStatus { get; set; } = false;
+    
+    [Display(Name = "WH Approval Date")]
+    public DateTime? WhApprovalDate { get; set; }
+    
+    public string? WhApprovalUserId { get; set; }
+    
+    [Display(Name = "WH Approved By")]
+    public string? WhApprovalUserName { get; set; }
+
+    // QC Approval
+    [Display(Name = "QC Approval")]
+    public bool QcApprovalStatus { get; set; } = false;
+    
+    [Display(Name = "QC Approval Date")]
+    public DateTime? QcApprovalDate { get; set; }
+    
+    public string? QcApprovalUserId { get; set; }
+    
+    [Display(Name = "QC Approved By")]
+    public string? QcApprovalUserName { get; set; }
+
     public List<MemoAllocationDetailModel> Details { get; set; } = new();
 }
 

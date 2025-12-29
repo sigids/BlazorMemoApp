@@ -1,11 +1,15 @@
 @page "/memo-allocations"
-@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,User")]
+@* @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,User")] *@
 @rendermode InteractiveServer
 @using BlazorMemoApp.Models
 @using Microsoft.EntityFrameworkCore
+@using System.Security.Claims
 @inject BlazorMemoApp.Data.ApplicationDbContext Db
 @inject NavigationManager Nav
 @inject IJSRuntime JS
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject BlazorMemoApp.Services.BuyerPrivilegeService BuyerPrivilegeService
+@inject BlazorMemoApp.Services.FactoryPrivilegeService FactoryPrivilegeService
 
 <h1>Memo Allocation List</h1>
 
@@ -14,7 +18,7 @@
 
     <div class="input-group" style="max-width:340px;">
         <span class="input-group-text">Search</span>
-        <input class="form-control form-control-sm" @bind="_filter" placeholder="Memo No, PO No, Unit" />
+        <input class="form-control form-control-sm" @bind="_filter" placeholder="Memo No, PO No, Unit, Buyer" />
     </div>
 
     <div>
@@ -45,11 +49,14 @@ else
                     <th>Date</th>
                     <th>Unit</th>
                     <th>PO No</th>
+                    <th>Buyer</th>
                     <th class="text-center">Details Count</th>
                     <th class="text-end">Total Qty Pass</th>
                     <th class="text-end">Total Amount Pass</th>
                     <th class="text-end">Total Qty Allocate</th>
                     <th class="text-end">Total Qty Balance</th>
+                    <th class="text-center">WH Approval</th>
+                    <th class="text-center">QC Approval</th>
                     <th style="width:200px;">Actions</th>
                 </tr>
             </thead>
@@ -61,16 +68,40 @@ else
                         <td>@item.MemoDate.ToString("yyyy-MM-dd")</td>
                         <td>@item.UnitName</td>
                         <td>@item.PONo</td>
+                        <td>@(item.Buyer != null ? $"{item.Buyer.Name} - {item.Buyer.NameAbbr}" : "")</td>
                         <td class="text-center">@item.Details.Count</td>
                         <td class="text-end">@item.Details.Sum(d => d.QtyPass).ToString("N2")</td>
                         <td class="text-end">@item.Details.Sum(d => d.AmountPass).ToString("N2")</td>
                         <td class="text-end">@item.Details.Sum(d => d.QtyAllocate).ToString("N2")</td>
                         <td class="text-end">@item.Details.Sum(d => d.QtyBalance).ToString("N2")</td>
+                        <td class="text-center">
+                            @if (item.WhApprovalStatus)
+                            {
+                                <span class="badge bg-success" title="@item.WhApprovalUserName - @item.WhApprovalDate?.ToString("yyyy-MM-dd HH:mm")">Approved</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Pending</span>
+                            }
+                        </td>
+                        <td class="text-center">
+                            @if (item.QcApprovalStatus)
+                            {
+                                <span class="badge bg-info" title="@item.QcApprovalUserName - @item.QcApprovalDate?.ToString("yyyy-MM-dd HH:mm")">Approved</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Pending</span>
+                            }
+                        </td>
                         <td>
                             <div class="d-flex gap-2">
                                 <button class="btn btn-sm btn-outline-primary" @onclick="() => EditItem(item.Id)">Edit</button>
                                 <button class="btn btn-sm btn-outline-secondary" @onclick="() => ViewItem(item.Id)">View</button>
-                                <button class="btn btn-sm btn-danger" @onclick="() => DeleteItem(item.Id)">Delete</button>
+                                @if (_isAdmin || _isSupervisor )
+                                {
+                                    <button class="btn btn-sm btn-danger" @onclick="() => DeleteItem(item.Id)">Delete</button>
+                                }
                             </div>
                         </td>
                     </tr>
@@ -106,23 +137,78 @@ else
     private string _filter = string.Empty;
     private int _pageSize = 10;
     private int _currentPage = 1;
+    private bool _isAdmin = false;
+    private bool _isSupervisor = false;
+    private bool _hasFactoryRole = false;
+    private HashSet<int> _allowedBuyerIds = new();
+    private HashSet<string> _allowedUnits = new();
 
     private IEnumerable<MemoAllocationHeaderModel> FilteredItems
         => (_allItems ?? Enumerable.Empty<MemoAllocationHeaderModel>())
             .Where(m => string.IsNullOrWhiteSpace(_filter)
                         || (m.MemoNo ?? string.Empty).Contains(_filter, StringComparison.OrdinalIgnoreCase)
                         || (m.PONo ?? string.Empty).Contains(_filter, StringComparison.OrdinalIgnoreCase)
-                        || (m.UnitName ?? string.Empty).Contains(_filter, StringComparison.OrdinalIgnoreCase));
+                        || (m.UnitName ?? string.Empty).Contains(_filter, StringComparison.OrdinalIgnoreCase)
+                        || (m.Buyer?.Name ?? string.Empty).Contains(_filter, StringComparison.OrdinalIgnoreCase)
+                        || (m.Buyer?.NameAbbr ?? string.Empty).Contains(_filter, StringComparison.OrdinalIgnoreCase));
 
     private IEnumerable<MemoAllocationHeaderModel> PagedItems => FilteredItems.Skip((_currentPage - 1) * _pageSize).Take(_pageSize);
     private int TotalPages => Math.Max(1, (int)Math.Ceiling(FilteredItems.Count() / (double)_pageSize));
 
     protected override async Task OnInitializedAsync()
     {
-        _allItems = await Db.MemoAllocations
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        _isAdmin = authState.User.IsInRole("Admin");
+        _isSupervisor = authState.User.IsInRole("Supervisor");
+
+        // Check factory role and get allowed units
+        if (!string.IsNullOrEmpty(userId))
+        {
+            _hasFactoryRole = await FactoryPrivilegeService.HasFactoryRoleAsync(userId);
+            if (_hasFactoryRole)
+            {
+                var hasAllUnits = await FactoryPrivilegeService.HasAllUnitsAccessAsync(userId);
+                if (!hasAllUnits)
+                {
+                    var allowedUnits = await FactoryPrivilegeService.GetAllowedUnitsAsync(userId);
+                    _allowedUnits = allowedUnits.ToHashSet(StringComparer.OrdinalIgnoreCase);
+                }
+            }
+        }
+
+        // Get allowed buyers for this user (only for non-factory roles)
+        var allBuyers = await Db.MemoAddresses.Where(a => a.Type.Contains("B")).ToListAsync();
+        var allowedBuyers = !string.IsNullOrEmpty(userId)
+            ? await BuyerPrivilegeService.FilterBuyersAsync(userId, allBuyers)
+            : allBuyers;
+        _allowedBuyerIds = allowedBuyers.Select(b => b.Id).ToHashSet();
+
+        var query = Db.MemoAllocations
+            .Include(m => m.Buyer)
             .Include(m => m.Details).ThenInclude(d => d.SpiAllocations)
-            .OrderByDescending(m => m.MemoDate)
-            .ToListAsync();
+            .AsQueryable();
+
+        // Filter based on role type
+        if (!_isAdmin)
+        {
+            if (_hasFactoryRole)
+            {
+                // Factory roles: filter by unit access only
+                var hasAllUnits = await FactoryPrivilegeService.HasAllUnitsAccessAsync(userId!);
+                if (!hasAllUnits && _allowedUnits.Any())
+                {
+                    query = query.Where(m => _allowedUnits.Contains(m.UnitName ?? ""));
+                }
+            }
+            else
+            {
+                // Non-factory roles: filter by buyer access
+                query = query.Where(m => m.BuyerId == null || _allowedBuyerIds.Contains(m.BuyerId.Value));
+            }
+        }
+
+        _allItems = await query.OrderByDescending(m => m.MemoDate).ToListAsync();
 
         if (_currentPage > TotalPages) _currentPage = TotalPages;
     }
@@ -133,6 +219,8 @@ else
 
     private async Task DeleteItem(int id)
     {
+        if (!_isAdmin) return;
+
         var item = _allItems?.FirstOrDefault(m => m.Id == id);
         if (item == null) return;
 

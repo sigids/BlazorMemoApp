@@ -15,6 +15,7 @@ public class MemoHeaderModel
     public DateTime MemoDate { get; set; } = DateTime.Today;
 
     public int? BuyerId { get; set; }
+    public MemoAdressModel? Buyer { get; set; }
     public int? StyleId { get; set; }
     public int? SupplierId { get; set; }
 
@@ -24,7 +25,7 @@ public class MemoHeaderModel
     public int? GmtQty { get; set; }
     public decimal? GmtFobValue { get; set; }
     public decimal? GmtFobRate { get; set; }
-
+    public decimal CalcFobValue => GmtFobRate.GetValueOrDefault(0) * GmtQty.GetValueOrDefault(0);
     // Creator tracking
     public string? CreatedByUserId { get; set; }
     public ApplicationUser? CreatedByUser { get; set; }
@@ -201,4 +202,33 @@ public class UserBuyerPrivilegeModel
     
     // If BuyerId is null, it means "All Buyers" access
     public bool HasAllBuyersAccess => BuyerId == null;
+}
+
+public enum FactoryRoleType
+{
+    Warehouse,
+    QC
+}
+
+public class UserFactoryRoleModel
+{
+    public int Id { get; set; }
+    
+    public string UserId { get; set; } = string.Empty;
+    public ApplicationUser? User { get; set; }
+    
+    public FactoryRoleType RoleType { get; set; }
+}
+
+public class UserFactoryUnitPrivilegeModel
+{
+    public int Id { get; set; }
+    
+    public string UserId { get; set; } = string.Empty;
+    public ApplicationUser? User { get; set; }
+    
+    public string? UnitName { get; set; }
+    
+    // If UnitName is null, it means "All Units" access
+    public bool HasAllUnitsAccess => UnitName == null;
 }

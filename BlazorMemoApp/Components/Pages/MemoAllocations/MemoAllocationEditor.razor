@@ -57,6 +57,19 @@
     </div>
     
     <div class="row g-3 mt-2">
+        <div class="col-sm-3">
+            <label class="form-label">Buyer</label>
+            <InputSelect class="form-select" @bind-Value="header.BuyerId">
+                <option value="">-- Select Buyer --</option>
+                @foreach (var b in buyers)
+                {
+                    <option value="@b.Id">@b.Name - @b.NameAbbr</option>
+                }
+            </InputSelect>
+        </div>
+    </div>
+    
+    <div class="row g-3 mt-2">
         <div class="col-sm-4 d-flex align-items-end flex-column">
             <div class="d-flex gap-2">
                 <button type="button" class="btn btn-outline-info" @onclick="CalculateUsd" disabled="@_calculating">
@@ -354,6 +367,12 @@
         if (string.IsNullOrWhiteSpace(header.UnitName))
         {
             _saveMessage = "Please select Unit Name.";
+            return;
+        }
+
+        if (!header.BuyerId.HasValue)
+        {
+            _saveMessage = "Please select Buyer.";
             return;
         }
 

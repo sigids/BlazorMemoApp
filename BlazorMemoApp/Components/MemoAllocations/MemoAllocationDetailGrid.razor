@@ -21,11 +21,14 @@
         </select>
     </div>
 
-    <button class="btn btn-sm btn-outline-primary" @onclick="SelectAllFiltered">Select All</button>
-    <button class="btn btn-sm btn-danger" @onclick="DeleteSelected">Delete Selected (@_selected.Count)</button>
-    <button class="btn btn-sm btn-info" @onclick="FetchAllQtyStage" disabled="@_fetchingStage">
-        @(_fetchingStage ? "Fetching..." : "Fetch All Qty Stage")
-    </button>
+    @if (CanEditOtherFields)
+    {
+        <button class="btn btn-sm btn-outline-primary" @onclick="SelectAllFiltered">Select All</button>
+        <button class="btn btn-sm btn-danger" @onclick="DeleteSelected">Delete Selected (@_selected.Count)</button>
+        <button class="btn btn-sm btn-info" @onclick="FetchAllQtyStage" disabled="@_fetchingStage">
+            @(_fetchingStage ? "Fetching..." : "Fetch All Qty Stage")
+        </button>
+    }
 </div>
 
 @if (!string.IsNullOrEmpty(_stageMessage))
@@ -106,8 +109,11 @@ else
                         <td>@it.CurrencyPO</td>
                         <td>
                             <div class="input-group input-group-sm">
-                                <input type="number" class="form-control form-control-sm text-end" style="width:70px" @bind-value="it.QtyStage" @bind-value:event="oninput" />
-                                <button type="button" class="btn btn-outline-info btn-sm" @onclick="() => FetchSingleQtyStage(it)" title="Fetch Qty Stage">
+                                <input type="number" class="form-control form-control-sm text-end" style="width:70px" 
+                                       @bind-value="it.QtyStage" @bind-value:event="oninput" 
+                                       disabled="@(!CanEditOtherFields)" />
+                                <button type="button" class="btn btn-outline-info btn-sm" @onclick="() => FetchSingleQtyStage(it)" title="Fetch Qty Stage"
+                                        disabled="@(!CanEditOtherFields)">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
                                         <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
                                         <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
@@ -116,11 +122,15 @@ else
                             </div>
                         </td>
                         <td>
-                            <input type="number" class="form-control form-control-sm text-end" style="width:80px" step="0.01" @bind-value="it.QtyActual" @bind-value:event="oninput" @onchange="() => OnQtyActualChanged(it)" />
+                            <input type="number" class="form-control form-control-sm text-end" style="width:80px" step="0.01" 
+                                   @bind-value="it.QtyActual" @bind-value:event="oninput" @onchange="() => OnQtyActualChanged(it)" 
+                                   disabled="@(!CanEditQtyActual)" />
                         </td>
                         <td style="font-size:0.75rem;">@(it.DateConfWh?.ToString("MM/dd HH:mm") ?? "")</td>
                         <td>
-                            <input type="number" class="form-control form-control-sm text-end" style="width:80px" step="0.01" @bind-value="it.QtyPass" @bind-value:event="oninput" @onchange="() => OnQtyPassChanged(it)" />
+                            <input type="number" class="form-control form-control-sm text-end" style="width:80px" step="0.01" 
+                                   @bind-value="it.QtyPass" @bind-value:event="oninput" @onchange="() => OnQtyPassChanged(it)" 
+                                   disabled="@(!CanEditQtyPass)" />
                         </td>
                         <td style="font-size:0.75rem;">@(it.DateConfQc?.ToString("MM/dd HH:mm") ?? "")</td>
                         <td class="text-end">@it.AmountPass.ToString("N2")</td>
@@ -129,8 +139,9 @@ else
                                    value="@GetBuyerSearchText(it)"
                                    @oninput="(e) => SetBuyerSearchText(it, e.Value?.ToString() ?? string.Empty)"
                                    @onfocus="() => ShowBuyerDropdown(it)"
-                                   placeholder="Select Buyer..." />
-                            @if (IsBuyerDropdownVisible(it) && GetFilteredBuyersFor(it).Any())
+                                   placeholder="Select Buyer..." 
+                                   disabled="@(!CanEditOtherFields)" />
+                            @if (CanEditOtherFields && IsBuyerDropdownVisible(it) && GetFilteredBuyersFor(it).Any())
                             {
                                 <div class="list-group position-absolute z-3" style="max-height:150px; overflow:auto; width:100%;">
                                     @foreach (var buyer in GetFilteredBuyersFor(it))
@@ -147,7 +158,8 @@ else
                         <td class="text-end">@it.QtyBalance.ToString("N2")</td>
                         <td class="text-end">@it.AmountBalance.ToString("N2")</td>
                         <td>
-                            <input type="text" class="form-control form-control-sm" style="width:120px" @bind="it.Remark" />
+                            <input type="text" class="form-control form-control-sm" style="width:120px" @bind="it.Remark" 
+                                   disabled="@(!CanEditOtherFields)" />
                         </td>
                     </tr>
 
@@ -176,8 +188,9 @@ else
                                                                value="@GetSpiSearchText(spi)"
                                                                @oninput="(e) => SetSpiSearchText(spi, e.Value?.ToString() ?? string.Empty)"
                                                                @onfocus="() => ShowSpiDropdown(spi)"
-                                                               placeholder="Type to filter..." />
-                                                        @if (IsSpiDropdownVisible(spi) && GetFilteredOrdersForSpi(spi).Any())
+                                                               placeholder="Type to filter..."
+                                                               disabled="@(!CanEditOtherFields)" />
+                                                        @if (CanEditOtherFields && IsSpiDropdownVisible(spi) && GetFilteredOrdersForSpi(spi).Any())
                                                         {
                                                             <div class="list-group position-absolute z-3" style="max-height:150px; overflow:auto; width:100%;">
                                                                 @foreach (var order in GetFilteredOrdersForSpi(spi))
@@ -190,15 +203,18 @@ else
                                                         }
                                                     </td>
                                                     <td>
-                                                        <input type="number" class="form-control form-control-sm text-end" step="0.01" @bind-value="spi.QtyAllocate" @bind-value:event="oninput" />
+                                                        <input type="number" class="form-control form-control-sm text-end" step="0.01" 
+                                                               @bind-value="spi.QtyAllocate" @bind-value:event="oninput"
+                                                               disabled="@(!CanEditOtherFields)" />
                                                     </td>
                                                     <td class="position-relative">
                                                         <input class="form-control form-control-sm"
                                                                value="@GetSpiBuyerSearchText(spi)"
                                                                @oninput="(e) => SetSpiBuyerSearchText(spi, e.Value?.ToString() ?? string.Empty)"
                                                                @onfocus="() => ShowSpiBuyerDropdown(spi)"
-                                                               placeholder="Select Buyer..." />
-                                                        @if (IsSpiBuyerDropdownVisible(spi) && GetFilteredBuyersForSpi(spi).Any())
+                                                               placeholder="Select Buyer..."
+                                                               disabled="@(!CanEditOtherFields)" />
+                                                        @if (CanEditOtherFields && IsSpiBuyerDropdownVisible(spi) && GetFilteredBuyersForSpi(spi).Any())
                                                         {
                                                             <div class="list-group position-absolute z-3" style="max-height:150px; overflow:auto; width:100%;">
                                                                 @foreach (var buyer in GetFilteredBuyersForSpi(spi))
@@ -211,15 +227,18 @@ else
                                                         }
                                                     </td>
                                                     <td>
-                                                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteSpi(it, spi)">Delete</button>
+                                                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteSpi(it, spi)" disabled="@(!CanEditOtherFields)">Delete</button>
                                                     </td>
                                                 </tr>
                                             }
-                                            <tr>
-                                                <td colspan="4">
-                                                    <button class="btn btn-sm btn-primary" @onclick="() => AddSpi(it)">+ Add SPI</button>
-                                                </td>
-                                            </tr>
+                                            @if (CanEditOtherFields)
+                                            {
+                                                <tr>
+                                                    <td colspan="4">
+                                                        <button class="btn btn-sm btn-primary" @onclick="() => AddSpi(it)">+ Add SPI</button>
+                                                    </td>
+                                                </tr>
+                                            }
                                         </tbody>
                                     </table>
                                 </div>
@@ -260,6 +279,16 @@ else
     [Parameter] public string? PONo { get; set; }
     [Parameter] public List<MemoAdressModel> Buyers { get; set; } = new();
     [Parameter] public List<BuyerStyleOrderModel> Orders { get; set; } = new();
+    [Parameter] public bool IsWarehouse { get; set; } = false;
+    [Parameter] public bool IsQc { get; set; } = false;
+    [Parameter] public bool WhApproved { get; set; } = false;
+    [Parameter] public bool QcApproved { get; set; } = false;
+
+    private bool HasFactoryRole => IsWarehouse || IsQc;
+    private bool IsFullyApproved => WhApproved && QcApproved;
+    private bool CanEditQtyActual => !IsFullyApproved && (!HasFactoryRole || IsWarehouse) && !WhApproved;
+    private bool CanEditQtyPass => !IsFullyApproved && (!HasFactoryRole || IsQc) && !QcApproved;
+    private bool CanEditOtherFields => !IsFullyApproved && !HasFactoryRole;
 
     private HashSet<MemoAllocationDetailModel> _selected = new();
     private HashSet<MemoAllocationDetailModel> _expandedRows = new();

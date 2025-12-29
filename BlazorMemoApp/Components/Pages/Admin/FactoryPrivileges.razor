@@ -1,0 +1,267 @@
+@page "/admin/factory-privileges"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin")]
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using BlazorMemoApp.Data
+@using BlazorMemoApp.Models
+@using BlazorMemoApp.Services
+
+@inject UserManager<ApplicationUser> UserManager
+@inject ApplicationDbContext Db
+@inject FactoryPrivilegeService FactoryPrivilegeService
+@inject IJSRuntime JS
+
+<h1>Factory Privileges</h1>
+<p class="text-muted">Manage Factory roles (Warehouse/QC) and Unit access privileges for users.</p>
+
+@if (_loading)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Email</th>
+                    <th>Username</th>
+                    <th>Factory Role</th>
+                    <th>Unit Access</th>
+                    <th style="width:150px">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in _users)
+                {
+                    var role = _userRoles.GetValueOrDefault(user.Id);
+                    var units = _userUnits.GetValueOrDefault(user.Id) ?? new List<string>();
+                    <tr>
+                        <td>@user.Email</td>
+                        <td>@user.UserName</td>
+                        <td>
+                            @if (role.HasValue)
+                            {
+                                <span class="badge @(role == FactoryRoleType.Warehouse ? "bg-success" : "bg-info")">
+                                    @role.Value
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                        <td>
+                            @if (units.Contains(null!))
+                            {
+                                <span class="badge bg-primary">All Units</span>
+                            }
+                            else if (units.Any())
+                            {
+                                @foreach (var unit in units)
+                                {
+                                    <span class="badge bg-secondary me-1">@unit</span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" @onclick="() => EditPrivileges(user)">Edit</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@if (_showForm)
+{
+    <div class="modal d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Factory Privileges - @_selectedUser?.Email</h5>
+                    <button type="button" class="btn-close" @onclick="CloseForm"></button>
+                </div>
+                <div class="modal-body">
+                    @if (!string.IsNullOrEmpty(_errorMessage))
+                    {
+                        <div class="alert alert-danger">@_errorMessage</div>
+                    }
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Factory Role</label>
+                        <div class="d-flex gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="factoryRole" id="roleNone" 
+                                       checked="@(_selectedRole == null)" @onchange="() => _selectedRole = null" />
+                                <label class="form-check-label" for="roleNone">None</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="factoryRole" id="roleWarehouse" 
+                                       checked="@(_selectedRole == FactoryRoleType.Warehouse)" 
+                                       @onchange="() => _selectedRole = FactoryRoleType.Warehouse" />
+                                <label class="form-check-label" for="roleWarehouse">Warehouse</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="factoryRole" id="roleQc" 
+                                       checked="@(_selectedRole == FactoryRoleType.QC)" 
+                                       @onchange="() => _selectedRole = FactoryRoleType.QC" />
+                                <label class="form-check-label" for="roleQc">QC</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Unit Access</label>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="allUnits" 
+                                   checked="@_hasAllUnits" @onchange="OnAllUnitsChanged" />
+                            <label class="form-check-label fw-bold" for="allUnits">All Units Access</label>
+                        </div>
+                        
+                        @if (!_hasAllUnits)
+                        {
+                            <div class="row">
+                                @foreach (var unit in UnitMaster.Units)
+                                {
+                                    <div class="col-md-4">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="unit_@unit"
+                                                   checked="@_selectedUnits.Contains(unit)"
+                                                   @onchange="(e) => OnUnitChanged(unit, e)" />
+                                            <label class="form-check-label" for="unit_@unit">@unit</label>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseForm">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="SavePrivileges">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(_successMessage))
+{
+    <div class="alert alert-success alert-dismissible fade show mt-3">
+        @_successMessage
+        <button type="button" class="btn-close" @onclick="() => _successMessage = string.Empty"></button>
+    </div>
+}
+
+@code {
+    private List<ApplicationUser> _users = new();
+    private Dictionary<string, FactoryRoleType?> _userRoles = new();
+    private Dictionary<string, List<string?>> _userUnits = new();
+    private bool _loading = true;
+    
+    private bool _showForm;
+    private ApplicationUser? _selectedUser;
+    private FactoryRoleType? _selectedRole;
+    private HashSet<string> _selectedUnits = new();
+    private bool _hasAllUnits;
+    private string _errorMessage = string.Empty;
+    private string _successMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+        _loading = false;
+    }
+
+    private async Task LoadDataAsync()
+    {
+        _users = UserManager.Users.OrderBy(u => u.Email ?? u.UserName).ToList();
+        
+        // Load factory roles
+        var roles = await Db.UserFactoryRoles.ToListAsync();
+        _userRoles = roles.ToDictionary(r => r.UserId, r => (FactoryRoleType?)r.RoleType);
+        
+        // Load unit privileges
+        var privileges = await Db.UserFactoryUnitPrivileges.ToListAsync();
+        _userUnits = privileges.GroupBy(p => p.UserId)
+            .ToDictionary(g => g.Key, g => g.Select(p => p.UnitName).ToList());
+    }
+
+    private async Task EditPrivileges(ApplicationUser user)
+    {
+        _selectedUser = user;
+        _selectedRole = _userRoles.GetValueOrDefault(user.Id);
+        
+        var units = _userUnits.GetValueOrDefault(user.Id) ?? new List<string?>();
+        _hasAllUnits = units.Any(u => u == null);
+        _selectedUnits = units.Where(u => u != null).ToHashSet()!;
+        
+        _errorMessage = string.Empty;
+        _showForm = true;
+    }
+
+    private void CloseForm()
+    {
+        _showForm = false;
+        _errorMessage = string.Empty;
+    }
+
+    private void OnAllUnitsChanged(ChangeEventArgs e)
+    {
+        _hasAllUnits = (bool)(e.Value ?? false);
+        if (_hasAllUnits)
+        {
+            _selectedUnits.Clear();
+        }
+    }
+
+    private void OnUnitChanged(string unit, ChangeEventArgs e)
+    {
+        var isChecked = (bool)(e.Value ?? false);
+        if (isChecked)
+            _selectedUnits.Add(unit);
+        else
+            _selectedUnits.Remove(unit);
+    }
+
+    private async Task SavePrivileges()
+    {
+        if (_selectedUser == null) return;
+        
+        _errorMessage = string.Empty;
+
+        try
+        {
+            // Save factory role
+            await FactoryPrivilegeService.SaveUserFactoryRoleAsync(_selectedUser.Id, _selectedRole);
+
+            // Save unit privileges
+            var unitNames = new List<string?>();
+            if (_hasAllUnits)
+            {
+                unitNames.Add(null); // null means all units
+            }
+            else
+            {
+                unitNames.AddRange(_selectedUnits);
+            }
+            await FactoryPrivilegeService.SaveUserUnitPrivilegesAsync(_selectedUser.Id, unitNames);
+
+            await LoadDataAsync();
+            CloseForm();
+            _successMessage = $"Privileges saved for {_selectedUser.Email}.";
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Error saving privileges: {ex.Message}";
+        }
+    }
+}

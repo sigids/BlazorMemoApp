@@ -140,8 +140,8 @@ else
                                    @oninput="(e) => SetBuyerSearchText(it, e.Value?.ToString() ?? string.Empty)"
                                    @onfocus="() => ShowBuyerDropdown(it)"
                                    placeholder="Select Buyer..." 
-                                   disabled="@(!CanEditOtherFields)" />
-                            @if (CanEditOtherFields && IsBuyerDropdownVisible(it) && GetFilteredBuyersFor(it).Any())
+                                   disabled="@(!CanEditAllocation)" />
+                            @if (CanEditAllocation && IsBuyerDropdownVisible(it) && GetFilteredBuyersFor(it).Any())
                             {
                                 <div class="list-group position-absolute z-3" style="max-height:150px; overflow:auto; width:100%;">
                                     @foreach (var buyer in GetFilteredBuyersFor(it))
@@ -153,7 +153,9 @@ else
                                 </div>
                             }
                         </td>
-                        <td class="text-end">@it.QtyAllocate.ToString("N2")</td>
+                        <td class="text-end">                      
+                                @it.QtyAllocate.ToString("N2")
+                        </td>
                         <td class="text-end">@it.AmountAllocate.ToString("N2")</td>
                         <td class="text-end">@it.QtyBalance.ToString("N2")</td>
                         <td class="text-end">@it.AmountBalance.ToString("N2")</td>
@@ -189,8 +191,8 @@ else
                                                                @oninput="(e) => SetSpiSearchText(spi, e.Value?.ToString() ?? string.Empty)"
                                                                @onfocus="() => ShowSpiDropdown(spi)"
                                                                placeholder="Type to filter..."
-                                                               disabled="@(!CanEditOtherFields)" />
-                                                        @if (CanEditOtherFields && IsSpiDropdownVisible(spi) && GetFilteredOrdersForSpi(spi).Any())
+                                                               disabled="@(!CanEditAllocation)" />
+                                                        @if (CanEditAllocation && IsSpiDropdownVisible(spi) && GetFilteredOrdersForSpi(spi).Any())
                                                         {
                                                             <div class="list-group position-absolute z-3" style="max-height:150px; overflow:auto; width:100%;">
                                                                 @foreach (var order in GetFilteredOrdersForSpi(spi))
@@ -205,7 +207,7 @@ else
                                                     <td>
                                                         <input type="number" class="form-control form-control-sm text-end" step="0.01" 
                                                                @bind-value="spi.QtyAllocate" @bind-value:event="oninput"
-                                                               disabled="@(!CanEditOtherFields)" />
+                                                               disabled="@(!CanEditAllocation)" />
                                                     </td>
                                                     <td class="position-relative">
                                                         <input class="form-control form-control-sm"
@@ -213,8 +215,8 @@ else
                                                                @oninput="(e) => SetSpiBuyerSearchText(spi, e.Value?.ToString() ?? string.Empty)"
                                                                @onfocus="() => ShowSpiBuyerDropdown(spi)"
                                                                placeholder="Select Buyer..."
-                                                               disabled="@(!CanEditOtherFields)" />
-                                                        @if (CanEditOtherFields && IsSpiBuyerDropdownVisible(spi) && GetFilteredBuyersForSpi(spi).Any())
+                                                               disabled="@(!CanEditAllocation)" />
+                                                        @if (CanEditAllocation && IsSpiBuyerDropdownVisible(spi) && GetFilteredBuyersForSpi(spi).Any())
                                                         {
                                                             <div class="list-group position-absolute z-3" style="max-height:150px; overflow:auto; width:100%;">
                                                                 @foreach (var buyer in GetFilteredBuyersForSpi(spi))
@@ -227,11 +229,11 @@ else
                                                         }
                                                     </td>
                                                     <td>
-                                                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteSpi(it, spi)" disabled="@(!CanEditOtherFields)">Delete</button>
+                                                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteSpi(it, spi)" disabled="@(!CanEditAllocation)">Delete</button>
                                                     </td>
                                                 </tr>
                                             }
-                                            @if (CanEditOtherFields)
+                                            @if (CanEditAllocation)
                                             {
                                                 <tr>
                                                     <td colspan="4">
@@ -289,6 +291,10 @@ else
     private bool CanEditQtyActual => !IsFullyApproved && (!HasFactoryRole || IsWarehouse) && !WhApproved;
     private bool CanEditQtyPass => !IsFullyApproved && (!HasFactoryRole || IsQc) && !QcApproved;
     private bool CanEditOtherFields => !IsFullyApproved && !HasFactoryRole;
+
+    // NEW: allow allocation-related edits (original buyer, qty allocate, SPI add/delete)
+    // for non-factory users even after WH/QC approvals.
+    private bool CanEditAllocation => !HasFactoryRole;
 
     private HashSet<MemoAllocationDetailModel> _selected = new();
     private HashSet<MemoAllocationDetailModel> _expandedRows = new();

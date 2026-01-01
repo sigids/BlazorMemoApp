@@ -324,14 +324,14 @@ else
         sb.AppendLine($"MemoDate,{memo.MemoDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}");
         @* sb.AppendLine($"PONumber,{EscapeCsv(memo.PONumber)}"); *@
         sb.AppendLine($"GmtQty,{memo.GmtQty}");
-        sb.AppendLine($"GmtFobValue,{memo.GmtFobValue?.ToString("F2", CultureInfo.InvariantCulture) ?? string.Empty}");
+        sb.AppendLine($"FobValue,{memo.CalcFobValue.ToString("F2", CultureInfo.InvariantCulture) ?? string.Empty}");
         sb.AppendLine($"ApproveStatus,{EscapeCsv(memo.ApproveStatus)}");
         sb.AppendLine($"ApproveUserId,{EscapeCsv(memo.ApproveUser?.UserName)}");
         sb.AppendLine($"ApproveDate,{(memo.ApproveDate?.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) ?? string.Empty)}");        
         sb.AppendLine();
 
         // Details header
-        sb.AppendLine("PONo, Article,Color,Size,Price,Unit,Supplier,BOMQty,AvailStockQty,MCQQty,SurchargePaid,StockUsableQty,TotalExtraCollected,BOMAmount,StockAmount,PurchaseQty,PurchaseAmount,MCQAmount,Diff,StockFromMCQ,StockUsableAmount,StockNonUsableQty,StockNonUsableAmount,TotalExtraPaid");
+        sb.AppendLine("PONo, Article,Color,Size,Price,Unit,Supplier,BOMQty,AvailStockQty,MCQQty,SurchargePaid,StockUsableQty,TotalExtraCollected,BOMAmount,StockAmount,PurchaseQty,PurchaseAmount,MCQAmount,Diff,StockFromMCQ,StockUsableAmount,StockNonUsableQty,StockNonUsableAmount,TotalExtraPaid, Remark");
 
         foreach (var d in memo.Details ?? Enumerable.Empty<MemoDetailModel>())
         {
@@ -359,7 +359,8 @@ else
                 d.StockUsableAmount.ToString("F2", CultureInfo.InvariantCulture),
                 d.StockNonUsableQty.ToString(CultureInfo.InvariantCulture),
                 d.StockNonUsableAmount.ToString("F2", CultureInfo.InvariantCulture),
-                d.TotalExtraPaid.ToString("F2", CultureInfo.InvariantCulture)
+                d.TotalExtraPaid.ToString("F2", CultureInfo.InvariantCulture),
+                EscapeCsv(d.Remark)
             );
             sb.AppendLine(line);
         }

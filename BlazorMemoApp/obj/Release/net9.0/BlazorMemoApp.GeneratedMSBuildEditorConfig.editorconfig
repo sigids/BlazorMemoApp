@@ -188,12 +188,20 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xMYXlvdXRcU3VydmV5UHJvbXB0LnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/APPS-DEV/ASPNETCORE/BlazorMemoApp/BlazorMemoApp/Components/MemoAllocations/MemoAllocationDetailGrid.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xNZW1vQWxsb2NhdGlvbnNcTWVtb0FsbG9jYXRpb25EZXRhaWxHcmlkLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/APPS-DEV/ASPNETCORE/BlazorMemoApp/BlazorMemoApp/Components/Memos/MemoDetailGrid.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xNZW1vc1xNZW1vRGV0YWlsR3JpZC5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/APPS-DEV/ASPNETCORE/BlazorMemoApp/BlazorMemoApp/Components/Pages/Admin/EmailSettings.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xBZG1pblxFbWFpbFNldHRpbmdzLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/APPS-DEV/ASPNETCORE/BlazorMemoApp/BlazorMemoApp/Components/Pages/Admin/FactoryPrivileges.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xBZG1pblxGYWN0b3J5UHJpdmlsZWdlcy5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/APPS-DEV/ASPNETCORE/BlazorMemoApp/BlazorMemoApp/Components/Pages/Admin/TestConnection.razor]
@@ -232,6 +240,18 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xNYXN0ZXJcU3R5bGVNYXN0ZXIucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/APPS-DEV/ASPNETCORE/BlazorMemoApp/BlazorMemoApp/Components/Pages/MemoAllocations/MemoAllocationEditor.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xNZW1vQWxsb2NhdGlvbnNcTWVtb0FsbG9jYXRpb25FZGl0b3IucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/APPS-DEV/ASPNETCORE/BlazorMemoApp/BlazorMemoApp/Components/Pages/MemoAllocations/MemoAllocationList.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xNZW1vQWxsb2NhdGlvbnNcTWVtb0FsbG9jYXRpb25MaXN0LnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/APPS-DEV/ASPNETCORE/BlazorMemoApp/BlazorMemoApp/Components/Pages/MemoAllocations/MemoAllocationView.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xNZW1vQWxsb2NhdGlvbnNcTWVtb0FsbG9jYXRpb25WaWV3LnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/APPS-DEV/ASPNETCORE/BlazorMemoApp/BlazorMemoApp/Components/Pages/Memos/MemoEditor.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xNZW1vc1xNZW1vRWRpdG9yLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
@@ -242,6 +262,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/APPS-DEV/ASPNETCORE/BlazorMemoApp/BlazorMemoApp/Components/Pages/Reports/Detail.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xSZXBvcnRzXERldGFpbC5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/APPS-DEV/ASPNETCORE/BlazorMemoApp/BlazorMemoApp/Components/Pages/Reports/DetailAllocation.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xSZXBvcnRzXERldGFpbEFsbG9jYXRpb24ucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/APPS-DEV/ASPNETCORE/BlazorMemoApp/BlazorMemoApp/Components/Pages/Reports/Summary.razor]

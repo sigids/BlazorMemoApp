@@ -95,6 +95,7 @@ else
                     <th class="text-end">Stock Non-Usable Amount</th>
                     <th class="text-end">Total Extra Collected</th>
                     <th>Mode Of Collect</th>
+                    <th>User Name</th>
                 </tr>
             </thead>
             <tbody>
@@ -109,7 +110,7 @@ else
                         <td>@row.MemoDate.ToString("yyyy-MM-dd")</td>
                         <td>@row.StyleName</td>
                         <td class="text-end">@row.GmtQty?.ToString("N0")</td>
-                        <td class="text-end">@row.GmtFobValue?.ToString("N2")</td>
+                        <td class="text-end">@row.CalcFobValue.ToString("N2")</td>
                         <td>@row.PONumber</td>
                         <td>@row.Article</td>
                         <td>@row.Color</td>
@@ -136,6 +137,7 @@ else
                         <td class="text-end">@row.StockNonUsableAmount.ToString("N2")</td>
                         <td class="text-end">@row.TotalExtraCollected.ToString("N2")</td>
                         <td>@row.ModeOfCollect</td>
+                        <td>@row.UserName</td>
                     </tr>
                 }
             </tbody>
@@ -211,6 +213,8 @@ else
         _isAcct = user.IsInRole("Acct");
         var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         
+        
+
         var allBuyers = await Db.MemoAddresses.Where(a => a.Type.Contains("B")).ToListAsync();
         var buyers = !string.IsNullOrEmpty(userId) 
             ? await BuyerPrivilegeService.FilterBuyersAsync(userId, allBuyers) 
@@ -237,6 +241,7 @@ else
 
         var memos = await query.ToListAsync();
         var styles = await Db.BuyerStyles.ToListAsync();
+        var users = await Db.Users.ToDictionaryAsync(u => u.Id, u => u.UserName ?? u.Email ?? "");
 
         _data = memos.SelectMany(m => m.Details.Select(d => new ReportDetailRow
         {
@@ -245,7 +250,7 @@ else
             BuyerName = buyers.FirstOrDefault(b => b.Id == m.BuyerId)?.Name ?? "",
             StyleName = styles.FirstOrDefault(s => s.Id == m.StyleId)?.StyleName ?? "",
             GmtQty = m.GmtQty,
-            GmtFobValue = m.GmtFobValue,
+            CalcFobValue = m.CalcFobValue,
             PONumber = d.PONumber ?? m.PONumber ?? "",
             Article = d.Article,
             Color = d.Color,
@@ -260,7 +265,8 @@ else
             SurchargePaid = d.SurchargePaid,
             StockUsableQty = d.StockUsableQty,
             TotalExtraCollected = d.TotalExtraCollected,
-            ModeOfCollect = d.ModeOfCollect
+            ModeOfCollect = d.ModeOfCollect,
+            UserName = !string.IsNullOrEmpty(m.CreatedByUserId) && users.ContainsKey(m.CreatedByUserId) ? users[m.CreatedByUserId] : ""
         })).ToList();
         
         _loading = false;
@@ -310,13 +316,13 @@ else
     private string GenerateCsv()
     {
         var sb = new System.Text.StringBuilder();
-        sb.AppendLine("No,Buyer,Memo #,Memo Date,Style,Gmt Qty,Gmt FOB Value,PO,Article,Color,Size,Price,Currency,Unit,BOM Qty,SPI No,BOM Amount,Avail Stock Qty,Stock Amount,Purchase Qty,Purchase Amount,MCQ Qty,MCQ Amount,Diff,Surcharge Paid,Total Extra Paid,Stock From MCQ,Stock Usable Qty,Stock Usable Amount,Stock Non-Usable Qty,Stock Non-Usable Amount,Total Extra Collected,Mode Of Collect");
+        sb.AppendLine("No,Buyer,Memo #,Memo Date,Style,Gmt Qty,Gmt FOB Value,PO,Article,Color,Size,Price,Currency,Unit,BOM Qty,SPI No,BOM Amount,Avail Stock Qty,Stock Amount,Purchase Qty,Purchase Amount,MCQ Qty,MCQ Amount,Diff,Surcharge Paid,Total Extra Paid,Stock From MCQ,Stock Usable Qty,Stock Usable Amount,Stock Non-Usable Qty,Stock Non-Usable Amount,Total Extra Collected,Mode Of Collect,UserName");
         
         var serial = 0;
         foreach (var row in FilteredData)
         {
             serial++;
-            sb.AppendLine($"{serial},\"{row.BuyerName}\",\"{row.MemoNo}\",{row.MemoDate:yyyy-MM-dd},\"{row.StyleName}\",{row.GmtQty},{row.GmtFobValue},\"{row.PONumber}\",\"{row.Article}\",\"{row.Color}\",\"{row.Size}\",{row.Price},\"{row.Currency}\",\"{row.Unit}\",{row.BOMQty},\"{row.SpiNo}\",{row.BOMAmount},{row.AvailStockQty},{row.StockAmount},{row.PurchaseQty},{row.PurchaseAmount},{row.MCQQty},{row.MCQAmount},{row.Diff},{row.SurchargePaid},{row.TotalExtraPaid},{row.StockFromMCQ},{row.StockUsableQty},{row.StockUsableAmount},{row.StockNonUsableQty},{row.StockNonUsableAmount},{row.TotalExtraCollected},\"{row.ModeOfCollect}\"");
+            sb.AppendLine($"{serial},\"{row.BuyerName}\",\"{row.MemoNo}\",{row.MemoDate:yyyy-MM-dd},\"{row.StyleName}\",{row.GmtQty},{row.CalcFobValue},\"{row.PONumber}\",\"{row.Article}\",\"{row.Color}\",\"{row.Size}\",{row.Price},\"{row.Currency}\",\"{row.Unit}\",{row.BOMQty},\"{row.SpiNo}\",{row.BOMAmount},{row.AvailStockQty},{row.StockAmount},{row.PurchaseQty},{row.PurchaseAmount},{row.MCQQty},{row.MCQAmount},{row.Diff},{row.SurchargePaid},{row.TotalExtraPaid},{row.StockFromMCQ},{row.StockUsableQty},{row.StockUsableAmount},{row.StockNonUsableQty},{row.StockNonUsableAmount},{row.TotalExtraCollected},\"{row.ModeOfCollect}\",\"{row.UserName}\"");
         }
         
         return sb.ToString();
@@ -329,7 +335,7 @@ else
         public string BuyerName { get; set; } = string.Empty;
         public string StyleName { get; set; } = string.Empty;
         public int? GmtQty { get; set; }
-        public decimal? GmtFobValue { get; set; }
+        public decimal CalcFobValue { get; set; }
         public string PONumber { get; set; } = string.Empty;
         public string Article { get; set; } = string.Empty;
         public string Color { get; set; } = string.Empty;
@@ -345,6 +351,7 @@ else
         public int StockUsableQty { get; set; }
         public decimal TotalExtraCollected { get; set; }
         public string ModeOfCollect { get; set; } = string.Empty;
+        public string UserName { get; set; } = string.Empty;
 
         // Computed properties
         public decimal BOMAmount => Price * BOMQty;
@@ -357,6 +364,6 @@ else
         public decimal StockUsableAmount => Price * StockUsableQty;
         public int StockNonUsableQty => MCQQty - PurchaseQty - StockUsableQty;
         public decimal StockNonUsableAmount => Price * StockNonUsableQty;
-        public decimal TotalExtraPaid => Diff + SurchargePaid;
+        public decimal TotalExtraPaid => Diff + SurchargePaid;        
     }
 }

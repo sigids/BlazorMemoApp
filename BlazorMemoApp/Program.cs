@@ -64,6 +64,7 @@ builder.Services.AddHttpClient("ExchangeRateApi", client =>
 var app = builder.Build();
 //Register Syncfusion license https://help.syncfusion.com/common/essential-studio/licensing/how-to-generate
 // Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense("Ngo9BigBOggjHTQxAR8/V1NHaF5cWWdCf1FpRmJGdld5fUVHYVZUTXxaS00DNHVRdkdmWH5ednZVRGddWUB2X0RWYUo=");
+app.UseStaticFiles();
 
 
 // Seed roles on startup

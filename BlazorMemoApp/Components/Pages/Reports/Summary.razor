@@ -78,6 +78,7 @@ else
                     <th class="text-end">Saving</th>
                     <th class="text-end">Amount Commitment</th>
                     <th class="text-end">Percent Of Fob Value</th>
+                    <th>User Name</th>
                 </tr>
             </thead>
             <tbody>
@@ -102,6 +103,7 @@ else
                         <td class="text-end">@row.Saving.ToString("N2")</td>
                         <td class="text-end">@row.AmountCommitment.ToString("N2")</td>
                         <td class="text-end">@string.Format("{0:P2}",@row.PercentOfFobValue)</td>
+                        <td>@row.UserName</td>
                     </tr>
                 }
             </tbody>
@@ -118,6 +120,7 @@ else
                     <td class="text-end">@_data.Sum(x => x.AmountDN).ToString("N2")</td>
                     <td class="text-end">@_data.Sum(x => x.Saving).ToString("N2")</td>
                     <td class="text-end">@_data.Sum(x => x.AmountCommitment).ToString("N2")</td>
+                    <td></td>
                     <td></td>
                 </tr>
             </tfoot>
@@ -214,6 +217,7 @@ else
 
         var memos = await query.ToListAsync();
         var styles = await Db.BuyerStyles.ToListAsync();
+        var users = await Db.Users.ToDictionaryAsync(u => u.Id, u => u.UserName ?? u.Email ?? "");
 
         // create flat detail items first, then group by the requested keys and aggregate the sums
         var detailRows = memos.SelectMany(m => m.Details.Select(d => new
@@ -226,6 +230,7 @@ else
             StyleName = styles.FirstOrDefault(s => s.Id == m.StyleId)?.StyleName ?? "",
             GmtQty = m.GmtQty,
             GmtFobRate = m.GmtFobRate,
+            UserName = !string.IsNullOrEmpty(m.CreatedByUserId) && users.ContainsKey(m.CreatedByUserId) ? users[m.CreatedByUserId] : "",
             SurchargePaid = d.SurchargePaid,
             StockUsableQty = d.StockUsableQty,
             StockNonUsableQty = d.MCQQty - (d.BOMQty - d.AvailStockQty) - d.StockUsableQty,
@@ -239,7 +244,7 @@ else
         //var gmtFobValue = m.GmtFobValue;
 
         _data = detailRows
-             .GroupBy(x => new { x.MemoNo, x.MemoDate, x.BuyerId, x.BuyerName, x.StyleId, x.StyleName, x.GmtQty, x.GmtFobRate })
+             .GroupBy(x => new { x.MemoNo, x.MemoDate, x.BuyerId, x.BuyerName, x.StyleId, x.StyleName, x.GmtQty, x.GmtFobRate, x.UserName })
              .Select(g => new ReportRow
              {
                  MemoNo = g.Key.MemoNo,
@@ -250,6 +255,7 @@ else
                  StyleName = g.Key.StyleName,
                  GmtQty = g.Key.GmtQty,
                  GmtFobValue = (g.Key.GmtQty * g.Key.GmtFobRate),
+                 UserName = g.Key.UserName,
                  SurchargePaid = g.Sum(i => i.SurchargePaid),
                  StockUsableQty = g.Sum(i => i.StockUsableQty),
                  StockNonUsableQty = g.Sum(i => i.StockNonUsableQty),
@@ -311,13 +317,13 @@ else
     private string GenerateCsv()
     {
         var sb = new System.Text.StringBuilder();
-        sb.AppendLine("Serial No,Buyer,Memo #,Memo Date,Style,Gmt Qty,Gmt FOB Value,Surcharge Paid,Stock Usable Qty,Stock Non-Usable Qty,Total Extra Paid,Amount Costing,Amount DN,Amount Commitment,Percent Of Fob Value");
+        sb.AppendLine("Serial No,Buyer,Memo #,Memo Date,Style,Gmt Qty,Gmt FOB Value,Surcharge Paid,Stock Usable Qty,Stock Non-Usable Qty,Total Extra Paid,Amount Costing,Amount DN,Amount Commitment,Percent Of Fob Value,User Name");
         
         var serial = 0;
         foreach (var row in FilteredData)
         {
             serial++;
-            sb.AppendLine($"{serial},\"{row.BuyerName}\",\"{row.MemoNo}\",{row.MemoDate:yyyy-MM-dd},\"{row.StyleName}\",{row.GmtQty},{row.GmtFobValue},{row.SurchargePaid},{row.StockUsableQty},{row.StockNonUsableQty},{row.TotalExtraPaid},{row.AmountCosting},{row.AmountDN},{row.AmountCommitment},{row.PercentOfFobValue:P2}");
+            sb.AppendLine($"{serial},\"{row.BuyerName}\",\"{row.MemoNo}\",{row.MemoDate:yyyy-MM-dd},\"{row.StyleName}\",{row.GmtQty},{row.GmtFobValue},{row.SurchargePaid},{row.StockUsableQty},{row.StockNonUsableQty},{row.TotalExtraPaid},{row.AmountCosting},{row.AmountDN},{row.AmountCommitment},{row.PercentOfFobValue:P2},\"{row.UserName}\"");
         }
         
         return sb.ToString();
@@ -343,5 +349,6 @@ else
         public decimal Saving { get; set; }
         public decimal AmountCommitment { get; set; }
         public decimal? PercentOfFobValue { get; set; }
+        public string UserName { get; set; } = string.Empty;
     }
 }

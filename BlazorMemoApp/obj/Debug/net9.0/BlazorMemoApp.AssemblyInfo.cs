@@ -15,7 +15,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("BlazorMemoApp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ebfc7051cda2f69b57f04cf032abc3114e01070f")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5ae0ba50755af3c8fa627530b98d924625ac0141")]
 [assembly: System.Reflection.AssemblyProductAttribute("BlazorMemoApp")]
 [assembly: System.Reflection.AssemblyTitleAttribute("BlazorMemoApp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

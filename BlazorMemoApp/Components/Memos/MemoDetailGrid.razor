@@ -19,11 +19,8 @@
         </select>
     </div>
 
-    @if (CanEdit)
-    {
-        <button class="btn btn-sm btn-outline-primary" @onclick="SelectAllFiltered">Select All</button>
-        <button class="btn btn-sm btn-danger" @onclick="DeleteSelected">Delete Selected (@_selected.Count)</button>
-    }
+    <button class="btn btn-sm btn-outline-primary" @onclick="SelectAllFiltered">Select All</button>
+    <button class="btn btn-sm btn-danger" @onclick="DeleteSelected">Delete Selected (@_selected.Count)</button>
 </div>
 
 @if (Items is null || Items.Count == 0)
@@ -38,13 +35,13 @@ else
                 <tr class="align-middle">
                     <th style="width:36px;"></th>
                     <th>PO</th>
+                    <th>Supplier</th>
                     <th>Article</th>
                     <th>Color</th>
                     <th>Size</th>
                     <th>Price</th>
                     <th>Curency</th>
                     <th>Unit</th>
-                    <th>Supplier</th>
                     <th>BOM Qty</th>
                     <th>BOM Amount</th>
                     <th>Avail Stock Qty</th>
@@ -90,13 +87,13 @@ else
                             </div>
                         </td>
                     <td>@it.PONumber</td>
+                    <td>@it.Supplier</td>
                     <td>@it.Article</td>
                     <td>@it.Color</td>
                     <td>@it.Size</td>
                     <td>@it.Price.ToString("F2")</td>
                         <td>@it.Currency</td>
                     <td>@it.Unit</td>
-                    <td>@it.Supplier</td>
                     @* <td>
                             <input type="number" class="form-control form-control-sm" style="width:75px" step="0.01" @bind-value="it.BOMQty" @bind-value:event="oninput" />
                     </td> *@
@@ -104,32 +101,32 @@ else
                         <td class="text-end">@it.BOMQty</td>
                         <td>@it.BOMAmount.ToString("F2")</td>
                     <td>
-                            <input type="number" class="form-control form-control-sm" style="width:75px" @bind-value="it.AvailStockQty" @bind-value:event="oninput" disabled="@(!CanEdit)" />
+                            <input type="number" class="form-control form-control-sm" style="width:75px" @bind-value="it.AvailStockQty" @bind-value:event="oninput" />
                     </td>
                         <td>@it.StockAmount.ToString("F2")</td>
                         <td>@it.PurchaseQty.ToString("F2")</td>
                         <td>@it.PurchaseAmount.ToString("F2")</td>
                     <td>
-                            <input type="number" class="form-control form-control-sm" style="width:75px" @bind-value="it.MCQQty" @bind-value:event="oninput" disabled="@(!CanEdit)" />
+                            <input type="number" class="form-control form-control-sm" style="width:75px" @bind-value="it.MCQQty" @bind-value:event="oninput" />
                     </td>
                         <td>@it.MCQAmount.ToString("F2")</td>
                         <td>@it.Diff.ToString("F2")</td>
                     <td>
-                        <input type="number" step="0.01" class="form-control form-control-sm" @bind-value="it.SurchargePaid" @bind-value:event="oninput" disabled="@(!CanEdit)" />
+                        <input type="number" step="0.01" class="form-control form-control-sm" @bind-value="it.SurchargePaid" @bind-value:event="oninput" />
                     </td>
                         <td style="width:75px">@it.TotalExtraPaid.ToString("F2")</td>
                         <td style="width:75px">@it.StockFromMCQ.ToString("F2")</td>
                     <td>
-                            <input type="number" class="form-control form-control-sm" style="width:75px" @bind-value="it.StockUsableQty" @bind-value:event="oninput" disabled="@(!CanEdit)" />
+                            <input type="number" class="form-control form-control-sm" style="width:75px" @bind-value="it.StockUsableQty" @bind-value:event="oninput" />
                     </td>
                         <td>@it.StockUsableAmount.ToString("F2")</td>
                         <td>@it.StockNonUsableQty.ToString("F2")</td>
                         <td>@it.StockNonUsableAmount.ToString("F2")</td>
                     <td>
-                            <input type="number" step="0.01" class="form-control form-control-sm" style="width:75px" @bind-value="it.TotalExtraCollected" @bind-value:event="oninput" disabled="@(!CanEdit)" />
+                            <input type="number" step="0.01" class="form-control form-control-sm" style="width:75px" @bind-value="it.TotalExtraCollected" @bind-value:event="oninput" />
                     </td>
                     <td>
-                        <select class="form-select form-select-sm" style="width:100px" @bind="it.ModeOfCollect" disabled="@(!CanEdit)">
+                        <select class="form-select form-select-sm" style="width:100px" @bind="it.ModeOfCollect">
                             <option value="">-- Select --</option>
                             <option value="C">Costing</option>
                             <option value="D">DN</option>
@@ -137,7 +134,7 @@ else
                         </select>
                     </td>
                     <td>
-                            <input type="text" class="form-control form-control-sm" style="width:200px" @bind="it.Remark" disabled="@(!CanEdit)" />
+                        <InputTextArea class="form-control form-control-sm" @bind-Value="it.Remark" rows="2" />
                     </td>
                  </tr>
 
@@ -145,13 +142,14 @@ else
                     @if (_expandedRows.Contains(it))
                     {
                         <tr>
-                            <td colspan="29" class="p-0">
+                            <td colspan="28" class="p-0">
                                 <div class="p-3 bg-light">
                                     <h6>SPI & BOM Details for @it.Article - @it.Color - @it.Size</h6>
                                     <table class="table table-sm table-bordered">
                                         <thead>
                                             <tr>
                                                 <th>SPI Number</th>
+                                                <th>Style Name</th>
                                                 <th>BOM Qty</th>
                                                 <th>Action</th>
                                             </tr>
@@ -165,9 +163,8 @@ else
                                                                value="@GetSpiSearchText(detail)"
                                                                @oninput="(e) => SetSpiSearchText(detail, e.Value?.ToString() ?? string.Empty)"
                                                                @onfocus="() => ShowSpiDropdown(detail)"
-                                                               placeholder="Type to filter..."
-                                                               disabled="@(!CanEdit)" />
-                                                        @if (CanEdit && IsSpiDropdownVisible(detail) && GetFilteredOrdersForSpi(detail).Any())
+                                                               placeholder="Type to filter..." />
+                                                        @if (IsSpiDropdownVisible(detail) && GetFilteredOrdersForSpi(detail).Any())
                                                         {
                                                             <div class="list-group position-absolute z-3" style="max-height:150px; overflow:auto; width:100%;">
                                                                 @foreach (var order in GetFilteredOrdersForSpi(detail))
@@ -179,22 +176,20 @@ else
                                                             </div>
                                                         }
                                                     </td>
+                                                    <td>@GetStyleNameForSpi(detail)</td>
                                                     <td style="width: 100px;">
-                                                        <input type="number" class="form-control form-control-sm" @bind-value="detail.BomQty" @bind-value:event="oninput" disabled="@(!CanEdit)" />
+                                                        <input type="number" class="form-control form-control-sm" @bind-value="detail.BomQty" @bind-value:event="oninput" />
                                                     </td>
                                                     <td>
-                                                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteSpiBom(it, detail)" disabled="@(!CanEdit)">Delete</button>
+                                                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteSpiBom(it, detail)">Delete</button>
                                                     </td>
                                                 </tr>
                                             }
-                                            @if (CanEdit)
-                                            {
-                                                <tr>
-                                                    <td colspan="3">
-                                                        <button class="btn btn-sm btn-primary" @onclick="() => AddSpiBom(it)">+ Add New SPI/BOM</button>
-                                                    </td>
-                                                </tr>
-                                            }
+                                            <tr>
+                                                <td colspan="4">
+                                                    <button class="btn btn-sm btn-primary" @onclick="() => AddSpiBom(it)">+ Add New SPI/BOM</button>
+                                                </td>
+                                            </tr>
                                         </tbody>
                                     </table>
                                 </div>
@@ -229,9 +224,8 @@ else
     [Parameter] public int? BuyerId { get; set; }
     [Parameter] public int? StyleId { get; set; }
     [Parameter] public List<BuyerStyleOrderModel> Orders { get; set; } = new();
-    [Parameter] public bool IsApproved { get; set; } = false;
-
-    private bool CanEdit => !IsApproved;
+    // Added to accept the IsApproved flag from parent components
+    [Parameter] public bool IsApproved { get; set; }
 
     private HashSet<MemoDetailModel> _selected = new();
     private string _filter = string.Empty;
@@ -380,4 +374,11 @@ else
         // Blazor should re-render automatically.
     }
 
+    // NEW: resolve StyleName from Orders by matching OrderNo == SpiNo
+    private string GetStyleNameForSpi(SpiBomDetailModel detail)
+    {
+        if (detail == null || string.IsNullOrWhiteSpace(detail.SpiNo)) return string.Empty;
+        var ord = Orders.FirstOrDefault(o => string.Equals(o.OrderNo, detail.SpiNo, StringComparison.OrdinalIgnoreCase));
+        return ord?.Style?.StyleName ?? string.Empty;
+    }
 }

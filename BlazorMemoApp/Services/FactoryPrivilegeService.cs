@@ -36,6 +36,12 @@ public class FactoryPrivilegeService
         return role == FactoryRoleType.QC;
     }
 
+    public async Task<bool> IsPpicUserAsync(string userId)
+    {
+        var role = await GetUserFactoryRoleAsync(userId);
+        return role == FactoryRoleType.PPIC;
+    }
+
     public async Task<bool> HasFactoryRoleAsync(string userId)
     {
         var role = await GetUserFactoryRoleAsync(userId);

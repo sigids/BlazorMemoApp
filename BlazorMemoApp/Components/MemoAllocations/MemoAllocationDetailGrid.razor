@@ -72,6 +72,8 @@ else
                     <th>Qty Balance</th>
                     <th>Amount Balance</th>
                     <th style="width:150px;">Remark</th>
+                    <th style="width:150px;">WH Remark</th>
+                    <th style="width:150px;">QC Remark</th>
                 </tr>
             </thead>
             <tbody>
@@ -163,13 +165,21 @@ else
                             <input type="text" class="form-control form-control-sm" style="width:120px" @bind="it.Remark" 
                                    disabled="@(!CanEditOtherFields)" />
                         </td>
+                        <td>
+                            <input type="text" class="form-control form-control-sm" style="width:120px" @bind="it.WhRemark" 
+                                   disabled="@(!CanEditWhRemark)" />
+                        </td>
+                        <td>
+                            <input type="text" class="form-control form-control-sm" style="width:120px" @bind="it.QcRemark" 
+                                   disabled="@(!CanEditQcRemark)" />
+                        </td>
                     </tr>
 
                     @* Inline sub-grid for SPI Allocations *@
                     @if (_expandedRows.Contains(it))
                     {
                         <tr>
-                            <td colspan="23" class="p-0">
+                            <td colspan="25" class="p-0">
                                 <div class="p-3 bg-light">
                                     <h6>SPI Allocations for @it.Article - @it.Color - @it.Size</h6>
                                     <table class="table table-sm table-bordered mb-0">
@@ -283,14 +293,17 @@ else
     [Parameter] public List<BuyerStyleOrderModel> Orders { get; set; } = new();
     [Parameter] public bool IsWarehouse { get; set; } = false;
     [Parameter] public bool IsQc { get; set; } = false;
+    [Parameter] public bool IsPpic { get; set; } = false;
     [Parameter] public bool WhApproved { get; set; } = false;
     [Parameter] public bool QcApproved { get; set; } = false;
 
-    private bool HasFactoryRole => IsWarehouse || IsQc;
+    private bool HasFactoryRole => IsWarehouse || IsQc || IsPpic;
     private bool IsFullyApproved => WhApproved && QcApproved;
     private bool CanEditQtyActual => !IsFullyApproved && (!HasFactoryRole || IsWarehouse) && !WhApproved;
     private bool CanEditQtyPass => !IsFullyApproved && (!HasFactoryRole || IsQc) && !QcApproved;
     private bool CanEditOtherFields => !IsFullyApproved && !HasFactoryRole;
+    private bool CanEditWhRemark => IsWarehouse && !IsFullyApproved;
+    private bool CanEditQcRemark => IsQc && !IsFullyApproved;
 
     // NEW: allow allocation-related edits (original buyer, qty allocate, SPI add/delete)
     // for non-factory users even after WH/QC approvals.

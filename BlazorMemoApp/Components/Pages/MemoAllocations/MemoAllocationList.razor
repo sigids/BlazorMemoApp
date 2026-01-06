@@ -14,7 +14,10 @@
 <h1>Memo Allocation List</h1>
 
 <div class="mb-3 d-flex gap-2 flex-wrap align-items-center">
-    <button class="btn btn-primary" @onclick="CreateNew">Create Memo Allocation</button>
+    @if (!_isPpic)
+    {
+        <button class="btn btn-primary" @onclick="CreateNew">Create Memo Allocation</button>
+    }
 
     <div class="input-group" style="max-width:340px;">
         <span class="input-group-text">Search</span>
@@ -96,9 +99,12 @@ else
                         </td>
                         <td>
                             <div class="d-flex gap-2">
-                                <button class="btn btn-sm btn-outline-primary" @onclick="() => EditItem(item.Id)">Edit</button>
+                                @if (!_isPpic)
+                                {
+                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => EditItem(item.Id)">Edit</button>
+                                }
                                 <button class="btn btn-sm btn-outline-secondary" @onclick="() => ViewItem(item.Id)">View</button>
-                                @if (_isAdmin || _isSupervisor )
+                                @if (!_isPpic && (_isAdmin || _isSupervisor))
                                 {
                                     <button class="btn btn-sm btn-danger" @onclick="() => DeleteItem(item.Id)">Delete</button>
                                 }
@@ -140,6 +146,7 @@ else
     private bool _isAdmin = false;
     private bool _isSupervisor = false;
     private bool _hasFactoryRole = false;
+    private bool _isPpic = false;
     private HashSet<int> _allowedBuyerIds = new();
     private HashSet<string> _allowedUnits = new();
 
@@ -166,6 +173,7 @@ else
         if (!string.IsNullOrEmpty(userId))
         {
             _hasFactoryRole = await FactoryPrivilegeService.HasFactoryRoleAsync(userId);
+            _isPpic = await FactoryPrivilegeService.IsPpicUserAsync(userId);
             if (_hasFactoryRole)
             {
                 var hasAllUnits = await FactoryPrivilegeService.HasAllUnitsAccessAsync(userId);

@@ -1,6 +1,6 @@
 @page "/memo-allocations/{Id:int}"
 @page "/memo-allocations/{Id:int}/view"
-@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin,User")]
+@* No role restriction - access control is done in code based on factory role and buyer/unit privileges *@
 @rendermode InteractiveServer
 @using BlazorMemoApp.Models
 @using Microsoft.EntityFrameworkCore
@@ -244,6 +244,7 @@ else
             Orders="orders"
             IsWarehouse="_isWarehouse"
             IsQc="_isQc"
+            IsPpic="_isPpic"
             WhApproved="header.WhApprovalStatus"
             QcApproved="header.QcApprovalStatus" />
     }
@@ -308,6 +309,7 @@ else
     // Factory role flags
     private bool _isWarehouse = false;
     private bool _isQc = false;
+    private bool _isPpic = false;
     private bool _hasFactoryRole = false;
     private string _currentUserId = string.Empty;
     private string _currentUserName = string.Empty;
@@ -349,7 +351,8 @@ else
         {
             _isWarehouse = await FactoryPrivilegeService.IsWarehouseUserAsync(userId);
             _isQc = await FactoryPrivilegeService.IsQcUserAsync(userId);
-            _hasFactoryRole = _isWarehouse || _isQc;
+            _isPpic = await FactoryPrivilegeService.IsPpicUserAsync(userId);
+            _hasFactoryRole = _isWarehouse || _isQc || _isPpic;
         }
 
         header = await Db.MemoAllocations

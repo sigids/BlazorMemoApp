@@ -125,6 +125,16 @@ public class MemoAllocationDetailModel
     [Column(TypeName = "nvarchar(max)")]
     public string? Remark { get; set; }
 
+    [Display(Name = "WH Remark")]
+    [DataType(DataType.MultilineText)]
+    [Column(TypeName = "nvarchar(max)")]
+    public string? WhRemark { get; set; }
+
+    [Display(Name = "QC Remark")]
+    [DataType(DataType.MultilineText)]
+    [Column(TypeName = "nvarchar(max)")]
+    public string? QcRemark { get; set; }
+
     public List<MemoAllocationSpiModel> SpiAllocations { get; set; } = new();
 }
 

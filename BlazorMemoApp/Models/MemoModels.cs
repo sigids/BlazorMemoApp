@@ -209,7 +209,8 @@ public class UserBuyerPrivilegeModel
 public enum FactoryRoleType
 {
     Warehouse,
-    QC
+    QC,
+    PPIC
 }
 
 public class UserFactoryRoleModel

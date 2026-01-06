@@ -88,7 +88,7 @@ else
                     <td>@(memo.CalcFobValue.ToString("N2") ?? "")</td>
                     <td class="text-end">@memo.Details?.Sum(d => d.SurchargePaid).ToString("N2")</td>
                     <td class="text-end">@memo.Details?.Sum(d => d.TotalExtraCollected).ToString("N2")</td>
-                    <td class="text-end">@GetTotalExtraPaid(memo.Id).ToString("N2")</td>
+                    <td class="text-end">@memo.Details?.Sum(d => d.TotalExtraPaid).ToString("N2")</td>
                     <td>@(memo.ApproveStatus)</td>
                     <td>@(memo.ApproveUser?.UserName)</td>
                     <td>@(memo.ApproveDate?.ToString("yyyy-MM-dd HH:mm") ?? "")</td>
@@ -213,9 +213,9 @@ else
             query = query.Where(m => (m.ApproveStatus ?? string.Empty).ToUpper() == "APPROVED");
         }
         
-        // Always eager-load Details for correct sum
+        // Always eager-load Details and SpiBomDetails for correct sum
         _allMemos = await query
-            .Include(m => m.Details)
+            .Include(m => m.Details).ThenInclude(d => d.SpiBomDetails)
             .OrderByDescending(m => m.MemoDate)
             .ToListAsync();
 
@@ -240,13 +240,6 @@ else
     {
         var path = Nav.ToBaseRelativePath(Nav.Uri);
         _approvalMode = path.StartsWith("memos/approval", StringComparison.OrdinalIgnoreCase);
-    }
-
-    // Always fetch fresh details from DB for correct sum
-    private decimal GetTotalExtraPaid(int memoId)
-    {
-        var details = Db.MemoDetails.Where(d => d.MemoHeaderId == memoId).Select(d => d.TotalExtraPaid).ToList();
-        return details.Sum();
     }
 
     private async Task ApproveMemo(int id)

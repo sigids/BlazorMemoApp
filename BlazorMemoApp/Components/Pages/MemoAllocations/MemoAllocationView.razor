@@ -260,6 +260,7 @@ else
             }
         }
         <button class="btn btn-outline-primary" @onclick="Print">Print</button>
+        <button class="btn btn-outline-success" @onclick="ExportCsv">CSV</button>
         
         @if (_isWarehouse && !header.WhApprovalStatus)
         {
@@ -297,6 +298,9 @@ else
         </div>
     }
 }
+
+@using System.Text
+@using System.Globalization
 
 @code {
     [Parameter] public int Id { get; set; }
@@ -654,6 +658,77 @@ else
     private async Task Print()
     {
         await JS.InvokeVoidAsync("window.print");
+    }
+
+    private async Task ExportCsv()
+    {
+        if (header == null) return;
+
+        var sb = new StringBuilder();
+        // Header info (key,value)
+        sb.AppendLine("Field,Value");
+        sb.AppendLine($"MemoNo,{EscapeCsv(header.MemoNo)}");
+        sb.AppendLine($"MemoDate,{header.MemoDate.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)}");
+        sb.AppendLine($"UnitName,{EscapeCsv(header.UnitName)}");
+        sb.AppendLine($"PONo,{EscapeCsv(header.PONo)}");
+        sb.AppendLine($"Buyer,{EscapeCsv(header.Buyer?.Name ?? "")}");
+        sb.AppendLine($"WhApprovalStatus,{header.WhApprovalStatus}");
+        sb.AppendLine($"WhApprovalUserName,{EscapeCsv(header.WhApprovalUserName)}");
+        sb.AppendLine($"WhApprovalDate,{(header.WhApprovalDate?.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) ?? string.Empty)}");
+        sb.AppendLine($"QcApprovalStatus,{header.QcApprovalStatus}");
+        sb.AppendLine($"QcApprovalUserName,{EscapeCsv(header.QcApprovalUserName)}");
+        sb.AppendLine($"QcApprovalDate,{(header.QcApprovalDate?.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) ?? string.Empty)}");
+        sb.AppendLine();
+
+        // Details header
+        sb.AppendLine("PONo,MatName,Article,Color,Size,ItemCode,Supplier,UnitPO,RatePO,CurrencyPO,QtyStage,QtyActual,DateConfWh,QtyPass,DateConfQc,AmountPass,Buyer,QtyAllocate,AmountAllocate,QtyBalance,AmountBalance,Remark");
+
+        foreach (var d in header.Details ?? Enumerable.Empty<MemoAllocationDetailModel>())
+        {
+            var line = string.Join(",",
+                EscapeCsv(d.PONo),
+                EscapeCsv(d.MatName),
+                EscapeCsv(d.Article),
+                EscapeCsv(d.Color),
+                EscapeCsv(d.Size),
+                EscapeCsv(d.ItemCode),
+                EscapeCsv(d.Supplier),
+                EscapeCsv(d.UnitPO),
+                d.RatePO.ToString("F4", CultureInfo.InvariantCulture),
+                EscapeCsv(d.CurrencyPO),
+                d.QtyStage.ToString("F2", CultureInfo.InvariantCulture),
+                d.QtyActual.ToString("F2", CultureInfo.InvariantCulture),
+                EscapeCsv(d.DateConfWh?.ToString("MM/dd HH:mm") ?? ""),
+                d.QtyPass.ToString("F2", CultureInfo.InvariantCulture),
+                EscapeCsv(d.DateConfQc?.ToString("MM/dd HH:mm") ?? ""),
+                d.AmountPass.ToString("F2", CultureInfo.InvariantCulture),
+                EscapeCsv(d.Buyer?.Name ?? ""),
+                d.QtyAllocate.ToString("F2", CultureInfo.InvariantCulture),
+                d.AmountAllocate.ToString("F2", CultureInfo.InvariantCulture),
+                d.QtyBalance.ToString("F2", CultureInfo.InvariantCulture),
+                d.AmountBalance.ToString("F2", CultureInfo.InvariantCulture),
+                EscapeCsv(d.Remark)
+            );
+            sb.AppendLine(line);
+        }
+
+        var csv = sb.ToString();
+        var bytes = Encoding.UTF8.GetBytes(csv);
+        var base64 = Convert.ToBase64String(bytes);
+        var filename = $"{(string.IsNullOrWhiteSpace(header.MemoNo) ? "memoallocation" : header.MemoNo)}_{header.Id}.csv".Replace("\"", "");
+
+        var safeBase64 = base64.Replace("'", "\\'");
+        var safeFilename = filename.Replace("'", "\\'");
+        var js = $"(function(b64, filename){{var link=document.createElement('a');link.href='data:text/csv;base64,'+b64;link.download=filename;document.body.appendChild(link);link.click();document.body.removeChild(link);}})('{safeBase64}','{safeFilename}');";
+        await JS.InvokeVoidAsync("eval", js);
+    }
+
+    private static string EscapeCsv(string? input)
+    {
+        if (string.IsNullOrEmpty(input)) return string.Empty;
+        var needQuotes = input.Contains(',') || input.Contains('"') || input.Contains('\r') || input.Contains('\n');
+        var outVal = input.Replace("\"", "\"\"");
+        return needQuotes ? '"' + outVal + '"' : outVal;
     }
 
     private async Task WhApproval()

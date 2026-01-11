@@ -262,13 +262,21 @@ else
         <button class="btn btn-outline-primary" @onclick="Print">Print</button>
         <button class="btn btn-outline-success" @onclick="ExportCsv">CSV</button>
         
-        @if (_isWarehouse && !header.WhApprovalStatus)
+        @if (_isWarehouse)
         {
-            <button class="btn btn-success" @onclick="WhApproval">WH Approval</button>
+            @if (!header.WhApprovalStatus)
+            {
+                <button class="btn @GetWhApprovalButtonClass()" @onclick="WhApproval">WH Approval</button>
+            }
+            <button class="btn @GetWhApprovalItemButtonClass()" @onclick="WhApprovalItem">WH Approval Item</button>
         }
-        @if (_isQc && !header.QcApprovalStatus)
+        @if (_isQc)
         {
-            <button class="btn btn-info" @onclick="QcApproval">QC Approval</button>
+            @if (!header.QcApprovalStatus)
+            {
+                <button class="btn @GetQcApprovalButtonClass()" @onclick="QcApproval">QC Approval</button>
+            }
+            <button class="btn @GetQcApprovalItemButtonClass()" @onclick="QcApprovalItem">QC Approval Item</button>
         }
     </div>
     
@@ -783,6 +791,126 @@ else
             _saveMessage = $"Error saving QC approval: {ex.Message}";
             _saveSuccess = false;
         }
+    }
+
+    private async Task WhApprovalItem()
+    {
+        if (header == null || !_isWarehouse) return;
+
+        var confirmed = await JS.InvokeAsync<bool>("confirm", "Approve selected items as Warehouse?");
+        if (!confirmed) return;
+
+        try
+        {
+            var itemsToApprove = header.Details.Where(d => d.QtyActual > 0 && !d.WhApprovalItem).ToList();
+            
+            foreach (var item in itemsToApprove)
+            {
+                item.WhApprovalItem = true;
+                if (item.DateConfWh == null)
+                    item.DateConfWh = DateTime.Now;
+            }
+
+            await Db.SaveChangesAsync();
+            
+            // Check if all items are approved to update header
+            if (header.Details.All(d => d.WhApprovalItem || d.QtyActual == 0))
+            {
+                header.WhApprovalStatus = true;
+                header.WhApprovalDate = DateTime.Now;
+                header.WhApprovalUserId = _currentUserId;
+                header.WhApprovalUserName = _currentUserName;
+                await Db.SaveChangesAsync();
+            }
+            
+            _saveMessage = $"WH approval for {itemsToApprove.Count} item(s) saved successfully.";
+            _saveSuccess = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error saving WH item approval: {ex.Message}");
+            _saveMessage = $"Error saving WH item approval: {ex.Message}";
+            _saveSuccess = false;
+        }
+    }
+
+    private async Task QcApprovalItem()
+    {
+        if (header == null || !_isQc) return;
+
+        var confirmed = await JS.InvokeAsync<bool>("confirm", "Approve selected items as QC?");
+        if (!confirmed) return;
+
+        try
+        {
+            var itemsToApprove = header.Details.Where(d => d.QtyPass > 0 && !d.QcApprovalItem).ToList();
+            
+            foreach (var item in itemsToApprove)
+            {
+                item.QcApprovalItem = true;
+                if (item.DateConfQc == null)
+                    item.DateConfQc = DateTime.Now;
+            }
+
+            await Db.SaveChangesAsync();
+            
+            // Check if all items are approved to update header
+            if (header.Details.All(d => d.QcApprovalItem || d.QtyPass == 0))
+            {
+                header.QcApprovalStatus = true;
+                header.QcApprovalDate = DateTime.Now;
+                header.QcApprovalUserId = _currentUserId;
+                header.QcApprovalUserName = _currentUserName;
+                await Db.SaveChangesAsync();
+            }
+            
+            _saveMessage = $"QC approval for {itemsToApprove.Count} item(s) saved successfully.";
+            _saveSuccess = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error saving QC item approval: {ex.Message}");
+            _saveMessage = $"Error saving QC item approval: {ex.Message}";
+            _saveSuccess = false;
+        }
+    }
+
+    private string GetWhApprovalButtonClass()
+    {
+        if (header == null) return "btn-success";
+        return "btn-success";
+    }
+
+    private string GetWhApprovalItemButtonClass()
+    {
+        if (header == null || !header.Details.Any()) return "btn-outline-success";
+        
+        var totalItems = header.Details.Count(d => d.QtyActual > 0);
+        var approvedItems = header.Details.Count(d => d.WhApprovalItem && d.QtyActual > 0);
+        
+        if (approvedItems == 0) return "btn-outline-success";
+        if (approvedItems == totalItems) return "btn-success";
+        return "btn-warning";
+    }
+
+    private string GetQcApprovalButtonClass()
+    {
+        if (header == null) return "btn-info";
+        return "btn-info";
+    }
+
+    private string GetQcApprovalItemButtonClass()
+    {
+        if (header == null || !header.Details.Any()) return "btn-outline-info";
+        
+        var totalItems = header.Details.Count(d => d.QtyPass > 0);
+        var approvedItems = header.Details.Count(d => d.QcApprovalItem && d.QtyPass > 0);
+        
+        if (approvedItems == 0) return "btn-outline-info";
+        if (approvedItems == totalItems) return "btn-info";
+        return "btn-warning";
     }
 
     public class ExchangeRateResponse

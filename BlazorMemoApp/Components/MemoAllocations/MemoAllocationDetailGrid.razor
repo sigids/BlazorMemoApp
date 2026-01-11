@@ -63,8 +63,10 @@ else
                     <th style="width:120px;">Qty Stage</th>
                     <th style="width:100px;">Qty Actual</th>
                     <th>Date Conf Wh</th>
+                    <th style="width:60px;">WH Appr</th>
                     <th style="width:100px;">Qty Pass</th>
                     <th>Date Conf Qc</th>
+                    <th style="width:60px;">QC Appr</th>
                     <th>Amount Pass</th>
                     <th style="width:150px;">Original Buyer</th>
                     <th>Qty Allocate</th>
@@ -129,12 +131,18 @@ else
                                    disabled="@(!CanEditQtyActual)" />
                         </td>
                         <td style="font-size:0.75rem;">@(it.DateConfWh?.ToString("MM/dd HH:mm") ?? "")</td>
+                        <td class="text-center">
+                            <input type="checkbox" class="form-check-input" @bind="it.WhApprovalItem" disabled="@(!IsWarehouse)" />
+                        </td>
                         <td>
                             <input type="number" class="form-control form-control-sm text-end" style="width:80px" step="0.01" 
                                    @bind-value="it.QtyPass" @bind-value:event="oninput" @onchange="() => OnQtyPassChanged(it)" 
                                    disabled="@(!CanEditQtyPass)" />
                         </td>
                         <td style="font-size:0.75rem;">@(it.DateConfQc?.ToString("MM/dd HH:mm") ?? "")</td>
+                        <td class="text-center">
+                            <input type="checkbox" class="form-check-input" @bind="it.QcApprovalItem" disabled="@(!IsQc)" />
+                        </td>
                         <td class="text-end">@it.AmountPass.ToString("N2")</td>
                         <td class="position-relative">
                             <input class="form-control form-control-sm"
@@ -179,7 +187,7 @@ else
                     @if (_expandedRows.Contains(it))
                     {
                         <tr>
-                            <td colspan="25" class="p-0">
+                            <td colspan="27" class="p-0">
                                 <div class="p-3 bg-light">
                                     <h6>SPI Allocations for @it.Article - @it.Color - @it.Size</h6>
                                     <table class="table table-sm table-bordered mb-0">
@@ -285,6 +293,7 @@ else
 }
 
 @code {
+
     [Parameter] public List<MemoAllocationDetailModel> Items { get; set; } = new();
     [Parameter] public EventCallback<List<MemoAllocationDetailModel>> ItemsChanged { get; set; }
     [Parameter] public string UnitName { get; set; } = string.Empty;
@@ -576,6 +585,82 @@ else
         }
 
         item.QtyStage = totalQtyPo;
+    }
+
+
+    private async Task FetchQtyBlncAsscItem(MemoAllocationDetailModel item)
+    {
+        var warehouses = UnitMaster.GetWarehouses(UnitName);
+        if (!warehouses.Any()) return;
+
+        var connectionString = "DSN=Stage64;UID=sql;PWD=sql;";
+        decimal QtyBlncAssc = 0;
+
+        using var conn = new OdbcConnection(connectionString);
+        await conn.OpenAsync();
+
+        var query = @"
+            select
+            POQty = case when jo_det_units = im_mts_kgs_h then jo_det_mts_qty else jo_det_crpgd_qty end,
+            AssQty =
+            case when jo_det_units = im_mts_kgs_h then
+            (
+            select sum(jo_sub_mts_kgs_qty) from
+            dba.job_order_sub_detail
+            where jo_det_item_code = jo_sub_item_code
+            and jo_det_mas_no = jo_sub_mas_no
+            and jo_det_comp_code = jo_sub_comp_code
+            and jo_det_raw_proc_code = 'MP'
+            and jo_det_finish_raw = 'F'
+            )
+            else
+            (
+            select sum(jo_sub_crpgd_qty) from
+            dba.job_order_sub_detail
+            where jo_det_item_code = jo_sub_item_code
+            and jo_det_mas_no = jo_sub_mas_no
+            and jo_det_comp_code = jo_sub_comp_code
+            and jo_det_raw_proc_code = 'MP'
+            and jo_det_finish_raw = 'F'
+            ) end,
+            RcvQty =
+            case when jo_det_units = im_mts_kgs_h then
+                isnull( (select sum(inv_det_ddr_mts_kgs) from dba.inventory_detail where
+                inv_det_jo_det_no <> '0'
+                and inv_det_jo_no = jo_det_mas_no
+                and inv_det_item_code = jo_det_item_code
+                and inv_det_comp_code = jo_det_comp_code
+                and inv_det_proc_history = jo_det_raw_proc_code) ,0)
+            ELSE
+                isnull( (select sum(inv_det_ddr_crpgd) from dba.inventory_detail where
+                inv_det_jo_det_no <> '0'
+                and inv_det_jo_no = jo_det_mas_no
+                and inv_det_item_code = jo_det_item_code
+                and inv_det_comp_code = jo_det_comp_code
+                and inv_det_proc_history = jo_det_raw_proc_code) ,0)
+            end,
+
+            qtyBlncAssc = lesser(assqty, RcvQty),
+            pono = jo_det_mas_no,
+            item_code = jo_det_item_code
+
+            from dba.job_order_detail
+            left outer join dba.item_master on jo_det_item_code = im_item_code
+            where jo_det_mas_no = ? and jo_det_item_code = ?";
+
+        using var cmd = new OdbcCommand(query, conn);
+        cmd.Parameters.AddWithValue("@pono", PONo ?? "");
+        cmd.Parameters.AddWithValue("@item_code", item.ItemCode ?? "");
+
+        using var reader = await cmd.ExecuteReaderAsync();
+        if (await reader.ReadAsync())
+        {     
+            var qtyBlncAssc = reader.IsDBNull(3) ? 0m : reader.GetDecimal(3);
+
+            QtyBlncAssc = qtyBlncAssc;
+        }
+
+        item.QtyBlncAssc = QtyBlncAssc;
     }
 
     private void PrevPage() { if (_currentPage > 1) _currentPage--; }

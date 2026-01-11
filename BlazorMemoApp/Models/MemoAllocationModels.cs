@@ -90,6 +90,9 @@ public class MemoAllocationDetailModel
     [Display(Name = "Qty Stage")]
     public decimal QtyStage { get; set; }
 
+    [Display(Name = "Balance Associate")]
+    public decimal QtyBlncAssc { get; set; }
+
     [Display(Name = "Qty Actual")]
     public decimal QtyActual { get; set; }
 
@@ -101,6 +104,12 @@ public class MemoAllocationDetailModel
 
     [Display(Name = "Date Conf Qc")]
     public DateTime? DateConfQc { get; set; }
+
+    [Display(Name = "WH Item Approval")]
+    public bool WhApprovalItem { get; set; } = false;
+
+    [Display(Name = "QC Item Approval")]
+    public bool QcApprovalItem { get; set; } = false;
 
     [Display(Name = "Amount Pass")]
     public decimal AmountPass => QtyPass * RatePO;

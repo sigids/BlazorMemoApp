@@ -61,6 +61,7 @@ else
                     <th>Rate PO</th>
                     <th>Currency</th>
                     <th style="width:120px;">Qty Stage</th>
+                    <th style="width:120px;">Qty Blnc Assc</th>
                     <th style="width:100px;">Qty Actual</th>
                     <th>Date Conf Wh</th>
                     <th style="width:60px;">WH Appr</th>
@@ -127,6 +128,11 @@ else
                         </td>
                         <td>
                             <input type="number" class="form-control form-control-sm text-end" style="width:80px" step="0.01" 
+                                   @bind-value="it.QtyBlncAssc" @bind-value:event="oninput" 
+                                   disabled />
+                        </td>
+                        <td>
+                            <input type="number" class="form-control form-control-sm text-end" style="width:80px" step="0.01" 
                                    @bind-value="it.QtyActual" @bind-value:event="oninput" @onchange="() => OnQtyActualChanged(it)" 
                                    disabled="@(!CanEditQtyActual)" />
                         </td>
@@ -187,15 +193,16 @@ else
                     @if (_expandedRows.Contains(it))
                     {
                         <tr>
-                            <td colspan="27" class="p-0">
+                            <td colspan="28" class="p-0">
                                 <div class="p-3 bg-light">
                                     <h6>SPI Allocations for @it.Article - @it.Color - @it.Size</h6>
                                     <table class="table table-sm table-bordered mb-0">
                                         <thead>
                                             <tr>
-                                                <th style="width:200px;">SPI Number</th>
-                                                <th style="width:120px;">Qty Allocate</th>
                                                 <th style="width:200px;">Buyer Allocated</th>
+                                                <th style="width:100px;">SPI Number</th>
+                                                <th style="width:100px;">Style</th>
+                                                <th style="width:120px;">Qty Allocate</th>
                                                 <th style="width:80px;">Action</th>
                                             </tr>
                                         </thead>
@@ -203,6 +210,26 @@ else
                                             @foreach (var spi in it.SpiAllocations)
                                             {
                                                 <tr>
+                                                    <td class="position-relative">
+                                                        <input class="form-control form-control-sm"
+                                                               value="@GetSpiBuyerSearchText(spi)"
+                                                               @oninput="(e) => SetSpiBuyerSearchText(spi, e.Value?.ToString() ?? string.Empty)"
+                                                               @onfocus="() => ShowSpiBuyerDropdown(spi)"
+                                                               placeholder="Select Buyer..."
+                                                               disabled="@(!CanEditAllocation)" />
+                                                        @if (CanEditAllocation && IsSpiBuyerDropdownVisible(spi) && GetFilteredBuyersForSpi(spi).Any())
+                                                        {
+                                                            <div class="list-group position-absolute z-3" style="max-height:150px; overflow:auto; width:100%;">
+                                                                @foreach (var buyer in GetFilteredBuyersForSpi(spi))
+                                                                {
+                                                                    <button type="button" class="list-group-item list-group-item-action py-1" @onclick="() => SelectSpiBuyer(spi, buyer)">
+                                                                        @buyer.Name - @buyer.NameAbbr
+                                                                    </button>
+                                                                }
+                                                            </div>
+                                                        }
+                                                    </td>
+
                                                     <td class="position-relative">
                                                         <input class="form-control form-control-sm"
                                                                value="@GetSpiSearchText(spi)"
@@ -222,29 +249,11 @@ else
                                                             </div>
                                                         }
                                                     </td>
+                                                    <td>@GetStyleNameForSpi(spi)</td>
                                                     <td>
                                                         <input type="number" class="form-control form-control-sm text-end" step="0.01" 
-                                                               @bind-value="spi.QtyAllocate" @bind-value:event="oninput"
+                                                               @bind-value="spi.QtyAllocate" @bind-value:event="oninput" @onchange="() => OnQtyAllocateChanged(it)"
                                                                disabled="@(!CanEditAllocation)" />
-                                                    </td>
-                                                    <td class="position-relative">
-                                                        <input class="form-control form-control-sm"
-                                                               value="@GetSpiBuyerSearchText(spi)"
-                                                               @oninput="(e) => SetSpiBuyerSearchText(spi, e.Value?.ToString() ?? string.Empty)"
-                                                               @onfocus="() => ShowSpiBuyerDropdown(spi)"
-                                                               placeholder="Select Buyer..."
-                                                               disabled="@(!CanEditAllocation)" />
-                                                        @if (CanEditAllocation && IsSpiBuyerDropdownVisible(spi) && GetFilteredBuyersForSpi(spi).Any())
-                                                        {
-                                                            <div class="list-group position-absolute z-3" style="max-height:150px; overflow:auto; width:100%;">
-                                                                @foreach (var buyer in GetFilteredBuyersForSpi(spi))
-                                                                {
-                                                                    <button type="button" class="list-group-item list-group-item-action py-1" @onclick="() => SelectSpiBuyer(spi, buyer)">
-                                                                        @buyer.Name - @buyer.NameAbbr
-                                                                    </button>
-                                                                }
-                                                            </div>
-                                                        }
                                                     </td>
                                                     <td>
                                                         <button class="btn btn-sm btn-danger" @onclick="() => DeleteSpi(it, spi)" disabled="@(!CanEditAllocation)">Delete</button>
@@ -397,6 +406,25 @@ else
             item.DateConfQc = DateTime.Now;
     }
 
+    private void OnQtyAllocateChanged(MemoAllocationDetailModel item)
+    {
+        // Validate if QtyAllocate exceeds QtyBlncAssc
+        var totalQtyAllocate = item.SpiAllocations?.Sum(s => s.QtyAllocate) ?? 0;
+        
+        if (totalQtyAllocate > item.QtyBlncAssc && item.QtyBlncAssc > 0)
+        {
+            _stageMessage = $"Warning: Total Qty Allocate ({totalQtyAllocate:N2}) exceeds Qty Blnc Assc ({item.QtyBlncAssc:N2}) for {item.Article} - {item.Color} - {item.Size}";
+            _stageSuccess = false;
+            StateHasChanged();
+        }
+        else if (!string.IsNullOrEmpty(_stageMessage) && !_stageSuccess)
+        {
+            // Clear warning if it was related to qty allocation and now is valid
+            _stageMessage = string.Empty;
+            StateHasChanged();
+        }
+    }
+
     // Buyer selection for Detail
     private string GetBuyerSearchText(MemoAllocationDetailModel item)
     {
@@ -439,9 +467,15 @@ else
     private IEnumerable<BuyerStyleOrderModel> GetFilteredOrdersForSpi(MemoAllocationSpiModel spi)
     {
         var searchText = _spiSearchTexts.GetValueOrDefault(spi, string.Empty);
+        
+        // Filter orders based on BuyerAllocatedId if available
+        var filteredOrders = spi.BuyerAllocatedId.HasValue
+            ? Orders.Where(o => o.BuyerId == spi.BuyerAllocatedId.Value)
+            : Orders;
+        
         return string.IsNullOrWhiteSpace(searchText)
-            ? Orders
-            : Orders.Where(o => o.OrderNo.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+            ? filteredOrders
+            : filteredOrders.Where(o => o.OrderNo.Contains(searchText, StringComparison.OrdinalIgnoreCase));
     }
 
     private void SelectSpiOrder(MemoAllocationSpiModel spi, BuyerStyleOrderModel order)
@@ -500,9 +534,10 @@ else
             foreach (var item in Items)
             {
                 await FetchQtyStageForItem(item);
+                await FetchQtyBlncAsscItem(item);
             }
             _stageSuccess = true;
-            _stageMessage = $"Qty Stage fetched for {Items.Count} items.";
+            _stageMessage = $"Qty Stage and Qty Blnc Assc fetched for {Items.Count} items.";
         }
         catch (Exception ex)
         {
@@ -528,8 +563,9 @@ else
         try
         {
             await FetchQtyStageForItem(item);
+            await FetchQtyBlncAsscItem(item);
             _stageSuccess = true;
-            _stageMessage = $"Qty Stage fetched: {item.QtyStage:N2}";
+            _stageMessage = $"Qty Stage: {item.QtyStage:N2}, Qty Blnc Assc: {item.QtyBlncAssc:N2}";
         }
         catch (Exception ex)
         {
@@ -661,6 +697,13 @@ else
         }
 
         item.QtyBlncAssc = QtyBlncAssc;
+    }
+
+    private string GetStyleNameForSpi(MemoAllocationSpiModel detail)
+    {
+        if (detail == null || string.IsNullOrWhiteSpace(detail.SpiNo)) return string.Empty;
+        var ord = Orders.FirstOrDefault(o => string.Equals(o.OrderNo, detail.SpiNo, StringComparison.OrdinalIgnoreCase));
+        return ord?.Style?.StyleName ?? string.Empty;
     }
 
     private void PrevPage() { if (_currentPage > 1) _currentPage--; }

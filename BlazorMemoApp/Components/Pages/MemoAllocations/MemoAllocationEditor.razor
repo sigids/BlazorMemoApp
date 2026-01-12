@@ -141,7 +141,7 @@
             ? await BuyerPrivilegeService.FilterBuyersAsync(userId, allBuyers)
             : allBuyers;
 
-        orders = await Db.BuyerStyleOrders.ToListAsync();
+        orders = await Db.BuyerStyleOrders.Include(o => o.Style).ToListAsync();
         header.MemoNo = await GenerateMemoNoAsync();
         header.MemoDate = DateTime.Now;
     }

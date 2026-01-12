@@ -406,7 +406,7 @@ else
             }
         }
 
-        orders = await Db.BuyerStyleOrders.ToListAsync();
+        orders = await Db.BuyerStyleOrders.Include(o => o.Style).ToListAsync();
     }
 
     private void ToggleDetailExpansion(MemoAllocationDetailModel detail)

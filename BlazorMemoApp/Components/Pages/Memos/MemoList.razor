@@ -37,6 +37,19 @@
     </div>
 
     <div>
+        <select class="form-select form-select-sm" style="width:150px;" @bind="_filterApprovalStatus">
+            <option value="">All Status</option>
+            <option value="Pending">Pending</option>
+            <option value="Approved">Approved</option>
+        </select>
+    </div>
+
+    <div class="input-group" style="max-width:250px;">
+        <span class="input-group-text">Approved By</span>
+        <input class="form-control form-control-sm" @bind="_filterApprovedBy" placeholder="Username" />
+    </div>
+
+    <div>
         <select class="form-select form-select-sm" style="width:90px;" @bind="_pageSize">
             <option value="5">5</option>
             <option value="10">10</option>
@@ -157,6 +170,8 @@ else
 @code {
     private List<MemoHeaderModel>? _allMemos;
     private string _filter = string.Empty;
+    private string _filterApprovalStatus = string.Empty;
+    private string _filterApprovedBy = string.Empty;
     private int _pageSize = 10;
     private int _currentPage = 1;
     private bool _approvalMode = false;
@@ -169,6 +184,10 @@ else
             .Where(m => string.IsNullOrWhiteSpace(_filter)
                         || (m.MemoNo ?? string.Empty).Contains(_filter, StringComparison.OrdinalIgnoreCase)
                         || (m.PONumber ?? string.Empty).Contains(_filter, StringComparison.OrdinalIgnoreCase))
+            .Where(m => string.IsNullOrWhiteSpace(_filterApprovalStatus)
+                        || string.Equals(m.ApproveStatus ?? "", _filterApprovalStatus, StringComparison.OrdinalIgnoreCase))
+            .Where(m => string.IsNullOrWhiteSpace(_filterApprovedBy)
+                        || (m.ApproveUser?.UserName ?? string.Empty).Contains(_filterApprovedBy, StringComparison.OrdinalIgnoreCase))
             .Where(m => !_approvalMode || string.Equals(m.ApproveStatus ?? "", "Pending", StringComparison.OrdinalIgnoreCase))
             .Where(m => !_isAcct || string.Equals(m.ApproveStatus ?? "", "Approved", StringComparison.OrdinalIgnoreCase));
 

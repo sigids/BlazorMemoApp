@@ -676,7 +676,7 @@ else
                 and inv_det_proc_history = jo_det_raw_proc_code) ,0)
             end,
 
-            qtyBlncAssc = lesser(assqty, RcvQty),
+            qtyBlncAssc = greater(POQty,RcvQty) - assqty,
             pono = jo_det_mas_no,
             item_code = jo_det_item_code
 

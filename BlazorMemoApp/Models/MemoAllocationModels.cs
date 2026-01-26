@@ -175,8 +175,8 @@ public static class UnitMaster
     public static readonly Dictionary<string, List<string>> UnitWarehouses = new()
     {
         { "UnitTgr", new List<string> { "War-J1" } },
-        { "Unit1", new List<string> { "War-Y1" } },
-        { "Unit2", new List<string> { "War-Y2", "War-Y3"} },
+        { "Unit1", new List<string> { "War-Y1", "War-CP1" } },
+        { "Unit2", new List<string> { "War-Y2", "War-Y3", "War-CP2" } },
         { "Unit3", new List<string> { "War-K1" } },
         { "UnitFC", new List<string> { "War-FC" } },
         { "UnitJFC", new List<string> { "War-JFC" } }

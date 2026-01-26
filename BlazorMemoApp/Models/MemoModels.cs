@@ -45,6 +45,30 @@ public class MemoHeaderModel
 
     public List<MemoDetailModel> Details { get; set; } = new();
     public List<MemoAttachmentModel> Attachments { get; set; } = new();
+    public List<MemoMultiStyleModel> MultiStyles { get; set; } = new();
+    
+    // Computed property: Concatenated style names from MultiStyles, separated by semicolon
+    [NotMapped]
+    public string MultiStyleDisplay => MultiStyles.Any() 
+        ? string.Join("; ", MultiStyles.Where(m => m.Style != null).Select(m => m.Style!.StyleName)) 
+        : string.Empty;
+    
+    // Computed property: Total garment quantity from MultiStyles (sum of all child quantities)
+    [NotMapped]
+    public int MultiStyleTotalGmtQty => MultiStyles.Sum(m => m.GmtQty);
+    
+    // Computed property: Weighted average FOB rate from MultiStyles
+    [NotMapped]
+    public decimal MultiStyleWeightedFobRate
+    {
+        get
+        {
+            var totalQty = MultiStyles.Sum(m => m.GmtQty);
+            if (totalQty == 0) return 0;
+            var totalValue = MultiStyles.Sum(m => m.GmtQty * m.GmtFobRate);
+            return Math.Round(totalValue / totalQty, 6);
+        }
+    }
 }
 
 public class MemoDetailModel
@@ -234,4 +258,28 @@ public class UserFactoryUnitPrivilegeModel
     
     // If UnitName is null, it means "All Units" access
     public bool HasAllUnitsAccess => UnitName == null;
+}
+
+/// <summary>
+/// Child table for storing multiple styles per memo header.
+/// Used to support MultiStyle feature where a memo can have multiple styles with their own quantities and FOB rates.
+/// </summary>
+public class MemoMultiStyleModel
+{
+    public int Id { get; set; }
+    
+    public int MemoHeaderId { get; set; }
+    public MemoHeaderModel? MemoHeader { get; set; }
+    
+    public int? StyleId { get; set; }
+    public BuyerStyleModel? Style { get; set; }
+    
+    [Display(Name = "Garment Qty")]
+    public int GmtQty { get; set; }
+    
+    [Display(Name = "FOB Rate")]
+    public decimal GmtFobRate { get; set; }
+    
+    // Computed property for FOB value
+    public decimal FobValue => GmtQty * GmtFobRate;
 }

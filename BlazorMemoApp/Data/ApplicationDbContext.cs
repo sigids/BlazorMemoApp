@@ -22,6 +22,7 @@ namespace BlazorMemoApp.Data
         public DbSet<MemoAllocationHeaderModel> MemoAllocations { get; set; }
         public DbSet<MemoAllocationDetailModel> MemoAllocationDetails { get; set; }
         public DbSet<MemoAllocationSpiModel> MemoAllocationSpis { get; set; }
+        public DbSet<MemoMultiStyleModel> MemoMultiStyles { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -82,6 +83,19 @@ namespace BlazorMemoApp.Data
                 .HasOne(s => s.BuyerAllocated)
                 .WithMany()
                 .HasForeignKey(s => s.BuyerAllocatedId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // MemoMultiStyle -> MemoHeader relationship
+            modelBuilder.Entity<MemoMultiStyleModel>()
+                .HasOne(m => m.MemoHeader)
+                .WithMany(h => h.MultiStyles)
+                .HasForeignKey(m => m.MemoHeaderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<MemoMultiStyleModel>()
+                .HasOne(m => m.Style)
+                .WithMany()
+                .HasForeignKey(m => m.StyleId)
                 .OnDelete(DeleteBehavior.NoAction);
         }
     }

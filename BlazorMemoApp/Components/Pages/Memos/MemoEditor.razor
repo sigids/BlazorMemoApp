@@ -59,7 +59,7 @@
             }
         </div>
         <div class="col-sm-2 position-relative">
-            <label class="form-label">Style</label>
+            <label class="form-label">Style (Legacy)</label>
             <input class="form-control" 
                    @bind-value="styleSearchText" 
                    @bind-value:event="oninput"
@@ -79,12 +79,84 @@
             }
         </div>
         <div class="col-sm-2">
-            <label class="form-label">Garment Qty</label>
+            <label class="form-label">Garment Qty (Legacy)</label>
             <InputNumber class="form-control" @bind-Value="header.GmtQty"/>
         </div>
         <div class="col-sm-2">
-            <label class="form-label">FOB Rate</label>
+            <label class="form-label">FOB Rate (Legacy)</label>
             <InputNumber class="form-control" @bind-Value="header.GmtFobRate" />
+        </div>
+        <div class="col-12">
+            <div class="card mt-2">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">Multi-Style (New)</h6>
+                    <button type="button" class="btn btn-sm btn-outline-primary" @onclick="AddMultiStyleRow" disabled="@(header.BuyerId == null)">
+                        <i class="bi bi-plus"></i> Add Style
+                    </button>
+                </div>
+                <div class="card-body p-2">
+                    @if (!header.MultiStyles.Any())
+                    {
+                        <p class="text-muted mb-0">No styles added. Click "Add Style" to add styles.</p>
+                    }
+                    else
+                    {
+                        <table class="table table-sm table-bordered mb-2">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width:40%">Style</th>
+                                    <th style="width:20%">Garment Qty</th>
+                                    <th style="width:20%">FOB Rate</th>
+                                    <th style="width:15%">FOB Value</th>
+                                    <th style="width:5%"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var ms in header.MultiStyles)
+                                {
+                                    <tr>
+                                        <td>
+                                            <InputSelect class="form-select form-select-sm" @bind-Value="ms.StyleId">
+                                                <option value="">-- Select Style --</option>
+                                                @foreach (var style in filteredStylesDropdown)
+                                                {
+                                                    <option value="@style.Id">@style.StyleName</option>
+                                                }
+                                            </InputSelect>
+                                        </td>
+                                        <td>
+                                            <InputNumber class="form-control form-control-sm" @bind-Value="ms.GmtQty" />
+                                        </td>
+                                        <td>
+                                            <InputNumber class="form-control form-control-sm" @bind-Value="ms.GmtFobRate" />
+                                        </td>
+                                        <td class="text-end">
+                                            @ms.FobValue.ToString("N2")
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => RemoveMultiStyleRow(ms)">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <th>Total</th>
+                                    <th class="text-end">@header.MultiStyleTotalGmtQty.ToString("N0")</th>
+                                    <th class="text-end">Avg: @header.MultiStyleWeightedFobRate.ToString("N4")</th>
+                                    <th class="text-end">@header.MultiStyles.Sum(m => m.FobValue).ToString("N2")</th>
+                                    <th></th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                        <div class="text-muted small">
+                            <strong>MultiStyle:</strong> @header.MultiStyleDisplay
+                        </div>
+                    }
+                </div>
+            </div>
         </div>
         <div class="col-sm-2 position-relative">
             <label class="form-label">Supplier</label>
@@ -417,6 +489,18 @@
         header.SupplierId = supplier.Id;
         supplierSearchText = $"{supplier.Name} - {supplier.NameAbbr}";
         showSupplierDropdown = false;
+    }
+
+    private void AddMultiStyleRow()
+    {
+        header.MultiStyles.Add(new MemoMultiStyleModel());
+        StateHasChanged();
+    }
+
+    private void RemoveMultiStyleRow(MemoMultiStyleModel ms)
+    {
+        header.MultiStyles.Remove(ms);
+        StateHasChanged();
     }
 
     private void Cancel() => Nav.NavigateTo("/memos");

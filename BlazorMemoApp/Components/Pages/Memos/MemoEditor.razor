@@ -455,7 +455,8 @@
             Unit = d.Uom_Po,
             PONumber = po,
             ItemCode = d.Custom1,
-            Supplier = d.Supplier
+            Supplier = d.Supplier,
+            MemoHeader = header
         }).ToList();
         
         // Append new items to existing list instead of replacing
@@ -493,7 +494,11 @@
 
     private void AddMultiStyleRow()
     {
-        header.MultiStyles.Add(new MemoMultiStyleModel());
+        var newMultiStyle = new MemoMultiStyleModel
+        {
+            MemoHeader = header
+        };
+        header.MultiStyles.Add(newMultiStyle);
         StateHasChanged();
     }
 
@@ -857,7 +862,8 @@ private async Task UploadFilesAsync()
                 StoredFileName = storedFileName,
                 ContentType = file.ContentType,
                 FileSize = file.Size,
-                UploadedAt = DateTime.UtcNow
+                UploadedAt = DateTime.UtcNow,
+                MemoHeader = header
             });
         }
         catch (Exception ex)

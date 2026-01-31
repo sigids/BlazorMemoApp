@@ -365,7 +365,10 @@ else
     private void AddSpiBom(MemoDetailModel parent)
     {
         // Don't set Id - let EF Core generate it on save
-        parent.SpiBomDetails.Add(new SpiBomDetailModel());
+        parent.SpiBomDetails.Add(new SpiBomDetailModel
+        {
+            MemoDetail = parent
+        });
     }
 
     private void DeleteSpiBom(MemoDetailModel parent, SpiBomDetailModel itemToDelete)

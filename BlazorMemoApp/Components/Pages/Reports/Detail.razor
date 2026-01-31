@@ -109,7 +109,7 @@ else
                         <td>@row.MemoNo</td>
                         <td>@row.MemoDate.ToString("yyyy-MM-dd")</td>
                         <td>@row.StyleName</td>
-                        <td class="text-end">@row.GmtQty?.ToString("N0")</td>
+                        <td class="text-end">@row.GmtQty.ToString("N0")</td>
                         <td class="text-end">@row.CalcFobValue.ToString("N2")</td>
                         <td>@row.PONumber</td>
                         <td>@row.Article</td>
@@ -225,6 +225,8 @@ else
         var query = Db.Memos
             .Include(m => m.Details)
                 .ThenInclude(d => d.SpiBomDetails)
+            .Include(m => m.MultiStyles)
+                .ThenInclude(ms => ms.Style)
             .Where(m => m.BuyerId == null || allowedBuyerIds.Contains(m.BuyerId.Value))
             .AsQueryable();
 
@@ -248,9 +250,12 @@ else
             MemoNo = m.MemoNo,
             MemoDate = m.MemoDate,
             BuyerName = buyers.FirstOrDefault(b => b.Id == m.BuyerId)?.Name ?? "",
-            StyleName = styles.FirstOrDefault(s => s.Id == m.StyleId)?.StyleName ?? "",
-            GmtQty = m.GmtQty,
-            CalcFobValue = m.CalcFobValue,
+            // Use MultiStyles if available, otherwise fallback to legacy StyleId
+            StyleName = m.HasMultiStyles 
+                ? m.MultiStyleDisplay 
+                : (styles.FirstOrDefault(s => s.Id == m.StyleId)?.StyleName ?? ""),
+            GmtQty = m.EffectiveGmtQty,
+            CalcFobValue = m.EffectiveCalcFobValue,
             PONumber = d.PONumber ?? m.PONumber ?? "",
             Article = d.Article,
             Color = d.Color,
@@ -334,7 +339,7 @@ else
         public DateTime MemoDate { get; set; }
         public string BuyerName { get; set; } = string.Empty;
         public string StyleName { get; set; } = string.Empty;
-        public int? GmtQty { get; set; }
+        public int GmtQty { get; set; }
         public decimal CalcFobValue { get; set; }
         public string PONumber { get; set; } = string.Empty;
         public string Article { get; set; } = string.Empty;

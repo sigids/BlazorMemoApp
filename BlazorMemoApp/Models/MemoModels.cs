@@ -69,6 +69,36 @@ public class MemoHeaderModel
             return Math.Round(totalValue / totalQty, 6);
         }
     }
+    
+    // ============================================================
+    // EFFECTIVE PROPERTIES - Use MultiStyles if available, else fallback to legacy fields
+    // These are used for reports, exports, and grid displays to support backward compatibility
+    // ============================================================
+    
+    /// <summary>
+    /// Returns the effective style display: MultiStyle display if available, otherwise legacy StyleId name
+    /// Note: For legacy StyleId, the Style navigation property must be loaded separately
+    /// </summary>
+    [NotMapped]
+    public bool HasMultiStyles => MultiStyles.Any();
+    
+    /// <summary>
+    /// Returns the effective garment quantity: sum from MultiStyles if available, otherwise legacy GmtQty
+    /// </summary>
+    [NotMapped]
+    public int EffectiveGmtQty => MultiStyles.Any() ? MultiStyleTotalGmtQty : GmtQty.GetValueOrDefault(0);
+    
+    /// <summary>
+    /// Returns the effective FOB rate: weighted average from MultiStyles if available, otherwise legacy GmtFobRate
+    /// </summary>
+    [NotMapped]
+    public decimal EffectiveFobRate => MultiStyles.Any() ? MultiStyleWeightedFobRate : GmtFobRate.GetValueOrDefault(0);
+    
+    /// <summary>
+    /// Returns the effective calculated FOB value: based on effective qty and rate
+    /// </summary>
+    [NotMapped]
+    public decimal EffectiveCalcFobValue => EffectiveFobRate * EffectiveGmtQty;
 }
 
 public class MemoDetailModel

@@ -92,8 +92,8 @@ else
                         <td>@row.MemoNo</td>
                         <td>@row.MemoDate.ToString("yyyy-MM-dd")</td>
                         <td>@row.StyleName</td>
-                        <td class="text-end">@row.GmtQty?.ToString("N0")</td>
-                        <td class="text-end">@row.GmtFobValue?.ToString("N2")</td>
+                        <td class="text-end">@row.GmtQty.ToString("N0")</td>
+                        <td class="text-end">@row.GmtFobValue.ToString("N2")</td>
                         <td class="text-end">@row.SurchargePaid.ToString("N2")</td>
                         <td class="text-end">@row.StockUsableQty.ToString("N0")</td>
                         <td class="text-end">@row.StockNonUsableQty.ToString("N0")</td>
@@ -110,8 +110,8 @@ else
             <tfoot class="table-secondary fw-bold">
                 <tr>
                     <td colspan="5">Total</td>
-                    <td class="text-end">@_data.Sum(x => x.GmtQty ?? 0).ToString("N0")</td>
-                    <td class="text-end">@_data.Sum(x => x.GmtFobValue ?? 0).ToString("N2")</td>
+                    <td class="text-end">@_data.Sum(x => x.GmtQty).ToString("N0")</td>
+                    <td class="text-end">@_data.Sum(x => x.GmtFobValue).ToString("N2")</td>
                     <td class="text-end">@_data.Sum(x => x.SurchargePaid).ToString("N2")</td>
                     <td class="text-end">@_data.Sum(x => x.StockUsableQty).ToString("N0")</td>
                     <td class="text-end">@_data.Sum(x => x.StockNonUsableQty).ToString("N0")</td>
@@ -201,6 +201,8 @@ else
 
         var query = Db.Memos
             .Include(m => m.Details)
+            .Include(m => m.MultiStyles)
+                .ThenInclude(ms => ms.Style)
             .Where(m => m.BuyerId == null || allowedBuyerIds.Contains(m.BuyerId.Value))
             .AsQueryable();
 
@@ -226,10 +228,13 @@ else
             MemoDate = m.MemoDate,
             BuyerId = m.BuyerId,
             BuyerName = buyers.FirstOrDefault(b => b.Id == m.BuyerId)?.Name ?? "",
-            StyleId = m.StyleId,
-            StyleName = styles.FirstOrDefault(s => s.Id == m.StyleId)?.StyleName ?? "",
-            GmtQty = m.GmtQty,
-            GmtFobRate = m.GmtFobRate,
+            // Use MultiStyles if available, otherwise fallback to legacy StyleId
+            StyleName = m.HasMultiStyles 
+                ? m.MultiStyleDisplay 
+                : (styles.FirstOrDefault(s => s.Id == m.StyleId)?.StyleName ?? ""),
+            // Use effective properties for backward compatibility
+            GmtQty = m.EffectiveGmtQty,
+            GmtFobRate = m.EffectiveFobRate,
             UserName = !string.IsNullOrEmpty(m.CreatedByUserId) && users.ContainsKey(m.CreatedByUserId) ? users[m.CreatedByUserId] : "",
             SurchargePaid = d.SurchargePaid,
             StockUsableQty = d.StockUsableQty,
@@ -244,17 +249,16 @@ else
         //var gmtFobValue = m.GmtFobValue;
 
         _data = detailRows
-             .GroupBy(x => new { x.MemoNo, x.MemoDate, x.BuyerId, x.BuyerName, x.StyleId, x.StyleName, x.GmtQty, x.GmtFobRate, x.UserName })
+             .GroupBy(x => new { x.MemoNo, x.MemoDate, x.BuyerId, x.BuyerName, x.StyleName, x.GmtQty, x.GmtFobRate, x.UserName })
              .Select(g => new ReportRow
              {
                  MemoNo = g.Key.MemoNo,
                  MemoDate = g.Key.MemoDate,
                  BuyerId = g.Key.BuyerId,
                  BuyerName = g.Key.BuyerName,
-                 StyleId = g.Key.StyleId,
                  StyleName = g.Key.StyleName,
                  GmtQty = g.Key.GmtQty,
-                 GmtFobValue = (g.Key.GmtQty * g.Key.GmtFobRate),
+                 GmtFobValue = g.Key.GmtQty * g.Key.GmtFobRate,
                  UserName = g.Key.UserName,
                  SurchargePaid = g.Sum(i => i.SurchargePaid),
                  StockUsableQty = g.Sum(i => i.StockUsableQty),
@@ -264,7 +268,7 @@ else
                  AmountDN = g.Sum(i => i.AmountDN),
                  Saving = g.Sum(i => i.Saving),
                  AmountCommitment = g.Sum(i => i.AmountCommitment),
-                 PercentOfFobValue = (g.Key.GmtQty.HasValue && g.Key.GmtFobRate.HasValue && g.Key.GmtFobRate.Value != 0m && g.Key.GmtQty.Value != 0m)
+                 PercentOfFobValue = (g.Key.GmtFobRate != 0m && g.Key.GmtQty != 0)
                      ? g.Sum(i => i.TotalExtraPaid) / (g.Key.GmtQty * g.Key.GmtFobRate)
                      : 0m
              })
@@ -336,10 +340,9 @@ else
         public DateTime MemoDate { get; set; }
         public int? BuyerId { get; set; }
         public string BuyerName { get; set; } = string.Empty;
-        public int? StyleId { get; set; }
         public string StyleName { get; set; } = string.Empty;
-        public int? GmtQty { get; set; }
-        public decimal? GmtFobValue { get; set; }
+        public int GmtQty { get; set; }
+        public decimal GmtFobValue { get; set; }
         public decimal SurchargePaid { get; set; }
         public int StockUsableQty { get; set; }
         public int StockNonUsableQty { get; set; }

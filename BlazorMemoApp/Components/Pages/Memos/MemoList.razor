@@ -97,8 +97,8 @@ else
                     <td>@memo.MemoDate.ToString("yyyy-MM-dd")</td>
                     <td>@(memo.Buyer != null ? $"{memo.Buyer.Name} - {memo.Buyer.NameAbbr}" : "")</td>
                     <td>@memo.PONumber</td>
-                    <td>@memo.GmtQty</td>
-                    <td>@(memo.CalcFobValue.ToString("N2") ?? "")</td>
+                    <td>@memo.EffectiveGmtQty.ToString("N0")</td>
+                    <td>@memo.EffectiveCalcFobValue.ToString("N2")</td>
                     <td class="text-end">@memo.Details?.Sum(d => d.SurchargePaid).ToString("N2")</td>
                     <td class="text-end">@memo.Details?.Sum(d => d.TotalExtraCollected).ToString("N2")</td>
                     <td class="text-end">@memo.Details?.Sum(d => d.TotalExtraPaid).ToString("N2")</td>
@@ -232,9 +232,10 @@ else
             query = query.Where(m => (m.ApproveStatus ?? string.Empty).ToUpper() == "APPROVED");
         }
         
-        // Always eager-load Details and SpiBomDetails for correct sum
+        // Always eager-load Details, SpiBomDetails, and MultiStyles for correct sum and backward compatibility
         _allMemos = await query
             .Include(m => m.Details).ThenInclude(d => d.SpiBomDetails)
+            .Include(m => m.MultiStyles).ThenInclude(ms => ms.Style)
             .OrderByDescending(m => m.MemoDate)
             .ToListAsync();
 

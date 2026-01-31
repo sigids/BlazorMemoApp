@@ -450,8 +450,11 @@ else
         sb.AppendLine($"Buyer,{EscapeCsv(header.Buyer?.Name ?? string.Empty)}");
         sb.AppendLine($"MemoNo,{EscapeCsv(header.MemoNo)}");
         sb.AppendLine($"MemoDate,{header.MemoDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}");
-        sb.AppendLine($"GmtQty,{header.GmtQty}");
-        sb.AppendLine($"GmtFobValue,{header.GmtFobValue?.ToString("F2", CultureInfo.InvariantCulture) ?? string.Empty}");
+        // Use effective properties for backward compatibility
+        sb.AppendLine($"Style,{EscapeCsv(header.HasMultiStyles ? header.MultiStyleDisplay : string.Empty)}");
+        sb.AppendLine($"GmtQty,{header.EffectiveGmtQty}");
+        sb.AppendLine($"GmtFobRate,{header.EffectiveFobRate.ToString("F4", CultureInfo.InvariantCulture)}");
+        sb.AppendLine($"GmtFobValue,{header.EffectiveCalcFobValue.ToString("F2", CultureInfo.InvariantCulture)}");
         sb.AppendLine($"ApproveStatus,{EscapeCsv(header.ApproveStatus)}");
         sb.AppendLine($"ApproveUserId,{EscapeCsv(header.ApproveUser?.UserName)}");
         sb.AppendLine($"ApproveDate,{(header.ApproveDate?.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) ?? string.Empty)}");

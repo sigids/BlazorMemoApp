@@ -23,11 +23,27 @@
 
     <div class="input-group" style="max-width:340px;">
         <span class="input-group-text">Search</span>
-        <input class="form-control form-control-sm" @bind="_filter" placeholder="Memo No, PO No, Unit, Buyer" />
+        <input class="form-control form-control-sm" @bind="_filter" @bind:event="oninput" @bind:after="ResetToFirstPage" placeholder="Memo No, PO No, Unit, Buyer" />
     </div>
 
     <div>
-        <select class="form-select form-select-sm" style="width:90px;" @bind="_pageSize">
+        <select class="form-select form-select-sm" style="width:140px;" @bind="_whApprovalFilter" @bind:after="ResetToFirstPage">
+            <option value="">WH: All</option>
+            <option value="Approved">WH: Approved</option>
+            <option value="Pending">WH: Pending</option>
+        </select>
+    </div>
+
+    <div>
+        <select class="form-select form-select-sm" style="width:140px;" @bind="_qcApprovalFilter" @bind:after="ResetToFirstPage">
+            <option value="">QC: All</option>
+            <option value="Approved">QC: Approved</option>
+            <option value="Pending">QC: Pending</option>
+        </select>
+    </div>
+
+    <div>
+        <select class="form-select form-select-sm" style="width:90px;" @bind="_pageSize" @bind:after="ResetToFirstPage">
             <option value="5">5</option>
             <option value="10">10</option>
             <option value="25">25</option>
@@ -144,6 +160,8 @@ else
 @code {
     private List<MemoAllocationHeaderModel>? _allItems;
     private string _filter = string.Empty;
+    private string _whApprovalFilter = string.Empty;
+    private string _qcApprovalFilter = string.Empty;
     private int _pageSize = 10;
     private int _currentPage = 1;
     private bool _isAdmin = false;
@@ -160,7 +178,13 @@ else
                         || (m.PONo ?? string.Empty).Contains(_filter, StringComparison.OrdinalIgnoreCase)
                         || (m.UnitName ?? string.Empty).Contains(_filter, StringComparison.OrdinalIgnoreCase)
                         || (m.Buyer?.Name ?? string.Empty).Contains(_filter, StringComparison.OrdinalIgnoreCase)
-                        || (m.Buyer?.NameAbbr ?? string.Empty).Contains(_filter, StringComparison.OrdinalIgnoreCase));
+                        || (m.Buyer?.NameAbbr ?? string.Empty).Contains(_filter, StringComparison.OrdinalIgnoreCase))
+            .Where(m => string.IsNullOrWhiteSpace(_whApprovalFilter)
+                        || (_whApprovalFilter == "Approved" && m.WhApprovalStatus)
+                        || (_whApprovalFilter == "Pending" && !m.WhApprovalStatus))
+            .Where(m => string.IsNullOrWhiteSpace(_qcApprovalFilter)
+                        || (_qcApprovalFilter == "Approved" && m.QcApprovalStatus)
+                        || (_qcApprovalFilter == "Pending" && !m.QcApprovalStatus));
 
     private IEnumerable<MemoAllocationHeaderModel> PagedItems => FilteredItems.Skip((_currentPage - 1) * _pageSize).Take(_pageSize);
     private int TotalPages => Math.Max(1, (int)Math.Ceiling(FilteredItems.Count() / (double)_pageSize));
@@ -330,4 +354,5 @@ else
     private void PrevPage() { if (_currentPage > 1) _currentPage--; }
     private void NextPage() { if (_currentPage < TotalPages) _currentPage++; }
     private void GotoPage(int p) { _currentPage = Math.Min(Math.Max(1, p), TotalPages); }
+    private void ResetToFirstPage() { _currentPage = 1; }
 }

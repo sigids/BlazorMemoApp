@@ -11,8 +11,8 @@ MemoWebApp is designed to manage garment purchase memos, linking buyers, styles,
 - Frontend: Blazor
 - Database: Microsoft SQL Server
 - External APIs:
-    - PO List: GET http://192.168.0.5:8000/Api/GetPoes?pono={query}
-    - PO Detail: GET http://192.168.0.5:8000/Api/GetPoH2HDetail?pono={query}
+    - PO List: GET http://192.168.0.6:8000/Api/GetPoes?pono={query}
+    - PO Detail: GET http://192.168.0.6:8000/Api/GetPoH2HDetail?pono={query}
 
 **2\. 🗃️ Database Schema**
 

@@ -48,7 +48,7 @@ builder.Services.AddScoped<BlazorMemoApp.Services.FactoryPrivilegeService>();
 var poBaseUrl = builder.Configuration["ExternalApis:PoBaseUrl"];
 var resolvedPoBaseUrl = !string.IsNullOrWhiteSpace(poBaseUrl)
     ? poBaseUrl
-    : "http://192.168.0.5:8000"; // Fallback default per PRD
+    : "http://192.168.0.6:8000"; // Fallback default per PRD
 
 builder.Services.AddHttpClient<PoApiClient>(client =>
 {

@@ -541,6 +541,26 @@ private async Task Save()
         header.MemoNo = await GenerateMemoNoAsync();
         
         Console.WriteLine($"Saving Memo - BuyerId: {header.BuyerId}, SupplierId: {header.SupplierId}, StyleId: {header.StyleId}");
+        Console.WriteLine($"Saving Memo - MemoNo: {header.MemoNo}, CreatedByUserId: {header.CreatedByUserId}");
+        
+        // Clear navigation properties to avoid EF tracking issues
+        // Only foreign key IDs should be set
+        header.Buyer = null;
+        header.CreatedByUser = null;
+        header.ApproveUser = null;
+        
+        // Clear navigation properties on Details
+        foreach (var detail in header.Details)
+        {
+            detail.MemoHeader = null!;
+        }
+        
+        // Clear navigation properties on MultiStyles
+        foreach (var multiStyle in header.MultiStyles)
+        {
+            multiStyle.MemoHeader = null;
+            multiStyle.Style = null;
+        }
         
         await UploadFilesAsync();
         
@@ -558,8 +578,15 @@ private async Task Save()
     }
     catch (Exception ex)
     {
+        // Log the full exception including inner exceptions
+        var innerMsg = ex.InnerException?.Message ?? "No inner exception";
+        var innerInnerMsg = ex.InnerException?.InnerException?.Message ?? "No inner inner exception";
         Console.Error.WriteLine($"Error saving memo: {ex.Message}");
-        _saveMessage = $"Error saving memo: {ex.Message}";
+        Console.Error.WriteLine($"Inner Exception: {innerMsg}");
+        Console.Error.WriteLine($"Inner Inner Exception: {innerInnerMsg}");
+        Console.Error.WriteLine($"Stack Trace: {ex.StackTrace}");
+        
+        _saveMessage = $"Error saving memo: {ex.Message} | Inner: {innerMsg}";
         _saveSuccess = false;
         StateHasChanged();
     }

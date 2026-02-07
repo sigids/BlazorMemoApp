@@ -70,8 +70,8 @@ else
                     <th class="text-end">Gmt Qty</th>
                     <th class="text-end">Gmt FOB Value</th>
                     <th class="text-end">Surcharge Paid</th>
-                    <th class="text-end">Stock Usable Qty</th>
-                    <th class="text-end">Stock Non-Usable Qty</th>
+                    <th class="text-end">Stock Usable Amount</th>
+                    <th class="text-end">Stock Non-Usable Amount</th>
                     <th class="text-end">Total Extra Paid</th>
                     <th class="text-end">Amount Costing</th>
                     <th class="text-end">Amount DN</th>
@@ -95,8 +95,8 @@ else
                         <td class="text-end">@row.GmtQty.ToString("N0")</td>
                         <td class="text-end">@row.GmtFobValue.ToString("N2")</td>
                         <td class="text-end">@row.SurchargePaid.ToString("N2")</td>
-                        <td class="text-end">@row.StockUsableQty.ToString("N0")</td>
-                        <td class="text-end">@row.StockNonUsableQty.ToString("N0")</td>
+                        <td class="text-end">@row.StockUsableAmount.ToString("N2")</td>
+                        <td class="text-end">@row.StockNonUsableAmount.ToString("N2")</td>
                         <td class="text-end">@row.TotalExtraPaid.ToString("N2")</td>
                         <td class="text-end">@row.AmountCosting.ToString("N2")</td>
                         <td class="text-end">@row.AmountDN.ToString("N2")</td>
@@ -113,8 +113,8 @@ else
                     <td class="text-end">@_data.Sum(x => x.GmtQty).ToString("N0")</td>
                     <td class="text-end">@_data.Sum(x => x.GmtFobValue).ToString("N2")</td>
                     <td class="text-end">@_data.Sum(x => x.SurchargePaid).ToString("N2")</td>
-                    <td class="text-end">@_data.Sum(x => x.StockUsableQty).ToString("N0")</td>
-                    <td class="text-end">@_data.Sum(x => x.StockNonUsableQty).ToString("N0")</td>
+                    <td class="text-end">@_data.Sum(x => x.StockUsableAmount).ToString("N2")</td>
+                    <td class="text-end">@_data.Sum(x => x.StockNonUsableAmount).ToString("N2")</td>
                     <td class="text-end">@_data.Sum(x => x.TotalExtraPaid).ToString("N2")</td>
                     <td class="text-end">@_data.Sum(x => x.AmountCosting).ToString("N2")</td>
                     <td class="text-end">@_data.Sum(x => x.AmountDN).ToString("N2")</td>
@@ -237,8 +237,8 @@ else
             GmtFobRate = m.EffectiveFobRate,
             UserName = !string.IsNullOrEmpty(m.CreatedByUserId) && users.ContainsKey(m.CreatedByUserId) ? users[m.CreatedByUserId] : "",
             SurchargePaid = d.SurchargePaid,
-            StockUsableQty = d.StockUsableQty,
-            StockNonUsableQty = d.MCQQty - (d.BOMQty - d.AvailStockQty) - d.StockUsableQty,
+            StockUsableAmount = d.StockUsableQty * d.Price,
+            StockNonUsableAmount = ( d.MCQQty - (d.BOMQty - d.AvailStockQty) - d.StockUsableQty) * d.Price,
             TotalExtraPaid = (d.Price * d.MCQQty) - (d.Price * (d.BOMQty - d.AvailStockQty)) + d.SurchargePaid,
             AmountCosting = d.ModeOfCollect == "C" ? d.TotalExtraCollected : 0m,
             AmountDN = d.ModeOfCollect == "D" ? d.TotalExtraCollected : 0m,
@@ -261,8 +261,8 @@ else
                  GmtFobValue = g.Key.GmtQty * g.Key.GmtFobRate,
                  UserName = g.Key.UserName,
                  SurchargePaid = g.Sum(i => i.SurchargePaid),
-                 StockUsableQty = g.Sum(i => i.StockUsableQty),
-                 StockNonUsableQty = g.Sum(i => i.StockNonUsableQty),
+                 StockUsableAmount = g.Sum(i => i.StockUsableAmount),
+                 StockNonUsableAmount = g.Sum(i => i.StockNonUsableAmount),
                  TotalExtraPaid = g.Sum(i => i.TotalExtraPaid),
                  AmountCosting = g.Sum(i => i.AmountCosting),
                  AmountDN = g.Sum(i => i.AmountDN),
@@ -346,6 +346,9 @@ else
         public decimal SurchargePaid { get; set; }
         public int StockUsableQty { get; set; }
         public int StockNonUsableQty { get; set; }
+        public decimal StockUsableAmount { get; set; }
+        public decimal StockNonUsableAmount { get; set; }
+
         public decimal TotalExtraPaid { get; set; }
         public decimal AmountCosting { get; set; }
         public decimal AmountDN { get; set; }

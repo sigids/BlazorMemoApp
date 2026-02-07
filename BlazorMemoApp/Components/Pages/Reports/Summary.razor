@@ -30,6 +30,16 @@
         <input type="date" class="form-control" @bind="_dateTo" />
     </div>
     
+    <div class="input-group" style="max-width:200px;">
+        <span class="input-group-text">Status</span>
+        <select class="form-select" @bind="_approvalStatusFilter">
+            <option value="">All</option>
+            <option value="Pending">Pending</option>
+            <option value="Approved">Approved</option>
+            <option value="Rejected">Rejected</option>
+        </select>
+    </div>
+    
     <button class="btn btn-primary" @onclick="LoadData">Apply Filter</button>
     <button class="btn btn-outline-secondary" @onclick="ClearFilter">Clear</button>
     
@@ -79,6 +89,7 @@ else
                     <th class="text-end">Amount Commitment</th>
                     <th class="text-end">Percent Of Fob Value</th>
                     <th>User Name</th>
+                    <th>Approval Status</th>
                 </tr>
             </thead>
             <tbody>
@@ -104,6 +115,7 @@ else
                         <td class="text-end">@row.AmountCommitment.ToString("N2")</td>
                         <td class="text-end">@string.Format("{0:P2}",@row.PercentOfFobValue)</td>
                         <td>@row.UserName</td>
+                        <td><span class="badge bg-@GetStatusBadgeColor(row.ApprovalStatus)">@(row.ApprovalStatus ?? "Pending")</span></td>
                     </tr>
                 }
             </tbody>
@@ -120,6 +132,7 @@ else
                     <td class="text-end">@_data.Sum(x => x.AmountDN).ToString("N2")</td>
                     <td class="text-end">@_data.Sum(x => x.Saving).ToString("N2")</td>
                     <td class="text-end">@_data.Sum(x => x.AmountCommitment).ToString("N2")</td>
+                    <td></td>
                     <td></td>
                     <td></td>
                 </tr>
@@ -156,16 +169,34 @@ else
     private string _searchText = string.Empty;
     private DateTime? _dateFrom;
     private DateTime? _dateTo;
+    private string _approvalStatusFilter = string.Empty;
     private int _pageSize = 25;
     private int _currentPage = 1;
     private bool _isAcct = false;
 
-    private IEnumerable<ReportRow> FilteredData => string.IsNullOrWhiteSpace(_searchText)
-        ? _data
-        : _data.Where(r => 
-            (r.BuyerName ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
-            (r.MemoNo ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
-            (r.StyleName ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase));
+    private IEnumerable<ReportRow> FilteredData 
+    {
+        get
+        {
+            var filtered = _data.AsEnumerable();
+            
+            if (!string.IsNullOrWhiteSpace(_searchText))
+            {
+                filtered = filtered.Where(r => 
+                    (r.BuyerName ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+                    (r.MemoNo ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+                    (r.StyleName ?? "").Contains(_searchText, StringComparison.OrdinalIgnoreCase));
+            }
+            
+            if (!string.IsNullOrWhiteSpace(_approvalStatusFilter))
+            {
+                filtered = filtered.Where(r => 
+                    (r.ApprovalStatus ?? "Pending").Equals(_approvalStatusFilter, StringComparison.OrdinalIgnoreCase));
+            }
+            
+            return filtered;
+        }
+    }
 
     private List<ReportRow> PagedData => FilteredData.Skip((_currentPage - 1) * _pageSize).Take(_pageSize).ToList();
     private int TotalPages => Math.Max(1, (int)Math.Ceiling(FilteredData.Count() / (double)_pageSize));
@@ -236,6 +267,7 @@ else
             GmtQty = m.EffectiveGmtQty,
             GmtFobRate = m.EffectiveFobRate,
             UserName = !string.IsNullOrEmpty(m.CreatedByUserId) && users.ContainsKey(m.CreatedByUserId) ? users[m.CreatedByUserId] : "",
+            ApprovalStatus = m.ApproveStatus,
             SurchargePaid = d.SurchargePaid,
             StockUsableAmount = d.StockUsableQty * d.Price,
             StockNonUsableAmount = ( d.MCQQty - (d.BOMQty - d.AvailStockQty) - d.StockUsableQty) * d.Price,
@@ -249,7 +281,7 @@ else
         //var gmtFobValue = m.GmtFobValue;
 
         _data = detailRows
-             .GroupBy(x => new { x.MemoNo, x.MemoDate, x.BuyerId, x.BuyerName, x.StyleName, x.GmtQty, x.GmtFobRate, x.UserName })
+             .GroupBy(x => new { x.MemoNo, x.MemoDate, x.BuyerId, x.BuyerName, x.StyleName, x.GmtQty, x.GmtFobRate, x.UserName, x.ApprovalStatus })
              .Select(g => new ReportRow
              {
                  MemoNo = g.Key.MemoNo,
@@ -260,6 +292,7 @@ else
                  GmtQty = g.Key.GmtQty,
                  GmtFobValue = g.Key.GmtQty * g.Key.GmtFobRate,
                  UserName = g.Key.UserName,
+                 ApprovalStatus = g.Key.ApprovalStatus,
                  SurchargePaid = g.Sum(i => i.SurchargePaid),
                  StockUsableAmount = g.Sum(i => i.StockUsableAmount),
                  StockNonUsableAmount = g.Sum(i => i.StockNonUsableAmount),
@@ -282,7 +315,19 @@ else
         _searchText = string.Empty;
         _dateFrom = null;
         _dateTo = null;
+        _approvalStatusFilter = string.Empty;
         _currentPage = 1;
+    }
+    
+    private string GetStatusBadgeColor(string? status)
+    {
+        return status switch
+        {
+            "Approved" => "success",
+            "Rejected" => "danger",
+            "Pending" => "warning",
+            _ => "secondary"
+        };
     }
 
     private void OnPageSizeChanged()
@@ -321,13 +366,13 @@ else
     private string GenerateCsv()
     {
         var sb = new System.Text.StringBuilder();
-        sb.AppendLine("Serial No,Buyer,Memo #,Memo Date,Style,Gmt Qty,Gmt FOB Value,Surcharge Paid,Stock Usable Qty,Stock Non-Usable Qty,Total Extra Paid,Amount Costing,Amount DN,Amount Commitment,Percent Of Fob Value,User Name");
+        sb.AppendLine("Serial No,Buyer,Memo #,Memo Date,Style,Gmt Qty,Gmt FOB Value,Surcharge Paid,Stock Usable Amount,Stock Non-Usable Amount,Total Extra Paid,Amount Costing,Amount DN,Amount Commitment,Percent Of Fob Value,User Name,Approval Status");
         
         var serial = 0;
         foreach (var row in FilteredData)
         {
             serial++;
-            sb.AppendLine($"{serial},\"{row.BuyerName}\",\"{row.MemoNo}\",{row.MemoDate:yyyy-MM-dd},\"{row.StyleName}\",{row.GmtQty},{row.GmtFobValue},{row.SurchargePaid},{row.StockUsableQty},{row.StockNonUsableQty},{row.TotalExtraPaid},{row.AmountCosting},{row.AmountDN},{row.AmountCommitment},{row.PercentOfFobValue:P2},\"{row.UserName}\"");
+            sb.AppendLine($"{serial},\"{row.BuyerName}\",\"{row.MemoNo}\",{row.MemoDate:yyyy-MM-dd},\"{row.StyleName}\",{row.GmtQty},{row.GmtFobValue},{row.SurchargePaid},{row.StockUsableAmount},{row.StockNonUsableAmount},{row.TotalExtraPaid},{row.AmountCosting},{row.AmountDN},{row.AmountCommitment},{row.PercentOfFobValue:P2},\"{row.UserName}\",\"{row.ApprovalStatus ?? "Pending"}\"");
         }
         
         return sb.ToString();
@@ -356,5 +401,6 @@ else
         public decimal AmountCommitment { get; set; }
         public decimal? PercentOfFobValue { get; set; }
         public string UserName { get; set; } = string.Empty;
+        public string? ApprovalStatus { get; set; }
     }
 }
